@@ -1,8 +1,15 @@
-use bevy::prelude::*;
+use bevy::{
+    ecs::{component::HookContext, world::DeferredWorld},
+    prelude::*,
+};
 
-use crate::hotbar::HotbarSelection;
+use crate::{
+    hotbar::HotbarSelection,
+    power::{PowerConsumer, PowerProducer, Work},
+};
 
 mod hotbar;
+mod power;
 
 pub struct FactoryGamePlugin;
 
@@ -10,7 +17,7 @@ impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins);
 
-        app.add_plugins(hotbar::plugin);
+        app.add_plugins((hotbar::plugin, power::plugin));
 
         app.insert_resource(ClearColor(Color::linear_rgb(0.1, 0.1, 0.1)));
 
@@ -61,6 +68,7 @@ fn spawn_building(
 
     match selected_buildable.0 {
         BuildingType::Miner => entity.insert(Miner),
+        BuildingType::CoalGenerator => entity.insert(CoalGenerator),
         BuildingType::PowerPole => entity.insert(PowerPole),
     };
 }
@@ -69,13 +77,41 @@ fn spawn_building(
 pub enum BuildingType {
     #[default]
     Miner,
+    CoalGenerator,
     PowerPole,
 }
 
 #[derive(Component)]
-#[require(Sprite::from_color(Color::linear_rgb(0.5, 0.0, 0.0), Vec2::splat(64.0)))]
+#[require(
+    Sprite::from_color(Color::linear_rgb(0.5, 0.0, 0.0), Vec2::splat(64.0)),
+    PowerProducer(20.0)
+)]
 struct Miner;
 
 #[derive(Component)]
-#[require(Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.5), Vec2::splat(64.0)))]
+#[require(
+    Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.0), Vec2::splat(64.0)),
+    PowerProducer(20.0)
+)]
+struct CoalGenerator;
+
+#[derive(Component)]
+#[component(
+    on_insert = on_power_pole_insert
+)]
+#[require(
+    Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.5), Vec2::splat(64.0)),
+    PowerConsumer(15.0)
+)]
 struct PowerPole;
+
+fn on_power_pole_insert(mut world: DeferredWorld, context: HookContext) {
+    world
+        .commands()
+        .entity(context.entity)
+        .observe(power_pole_work);
+}
+
+fn power_pole_work(_trigger: Trigger<Work>) {
+    info!("power pole work!");
+}
