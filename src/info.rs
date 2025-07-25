@@ -5,8 +5,8 @@ use bevy::{
 
 use crate::{
     machine::{
-        frequency::Frequency,
         power::{Powered, TogglePower},
+        work::Frequency,
     },
     power::{PowerConsumer, PowerProducer},
 };

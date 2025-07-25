@@ -6,15 +6,32 @@ use bevy::{
     sprite::Anchor,
 };
 
-use super::Work;
 use crate::machine::power::Powered;
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<BeginWork>();
+    app.register_type::<WorkCompleted>();
+
     app.register_type::<Frequency>();
     app.register_type::<FrequencyTimer>();
 
+    app.add_event::<BeginWork>();
+    app.add_event::<WorkCompleted>();
+
     app.add_systems(FixedUpdate, (tick_frequency_timers, update_progress_bars));
+
+    app.add_systems(Update, (add_working_tag, remove_working_tag));
 }
+
+#[derive(Event, Reflect)]
+pub struct BeginWork(pub Entity);
+
+#[derive(Event, Reflect)]
+pub struct WorkCompleted(pub Entity);
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct Working;
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -60,17 +77,37 @@ fn on_frequency_insert(mut world: DeferredWorld, HookContext { entity, .. }: Hoo
 #[reflect(Component)]
 pub struct FrequencyProgressOf(Entity);
 
-fn tick_frequency_timers(
+fn add_working_tag(
+    mut events: EventReader<BeginWork>,
     mut commands: Commands,
+    mut frequency_timers: Query<&mut FrequencyTimer>,
+) {
+    for event in events.read() {
+        commands.entity(event.0).insert(Working);
+
+        if let Ok(mut frequency) = frequency_timers.get_mut(event.0) {
+            frequency.0.reset();
+        }
+    }
+}
+
+fn tick_frequency_timers(
     time: Res<Time>,
-    frequencies: Query<(Entity, &mut FrequencyTimer), With<Powered>>,
+    frequencies: Query<(Entity, &mut FrequencyTimer), (With<Powered>, With<Working>)>,
+    mut work_completed_events: EventWriter<WorkCompleted>,
 ) {
     for (entity, mut frequency) in frequencies {
         frequency.0.tick(time.delta());
 
         if frequency.0.just_finished() {
-            commands.trigger_targets(Work, entity);
+            work_completed_events.write(WorkCompleted(entity));
         }
+    }
+}
+
+fn remove_working_tag(mut events: EventReader<WorkCompleted>, mut commands: Commands) {
+    for event in events.read() {
+        commands.entity(event.0).remove::<Working>();
     }
 }
 

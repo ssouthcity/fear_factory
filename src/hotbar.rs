@@ -39,6 +39,7 @@ fn spawn_hotbar(mut commands: Commands) {
             ..default()
         },
         children![
+            hotbar_slot(BuildingType::Windmill, Color::linear_rgb(0.9, 0.9, 0.9)),
             hotbar_slot(BuildingType::Miner, Color::linear_rgb(0.5, 0.0, 0.0)),
             hotbar_slot(
                 BuildingType::CoalGenerator,
@@ -65,9 +66,10 @@ fn hotbar_slot(slot: BuildingType, color: Color) -> impl Bundle {
 
 fn handle_hotbar_input(keys: Res<ButtonInput<KeyCode>>, mut selected: ResMut<HotbarSelection>) {
     let keycodes = [
-        (KeyCode::Digit1, BuildingType::Miner),
-        (KeyCode::Digit2, BuildingType::CoalGenerator),
-        (KeyCode::Digit3, BuildingType::Constructor),
+        (KeyCode::Digit1, BuildingType::Windmill),
+        (KeyCode::Digit2, BuildingType::Miner),
+        (KeyCode::Digit3, BuildingType::CoalGenerator),
+        (KeyCode::Digit4, BuildingType::Constructor),
     ];
 
     for (key, building) in keycodes {

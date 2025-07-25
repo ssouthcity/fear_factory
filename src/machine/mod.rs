@@ -1,18 +1,22 @@
 use bevy::prelude::*;
 
-pub mod frequency;
+use crate::{
+    info::Details,
+    machine::io::{ResourceInput, ResourceOutput},
+};
+
+mod io;
 pub mod power;
 pub mod prefabs;
+pub mod work;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Work>();
+    app.register_type::<Machine>();
 
-    app.add_plugins((frequency::plugin, power::plugin));
+    app.add_plugins((work::plugin, io::plugin, power::plugin));
 }
-
-#[derive(Event, Reflect)]
-pub struct Work;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(Details, ResourceInput, ResourceOutput)]
 pub struct Machine;

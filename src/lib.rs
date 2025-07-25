@@ -1,8 +1,10 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::bevy_egui::EguiPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::{
     hotbar::HotbarSelection,
-    machine::prefabs::{BuildingType, CoalGenerator, Constructor, Miner},
+    machine::prefabs::{BuildingType, CoalGenerator, Constructor, Miner, Windmill},
 };
 
 mod audio;
@@ -17,6 +19,11 @@ impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins);
 
+        app.add_plugins(EguiPlugin {
+            enable_multipass_for_primary_context: true,
+        });
+        app.add_plugins(WorldInspectorPlugin::new());
+
         app.add_plugins((
             audio::plugin,
             hotbar::plugin,
@@ -30,6 +37,7 @@ impl Plugin for FactoryGamePlugin {
         app.add_systems(Startup, (setup_camera, setup_world));
 
         app.add_observer(drag_camera);
+        app.add_observer(zoom_camera);
     }
 }
 
@@ -59,6 +67,12 @@ fn drag_camera(
     camera_position.translation += event.delta.extend(0.0) * Vec3::new(-1.0, 1.0, 1.0) * 0.2;
 }
 
+fn zoom_camera(scroll: Trigger<Pointer<Scroll>>, proj: Single<&mut Projection, With<Camera>>) {
+    if let Projection::Orthographic(ref mut ortho) = *proj.into_inner() {
+        ortho.scale *= 1.0 - (scroll.y * 0.2);
+    }
+}
+
 fn spawn_building(
     trigger: Trigger<Pointer<Click>>,
     mut commands: Commands,
@@ -73,6 +87,7 @@ fn spawn_building(
     let mut entity = commands.spawn(Transform::from_translation(mouse_position.with_z(1.0)));
 
     match selected_buildable.0 {
+        BuildingType::Windmill => entity.insert(Windmill),
         BuildingType::Miner => entity.insert(Miner),
         BuildingType::CoalGenerator => entity.insert(CoalGenerator),
         BuildingType::Constructor => entity.insert(Constructor),
