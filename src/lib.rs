@@ -7,11 +7,13 @@ use bevy::{
 
 use crate::{
     hotbar::HotbarSelection,
+    info::Details,
     machine::{Frequency, Work},
     power::{PowerConsumer, PowerProducer},
 };
 
 mod hotbar;
+mod info;
 mod machine;
 mod power;
 
@@ -21,7 +23,7 @@ impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins);
 
-        app.add_plugins((hotbar::plugin, power::plugin, machine::plugin));
+        app.add_plugins((hotbar::plugin, power::plugin, machine::plugin, info::plugin));
 
         app.insert_resource(ClearColor(Color::linear_rgb(0.1, 0.1, 0.1)));
 
@@ -68,7 +70,7 @@ fn spawn_building(
 
     let mouse_position = trigger.event().hit.position.unwrap_or_default();
 
-    let mut entity = commands.spawn(Transform::from_translation(mouse_position));
+    let mut entity = commands.spawn(Transform::from_translation(mouse_position.with_z(1.0)));
 
     match selected_buildable.0 {
         BuildingType::Miner => entity.insert(Miner),
@@ -88,7 +90,8 @@ pub enum BuildingType {
 #[derive(Component)]
 #[require(
     Sprite::from_color(Color::linear_rgb(0.5, 0.0, 0.0), Vec2::splat(64.0)),
-    PowerConsumer(10.0)
+    PowerConsumer(10.0),
+    Details
 )]
 struct Miner;
 
@@ -96,7 +99,8 @@ struct Miner;
 #[require(
     Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.0), Vec2::splat(64.0)),
     PowerProducer(20.0),
-    Frequency(Duration::from_secs(1))
+    Frequency(Duration::from_secs(1)),
+    Details
 )]
 struct CoalGenerator;
 
@@ -107,7 +111,8 @@ struct CoalGenerator;
 #[require(
     Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.5), Vec2::splat(64.0)),
     PowerConsumer(15.0),
-    Frequency(Duration::from_secs(3))
+    Frequency(Duration::from_secs(3)),
+    Details
 )]
 struct Constructor;
 
