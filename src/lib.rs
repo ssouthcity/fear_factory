@@ -7,6 +7,7 @@ use crate::{
     machine::prefabs::{BuildingType, CoalGenerator, Constructor, Miner, Windmill},
 };
 
+mod animation;
 mod audio;
 mod hotbar;
 mod info;
@@ -17,7 +18,7 @@ pub struct FactoryGamePlugin;
 
 impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(DefaultPlugins);
+        app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()));
 
         app.add_plugins(EguiPlugin {
             enable_multipass_for_primary_context: true,
@@ -25,6 +26,7 @@ impl Plugin for FactoryGamePlugin {
         app.add_plugins(WorldInspectorPlugin::new());
 
         app.add_plugins((
+            animation::plugin,
             audio::plugin,
             hotbar::plugin,
             power::plugin,

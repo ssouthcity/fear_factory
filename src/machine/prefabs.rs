@@ -3,6 +3,7 @@ use std::time::Duration;
 use bevy::{platform::collections::HashMap, prelude::*};
 
 use crate::{
+    animation::AnimatedMachine,
     info::Details,
     machine::{
         Machine,
@@ -26,7 +27,8 @@ pub enum BuildingType {
 #[require(
     Machine,
     Name::new("Windmill"),
-    Sprite::from_color(Color::linear_rgb(0.9, 0.9, 0.9), Vec2::splat(64.0)),
+    Sprite::sized(Vec2::splat(64.0)),
+    AnimatedMachine("windmill.aseprite"),
     PowerProducer(30.0),
     Powered
 )]
@@ -36,13 +38,14 @@ pub struct Windmill;
 #[require(
     Machine,
     Name::new("Miner"),
-    Sprite::from_color(Color::linear_rgb(0.5, 0.0, 0.0), Vec2::splat(64.0)),
+    Sprite::sized(Vec2::splat(64.0)),
+    AnimatedMachine("miner.aseprite"),
     PowerConsumer(5.0),
     Powered,
     Frequency(Duration::from_secs(10)),
     ResourceOutput(HashMap::from([
         (ItemType::Coal, 60)
-    ]))
+    ])),
 )]
 pub struct Miner;
 
@@ -50,7 +53,8 @@ pub struct Miner;
 #[require(
     Machine,
     Name::new("Coal Generator"),
-    Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.0), Vec2::splat(64.0)),
+    Sprite::sized(Vec2::splat(64.0)),
+    AnimatedMachine("coal-generator.aseprite"),
     PowerProducer(75.0),
     Frequency(Duration::from_secs(60)),
     Powered,
@@ -64,7 +68,8 @@ pub struct CoalGenerator;
 #[require(
     Machine,
     Name::new("Constructor"),
-    Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.5), Vec2::splat(64.0)),
+    Sprite::sized(Vec2::splat(64.0)),
+    AnimatedMachine("constructor.aseprite"),
     PowerConsumer(15.0),
     Frequency(Duration::from_secs(3)),
     Details,
