@@ -8,7 +8,7 @@ use bevy::{
 use crate::{
     hotbar::HotbarSelection,
     info::Details,
-    machine::{Frequency, Work},
+    machine::{Powered, Work, frequency::Frequency},
     power::{PowerConsumer, PowerProducer},
 };
 
@@ -89,18 +89,22 @@ pub enum BuildingType {
 
 #[derive(Component)]
 #[require(
+    Name::new("Miner"),
     Sprite::from_color(Color::linear_rgb(0.5, 0.0, 0.0), Vec2::splat(64.0)),
     PowerConsumer(10.0),
-    Details
+    Details,
+    Powered
 )]
 struct Miner;
 
 #[derive(Component)]
 #[require(
+    Name::new("Coal Generator"),
     Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.0), Vec2::splat(64.0)),
     PowerProducer(20.0),
     Frequency(Duration::from_secs(1)),
-    Details
+    Details,
+    Powered
 )]
 struct CoalGenerator;
 
@@ -109,10 +113,12 @@ struct CoalGenerator;
     on_insert = on_constructor_insert
 )]
 #[require(
+    Name::new("Constructor"),
     Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.5), Vec2::splat(64.0)),
     PowerConsumer(15.0),
     Frequency(Duration::from_secs(3)),
-    Details
+    Details,
+    Powered
 )]
 struct Constructor;
 

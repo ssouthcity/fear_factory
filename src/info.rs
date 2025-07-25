@@ -1,7 +1,10 @@
-use bevy::prelude::*;
+use bevy::{
+    ecs::{relationship::RelatedSpawner, spawn::SpawnWith},
+    prelude::*,
+};
 
 use crate::{
-    machine::Frequency,
+    machine::{Powered, TogglePower, frequency::Frequency},
     power::{PowerConsumer, PowerProducer},
 };
 
@@ -16,8 +19,10 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (update_details_pane_info, show_hide_details_pane)
-            .run_if(resource_changed::<SelectedMachine>),
+        (
+            update_details_pane_info,
+            show_hide_details_pane.run_if(resource_changed::<SelectedMachine>),
+        ),
     );
 }
 
@@ -36,6 +41,8 @@ pub struct SelectedMachine(Option<Entity>);
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 pub enum DetailContent {
+    Name,
+    PowerState,
     Frequency,
     PowerProduction,
     PowerConsumption,
@@ -69,6 +76,37 @@ fn spawn_details_pane(mut commands: Commands) {
         BackgroundColor(Color::BLACK),
         children![
             (
+                Node {
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::SpaceBetween,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                children![
+                    (
+                        Text::default(),
+                        children![
+                            TextSpan::new("Name: "),
+                            (TextSpan::default(), DetailContent::Name),
+                        ]
+                    ),
+                    (
+                        Node::default(),
+                        Children::spawn(SpawnWith(|parent: &mut RelatedSpawner<ChildOf>| {
+                            parent
+                                .spawn((
+                                    Button::default(),
+                                    children![(
+                                        Text::default(),
+                                        children![(TextSpan::default(), DetailContent::PowerState)],
+                                    )],
+                                ))
+                                .observe(send_power_toggle);
+                        }))
+                    )
+                ]
+            ),
+            (
                 Text::default(),
                 children![
                     TextSpan::new("Frequency: "),
@@ -99,6 +137,8 @@ fn spawn_details_pane(mut commands: Commands) {
 fn update_details_pane_info(
     selected_machine: Res<SelectedMachine>,
     details_spans: Query<(&mut TextSpan, &DetailContent)>,
+    name_query: Query<&Name>,
+    power_state_query: Query<&Powered>,
     frequency_query: Query<&Frequency>,
     power_production_query: Query<&PowerProducer>,
     power_consumption_query: Query<&PowerConsumer>,
@@ -109,6 +149,17 @@ fn update_details_pane_info(
 
     for (mut span, content) in details_spans {
         span.0 = match content {
+            DetailContent::Name => name_query
+                .get(machine)
+                .map(|n| n.to_string())
+                .unwrap_or("N/A".to_owned()),
+
+            DetailContent::PowerState => power_state_query
+                .get(machine)
+                .map(|_| "On")
+                .unwrap_or("Off")
+                .to_string(),
+
             DetailContent::Frequency => frequency_query
                 .get(machine)
                 .map(|f| f.0.as_secs_f32().to_string())
@@ -135,5 +186,15 @@ fn show_hide_details_pane(
         Visibility::Visible
     } else {
         Visibility::Hidden
+    };
+}
+
+fn send_power_toggle(
+    _trigger: Trigger<Pointer<Click>>,
+    selected_machine: Res<SelectedMachine>,
+    mut commands: Commands,
+) {
+    if let Some(machine) = selected_machine.0 {
+        commands.trigger_targets(TogglePower, machine);
     };
 }

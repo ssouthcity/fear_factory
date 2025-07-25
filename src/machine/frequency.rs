@@ -6,14 +6,12 @@ use bevy::{
     sprite::Anchor,
 };
 
-use crate::power::fuse_is_broken;
+use super::Work;
+use crate::{machine::Powered, power::fuse_is_broken};
 
 pub fn plugin(app: &mut App) {
-    // components
     app.register_type::<Frequency>();
     app.register_type::<FrequencyTimer>();
-    // events
-    app.register_type::<Work>();
 
     app.add_systems(
         FixedUpdate,
@@ -23,7 +21,6 @@ pub fn plugin(app: &mut App) {
     );
 }
 
-// Component that determines how often a machine runs
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[component(immutable, on_insert = on_frequency_insert)]
@@ -68,13 +65,10 @@ fn on_frequency_insert(mut world: DeferredWorld, HookContext { entity, .. }: Hoo
 #[reflect(Component)]
 pub struct FrequencyProgressOf(Entity);
 
-#[derive(Event, Reflect)]
-pub struct Work;
-
 fn tick_frequency_timers(
     mut commands: Commands,
     time: Res<Time>,
-    frequencies: Query<(Entity, &mut FrequencyTimer)>,
+    frequencies: Query<(Entity, &mut FrequencyTimer), With<Powered>>,
 ) {
     for (entity, mut frequency) in frequencies {
         frequency.0.tick(time.delta());

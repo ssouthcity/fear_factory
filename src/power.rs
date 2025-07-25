@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::machine::Powered;
+
 pub fn plugin(app: &mut App) {
     // resources
     app.register_type::<CurrentPower>();
@@ -60,7 +62,7 @@ fn fix_fuse(keys: Res<ButtonInput<KeyCode>>, mut fuse_status: ResMut<FuseStatus>
 }
 
 fn produce_power(
-    power_producers: Query<&PowerProducer>,
+    power_producers: Query<&PowerProducer, With<Powered>>,
     mut current_power: ResMut<CurrentPower>,
     time: Res<Time>,
 ) {
@@ -72,7 +74,7 @@ fn produce_power(
 
 fn consume_power(
     mut commands: Commands,
-    power_consumers: Query<&PowerConsumer>,
+    power_consumers: Query<&PowerConsumer, With<Powered>>,
     mut current_power: ResMut<CurrentPower>,
     time: Res<Time>,
 ) {
@@ -102,7 +104,7 @@ fn spawn_debug_ui(mut commands: Commands) {
         Node {
             position_type: PositionType::Absolute,
             top: Val::ZERO,
-            right: Val::ZERO,
+            left: Val::ZERO,
             ..default()
         },
     ));
@@ -114,7 +116,7 @@ fn update_debug_ui(
     mut text: Single<&mut Text, With<CurrentPowerUI>>,
     mut text_color: Single<&mut TextColor, With<CurrentPowerUI>>,
 ) {
-    text.0 = current_power.0.to_string();
+    text.0 = (current_power.0 * 64.0).to_string();
 
     text_color.0 = if fuse_status.0 {
         Color::linear_rgb(1.0, 0.0, 0.0)
