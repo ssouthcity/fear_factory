@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::{
     ecs::{component::HookContext, world::DeferredWorld},
     prelude::*,
@@ -5,10 +7,12 @@ use bevy::{
 
 use crate::{
     hotbar::HotbarSelection,
-    power::{PowerConsumer, PowerProducer, Work},
+    machine::{Frequency, Work},
+    power::{PowerConsumer, PowerProducer},
 };
 
 mod hotbar;
+mod machine;
 mod power;
 
 pub struct FactoryGamePlugin;
@@ -17,7 +21,7 @@ impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins);
 
-        app.add_plugins((hotbar::plugin, power::plugin));
+        app.add_plugins((hotbar::plugin, power::plugin, machine::plugin));
 
         app.insert_resource(ClearColor(Color::linear_rgb(0.1, 0.1, 0.1)));
 
@@ -69,7 +73,7 @@ fn spawn_building(
     match selected_buildable.0 {
         BuildingType::Miner => entity.insert(Miner),
         BuildingType::CoalGenerator => entity.insert(CoalGenerator),
-        BuildingType::PowerPole => entity.insert(PowerPole),
+        BuildingType::Constructor => entity.insert(Constructor),
     };
 }
 
@@ -78,40 +82,42 @@ pub enum BuildingType {
     #[default]
     Miner,
     CoalGenerator,
-    PowerPole,
+    Constructor,
 }
 
 #[derive(Component)]
 #[require(
     Sprite::from_color(Color::linear_rgb(0.5, 0.0, 0.0), Vec2::splat(64.0)),
-    PowerProducer(20.0)
+    PowerConsumer(10.0)
 )]
 struct Miner;
 
 #[derive(Component)]
 #[require(
     Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.0), Vec2::splat(64.0)),
-    PowerProducer(20.0)
+    PowerProducer(20.0),
+    Frequency(Duration::from_secs(1))
 )]
 struct CoalGenerator;
 
 #[derive(Component)]
 #[component(
-    on_insert = on_power_pole_insert
+    on_insert = on_constructor_insert
 )]
 #[require(
     Sprite::from_color(Color::linear_rgb(0.0, 0.0, 0.5), Vec2::splat(64.0)),
-    PowerConsumer(15.0)
+    PowerConsumer(15.0),
+    Frequency(Duration::from_secs(3))
 )]
-struct PowerPole;
+struct Constructor;
 
-fn on_power_pole_insert(mut world: DeferredWorld, context: HookContext) {
+fn on_constructor_insert(mut world: DeferredWorld, context: HookContext) {
     world
         .commands()
         .entity(context.entity)
-        .observe(power_pole_work);
+        .observe(on_constructor_work);
 }
 
-fn power_pole_work(_trigger: Trigger<Work>) {
-    info!("power pole work!");
+fn on_constructor_work(_trigger: Trigger<Work>) {
+    info!("constructor work!");
 }

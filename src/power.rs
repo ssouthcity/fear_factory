@@ -8,14 +8,13 @@ pub fn plugin(app: &mut App) {
     app.register_type::<PowerProducer>();
     app.register_type::<PowerConsumer>();
     // events
-    app.register_type::<Work>();
     app.register_type::<BrokenFuse>();
 
     app.init_resource::<CurrentPower>();
     app.init_resource::<FuseStatus>();
 
     app.add_systems(
-        Update,
+        FixedUpdate,
         (produce_power, consume_power)
             .chain()
             .run_if(not(fuse_is_broken)),
@@ -33,11 +32,11 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Resource, Reflect, Default)]
 #[reflect(Resource)]
-struct CurrentPower(f32);
+pub struct CurrentPower(pub f32);
 
 #[derive(Resource, Reflect, Default)]
 #[reflect(Resource)]
-struct FuseStatus(bool);
+pub struct FuseStatus(pub bool);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -48,12 +47,9 @@ pub struct PowerProducer(pub f32);
 pub struct PowerConsumer(pub f32);
 
 #[derive(Event, Reflect)]
-pub struct Work;
-
-#[derive(Event, Reflect)]
 pub struct BrokenFuse;
 
-fn fuse_is_broken(fuse_status: Res<FuseStatus>) -> bool {
+pub fn fuse_is_broken(fuse_status: Res<FuseStatus>) -> bool {
     return fuse_status.0;
 }
 
@@ -63,21 +59,27 @@ fn fix_fuse(keys: Res<ButtonInput<KeyCode>>, mut fuse_status: ResMut<FuseStatus>
     }
 }
 
-fn produce_power(power_producers: Query<&PowerProducer>, mut current_power: ResMut<CurrentPower>) {
-    current_power.0 = power_producers.iter().map(|f| f.0).sum();
+fn produce_power(
+    power_producers: Query<&PowerProducer>,
+    mut current_power: ResMut<CurrentPower>,
+    time: Res<Time>,
+) {
+    current_power.0 = power_producers
+        .iter()
+        .map(|f| f.0 * time.delta_secs())
+        .sum();
 }
 
 fn consume_power(
     mut commands: Commands,
-    power_consumers: Query<(Entity, &PowerConsumer)>,
+    power_consumers: Query<&PowerConsumer>,
     mut current_power: ResMut<CurrentPower>,
+    time: Res<Time>,
 ) {
-    for (entity, consumer) in power_consumers {
-        current_power.0 -= consumer.0;
+    for consumer in power_consumers {
+        current_power.0 -= consumer.0 * time.delta_secs();
 
-        if current_power.0 >= 0.0 {
-            commands.trigger_targets(Work, entity);
-        } else {
+        if current_power.0 < 0.0 {
             commands.trigger(BrokenFuse);
             break;
         }
