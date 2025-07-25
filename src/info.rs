@@ -4,7 +4,10 @@ use bevy::{
 };
 
 use crate::{
-    machine::{Powered, TogglePower, frequency::Frequency},
+    machine::{
+        frequency::Frequency,
+        power::{Powered, TogglePower},
+    },
     power::{PowerConsumer, PowerProducer},
 };
 

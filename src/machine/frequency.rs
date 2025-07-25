@@ -7,18 +7,13 @@ use bevy::{
 };
 
 use super::Work;
-use crate::{machine::Powered, power::fuse_is_broken};
+use crate::machine::power::Powered;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<Frequency>();
     app.register_type::<FrequencyTimer>();
 
-    app.add_systems(
-        FixedUpdate,
-        (tick_frequency_timers, update_progress_bars)
-            .chain()
-            .run_if(not(fuse_is_broken)),
-    );
+    app.add_systems(FixedUpdate, (tick_frequency_timers, update_progress_bars));
 }
 
 #[derive(Component, Reflect)]
