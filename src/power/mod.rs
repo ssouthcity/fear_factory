@@ -2,7 +2,12 @@ use bevy::prelude::*;
 
 use crate::machine::power::Powered;
 
+pub mod grid;
+pub mod pole;
+
 pub fn plugin(app: &mut App) {
+    app.add_plugins((grid::plugin, pole::plugin));
+
     // resources
     app.register_type::<CurrentPower>();
     // components

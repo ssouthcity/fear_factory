@@ -5,6 +5,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use crate::{
     hotbar::HotbarSelection,
     machine::prefabs::{BuildingType, CoalGenerator, Constructor, Miner, Windmill},
+    power::pole::PowerPole,
 };
 
 mod animation;
@@ -90,6 +91,7 @@ fn spawn_building(
 
     match selected_buildable.0 {
         BuildingType::Windmill => entity.insert(Windmill),
+        BuildingType::PowerPole => entity.insert(PowerPole),
         BuildingType::Miner => entity.insert(Miner),
         BuildingType::CoalGenerator => entity.insert(CoalGenerator),
         BuildingType::Constructor => entity.insert(Constructor),

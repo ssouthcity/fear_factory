@@ -18,6 +18,7 @@ use crate::{
 pub enum BuildingType {
     #[default]
     Windmill,
+    PowerPole,
     Miner,
     CoalGenerator,
     Constructor,
