@@ -14,7 +14,7 @@ use crate::{
     power::{PowerConsumer, PowerProducer},
 };
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Default, Reflect)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Default, Reflect, Debug, Clone, Copy)]
 pub enum BuildingType {
     #[default]
     Windmill,
