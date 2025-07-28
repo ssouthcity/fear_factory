@@ -33,34 +33,40 @@ fn spawn_input_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         },
         Children::spawn(SpawnIter(
-            [InputMode::Camera, InputMode::View, InputMode::Build]
-                .iter()
-                .map(move |mode| {
-                    (
-                        Name::new(format!("Hotbar Slot {:?}", mode)),
-                        Node {
-                            width: Val::Px(64.0),
-                            height: Val::Px(64.0),
-                            border: UiRect::all(Val::Px(4.0)),
-                            ..default()
+            [
+                InputMode::Camera,
+                InputMode::View,
+                InputMode::Build,
+                InputMode::PowerLine,
+            ]
+            .iter()
+            .map(move |mode| {
+                (
+                    Name::new(format!("Hotbar Slot {:?}", mode)),
+                    Node {
+                        width: Val::Px(64.0),
+                        height: Val::Px(64.0),
+                        border: UiRect::all(Val::Px(4.0)),
+                        ..default()
+                    },
+                    BorderColor(Color::WHITE),
+                    PickInputMode(mode.clone()),
+                    children![(
+                        Name::new("Icon"),
+                        ImageNode::default(),
+                        AseSlice {
+                            aseprite: aseprite.clone(),
+                            name: (match mode {
+                                InputMode::Camera => "Camera",
+                                InputMode::View => "View",
+                                InputMode::Build => "Build",
+                                InputMode::PowerLine => "Power Line",
+                            })
+                            .to_string(),
                         },
-                        BorderColor(Color::WHITE),
-                        PickInputMode(mode.clone()),
-                        children![(
-                            Name::new("Icon"),
-                            ImageNode::default(),
-                            AseSlice {
-                                aseprite: aseprite.clone(),
-                                name: (match mode {
-                                    InputMode::Camera => "Camera",
-                                    InputMode::View => "View",
-                                    InputMode::Build => "Build",
-                                })
-                                .to_string(),
-                            },
-                        )],
-                    )
-                }),
+                    )],
+                )
+            }),
         )),
     ));
 }

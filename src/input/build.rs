@@ -1,31 +1,52 @@
 use bevy::prelude::*;
 
 use crate::{
-    input::{CursorPosition, InputMode},
+    input::InputMode,
     machine::prefabs::{BuildingType, CoalGenerator, Constructor, Miner, Windmill},
     power::pole::PowerPole,
     ui::HotbarSelection,
 };
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(InputMode::Build), spawn_observers);
+    app.add_systems(Startup, spawn_plane);
 }
 
-fn spawn_observers(mut commands: Commands) {
-    commands.spawn((Observer::new(spawn_building), StateScoped(InputMode::Build)));
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct World;
+
+fn spawn_plane(mut commands: Commands) {
+    commands
+        .spawn((
+            World::default(),
+            Sprite::from_color(Color::NONE, Vec2::splat(2000.0)),
+            Pickable::default(),
+        ))
+        .observe(spawn_building);
 }
 
 fn spawn_building(
     trigger: Trigger<Pointer<Click>>,
+    input_mode: Res<State<InputMode>>,
     mut commands: Commands,
-    cursor_position: Res<CursorPosition>,
     selected_buildable: Res<HotbarSelection>,
 ) {
+    if *input_mode.get() != InputMode::Build {
+        return;
+    }
+
     if trigger.event().button != PointerButton::Primary {
         return;
     }
 
-    let mut entity = commands.spawn(Transform::from_translation(cursor_position.0.extend(1.0)));
+    let Some(cursor_position) = trigger.event().hit.position else {
+        return;
+    };
+
+    let mut entity = commands.spawn((
+        Transform::from_translation(cursor_position.with_z(1.0)),
+        ChildOf(trigger.target()),
+    ));
 
     match selected_buildable.0 {
         BuildingType::Windmill => entity.insert(Windmill),
