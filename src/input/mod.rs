@@ -1,19 +1,13 @@
 use bevy::prelude::*;
 
 mod build;
-mod camera;
 mod power_line;
 mod view;
 
 pub fn plugin(app: &mut App) {
     app.init_state::<InputMode>();
 
-    app.add_plugins((
-        camera::plugin,
-        view::plugin,
-        build::plugin,
-        power_line::plugin,
-    ));
+    app.add_plugins((view::plugin, build::plugin, power_line::plugin));
 
     app.init_resource::<CursorPosition>()
         .add_systems(Update, track_cursor_position);
@@ -23,7 +17,6 @@ pub fn plugin(app: &mut App) {
 #[states(scoped_entities)]
 pub enum InputMode {
     #[default]
-    Camera,
     View,
     Build,
     PowerLine,

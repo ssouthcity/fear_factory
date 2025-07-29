@@ -4,6 +4,7 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod animation;
 mod audio;
+mod camera;
 mod info;
 mod input;
 mod machine;
@@ -22,6 +23,7 @@ impl Plugin for FactoryGamePlugin {
         app.add_plugins((
             animation::plugin,
             audio::plugin,
+            camera::plugin,
             power::plugin,
             input::plugin,
             machine::plugin,
@@ -30,11 +32,5 @@ impl Plugin for FactoryGamePlugin {
         ));
 
         app.insert_resource(ClearColor(Color::linear_rgb(0.25, 0.25, 0.0)));
-
-        app.add_systems(Startup, (setup_camera,));
     }
-}
-
-fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
 }
