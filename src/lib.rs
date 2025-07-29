@@ -16,9 +16,7 @@ impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()));
 
-        app.add_plugins(EguiPlugin {
-            enable_multipass_for_primary_context: true,
-        });
+        app.add_plugins(EguiPlugin::default());
         app.add_plugins(WorldInspectorPlugin::new());
 
         app.add_plugins((
