@@ -4,7 +4,10 @@ use bevy::{
 };
 use rand::Rng;
 
-use crate::power::grid::{MergeGrids, PowerGrid, PowerGridComponentOf};
+use crate::{
+    animation::AnimatedMachine,
+    power::grid::{MergeGrids, PowerGrid, PowerGridComponentOf},
+};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<PowerPole>();
@@ -15,7 +18,8 @@ pub fn plugin(app: &mut App) {
 #[component(on_add = on_add_power_pole)]
 #[require(
     Name::new("Power Pole"),
-    Sprite::from_color(Color::linear_rgb(0.2, 0.2, 0.2), Vec2::new(8.0, 32.0)),
+    AnimatedMachine("power-pole.aseprite"),
+    Sprite::sized(Vec2::splat(64.0)),
     Pickable::default()
 )]
 pub struct PowerPole;
