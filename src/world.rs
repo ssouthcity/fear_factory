@@ -1,25 +1,20 @@
 use bevy::prelude::*;
 
 use crate::{
-    input::InputMode,
     machine::prefabs::{BuildingType, CoalGenerator, Constructor, Miner, Windmill},
     power::pole::PowerPole,
     ui::HotbarSelection,
 };
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Startup, spawn_plane);
+    app.add_systems(Startup, spawn_world);
 }
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct World;
-
-fn spawn_plane(mut commands: Commands) {
+fn spawn_world(mut commands: Commands) {
     commands
         .spawn((
-            World::default(),
-            Sprite::from_color(Color::NONE, Vec2::splat(2000.0)),
+            Name::new("World"),
+            Sprite::from_color(Color::hsl(100.0, 0.5, 0.64), Vec2::splat(1600.0)),
             Pickable::default(),
         ))
         .observe(spawn_building);
@@ -27,14 +22,9 @@ fn spawn_plane(mut commands: Commands) {
 
 fn spawn_building(
     trigger: Trigger<Pointer<Click>>,
-    input_mode: Res<State<InputMode>>,
     mut commands: Commands,
     selected_buildable: Res<HotbarSelection>,
 ) {
-    if *input_mode.get() != InputMode::Build {
-        return;
-    }
-
     if trigger.event().button != PointerButton::Primary {
         return;
     }

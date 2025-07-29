@@ -58,8 +58,12 @@ fn on_detail_insert(trigger: Trigger<OnInsert, Details>, mut commands: Commands)
         .observe(select_machine);
 }
 
-fn select_machine(trigger: Trigger<Pointer<Click>>, mut selected_machine: ResMut<SelectedMachine>) {
+fn select_machine(
+    mut trigger: Trigger<Pointer<Click>>,
+    mut selected_machine: ResMut<SelectedMachine>,
+) {
     selected_machine.0 = Some(trigger.target());
+    trigger.propagate(false);
 }
 
 fn spawn_details_pane(mut commands: Commands) {

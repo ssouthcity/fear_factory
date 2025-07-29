@@ -6,10 +6,10 @@ mod animation;
 mod audio;
 mod camera;
 mod info;
-mod input;
 mod machine;
 mod power;
 mod ui;
+mod world;
 
 pub struct FactoryGamePlugin;
 
@@ -25,12 +25,12 @@ impl Plugin for FactoryGamePlugin {
             audio::plugin,
             camera::plugin,
             power::plugin,
-            input::plugin,
             machine::plugin,
             info::plugin,
             ui::plugin,
+            world::plugin,
         ));
 
-        app.insert_resource(ClearColor(Color::linear_rgb(0.25, 0.25, 0.0)));
+        app.insert_resource(ClearColor(Color::BLACK));
     }
 }
