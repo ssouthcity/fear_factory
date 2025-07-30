@@ -1,8 +1,11 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 
-use crate::machine::{
-    Machine,
-    work::{BeginWork, WorkCompleted, Working},
+use crate::{
+    FactorySystems,
+    machine::{
+        Machine,
+        work::{BeginWork, WorkCompleted, Working},
+    },
 };
 
 pub fn plugin(app: &mut App) {
@@ -11,7 +14,10 @@ pub fn plugin(app: &mut App) {
 
     app.init_resource::<TotalInventory>();
 
-    app.add_systems(Update, (begin_work, finish_work));
+    app.add_systems(
+        Update,
+        (begin_work, finish_work).in_set(FactorySystems::Logistics),
+    );
 }
 
 #[derive(Hash, PartialEq, Eq, Reflect, Debug, Clone, Copy)]

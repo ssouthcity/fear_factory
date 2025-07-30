@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use rand::Rng;
 
 use crate::{
+    FactorySystems,
     machine::power::Powered,
     power::{FuseBlown, PowerConsumer, PowerProducer},
 };
@@ -14,25 +15,24 @@ pub fn plugin(app: &mut App) {
     app.add_observer(on_new_grid_node);
 
     app.add_observer(add_power_grid_indicator)
-        .add_systems(Update, color_indicators);
+        .add_systems(Update, color_indicators.in_set(FactorySystems::UI));
 
     app.add_event::<MergeGrids>();
-
-    app.add_systems(Update, merge_grids);
 
     app.add_systems(Startup, spawn_power_grid_ui)
         .add_observer(add_new_grid_to_ui)
         .add_observer(remove_grid_from_ui)
-        .add_systems(Update, update_power_grid_ui);
+        .add_systems(Update, update_power_grid_ui.in_set(FactorySystems::UI));
 
     app.add_systems(
         Update,
         (
-            reset_power_levels,
+            (reset_power_levels, merge_grids),
             (calculate_power_production, calculate_power_consumption),
             check_for_overload,
         )
-            .chain(),
+            .chain()
+            .in_set(FactorySystems::Power),
     );
 }
 

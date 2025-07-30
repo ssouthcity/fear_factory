@@ -32,5 +32,26 @@ impl Plugin for FactoryGamePlugin {
         ));
 
         app.insert_resource(ClearColor(Color::BLACK));
+
+        app.configure_sets(
+            Update,
+            (
+                FactorySystems::Build,
+                FactorySystems::Power,
+                FactorySystems::Logistics,
+                FactorySystems::Work,
+                FactorySystems::UI,
+            )
+                .chain(),
+        );
     }
+}
+
+#[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub enum FactorySystems {
+    Build,
+    Power,
+    Logistics,
+    Work,
+    UI,
 }

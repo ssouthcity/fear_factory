@@ -6,7 +6,7 @@ use bevy::{
     sprite::Anchor,
 };
 
-use crate::machine::power::Powered;
+use crate::{FactorySystems, machine::power::Powered};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<BeginWork>();
@@ -20,7 +20,10 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(FixedUpdate, (tick_frequency_timers, update_progress_bars));
 
-    app.add_systems(Update, (add_working_tag, remove_working_tag));
+    app.add_systems(
+        Update,
+        (add_working_tag, remove_working_tag).in_set(FactorySystems::Work),
+    );
 }
 
 #[derive(Event, Reflect)]

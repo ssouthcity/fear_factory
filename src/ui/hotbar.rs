@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::machine::prefabs::BuildingType;
+use crate::{FactorySystems, world::Buildable};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<HotbarSelection>();
@@ -11,17 +11,17 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(Startup, spawn_hotbar);
 
-    app.add_systems(Update, highlight_selected_slot);
+    app.add_systems(Update, highlight_selected_slot.in_set(FactorySystems::UI));
 }
 
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
-pub struct HotbarSelection(pub BuildingType);
+pub struct HotbarSelection(pub Buildable);
 
 #[derive(Component, Default, Reflect)]
 #[reflect(Component)]
 #[require(Pickable)]
-struct HotbarSlot(BuildingType);
+struct HotbarSlot(Buildable);
 
 fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
     let aseprite = asset_server.load::<Aseprite>("build-icons.aseprite");
@@ -46,11 +46,11 @@ fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
         .id();
 
     for (building, slice_name) in [
-        (BuildingType::Windmill, "Windmill"),
-        (BuildingType::PowerPole, "Power Pole"),
-        (BuildingType::Miner, "Miner"),
-        (BuildingType::CoalGenerator, "Coal Generator"),
-        (BuildingType::Constructor, "Constructor"),
+        (Buildable::Windmill, "Windmill"),
+        (Buildable::PowerPole, "Power Pole"),
+        (Buildable::Miner, "Miner"),
+        (Buildable::CoalGenerator, "Coal Generator"),
+        (Buildable::Constructor, "Constructor"),
     ] {
         let id = commands
             .spawn((

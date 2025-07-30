@@ -4,6 +4,7 @@ use bevy::{
 };
 
 use crate::{
+    FactorySystems,
     machine::{
         power::{Powered, TogglePower},
         work::Frequency,
@@ -25,7 +26,8 @@ pub fn plugin(app: &mut App) {
         (
             update_details_pane_info,
             show_hide_details_pane.run_if(resource_changed::<SelectedMachine>),
-        ),
+        )
+            .in_set(FactorySystems::UI),
     );
 }
 
