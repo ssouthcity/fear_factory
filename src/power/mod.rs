@@ -3,9 +3,10 @@ use bevy::prelude::*;
 pub mod grid;
 pub mod line;
 pub mod pole;
+pub mod socket;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((grid::plugin, pole::plugin, line::plugin));
+    app.add_plugins((grid::plugin, pole::plugin, line::plugin, socket::plugin));
 
     // components
     app.register_type::<PowerProducer>();

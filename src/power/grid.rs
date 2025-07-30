@@ -4,7 +4,7 @@ use rand::Rng;
 use crate::{
     FactorySystems,
     machine::power::Powered,
-    power::{FuseBlown, PowerConsumer, PowerProducer, line::PowerLine},
+    power::{FuseBlown, PowerConsumer, PowerProducer, socket::PowerSocketsLinked},
 };
 
 pub fn plugin(app: &mut App) {
@@ -16,8 +16,6 @@ pub fn plugin(app: &mut App) {
 
     app.add_observer(add_power_grid_indicator)
         .add_systems(Update, color_indicators.in_set(FactorySystems::UI));
-
-    app.add_event::<MergeGrids>();
 
     app.add_systems(Startup, spawn_power_grid_ui)
         .add_observer(add_new_grid_to_ui)
@@ -64,36 +62,6 @@ fn on_new_grid_node(trigger: Trigger<OnAdd, GridNode>, mut commands: Commands) {
     commands
         .entity(trigger.target())
         .insert(PowerGridComponentOf(grid));
-
-    commands
-        .entity(trigger.target())
-        .observe(on_grid_node_connect);
-}
-
-fn on_grid_node_connect(
-    trigger: Trigger<Pointer<DragDrop>>,
-    grid_nodes: Query<&GridNode>,
-    power_grid_component_of: Query<&PowerGridComponentOf>,
-    mut events: EventWriter<MergeGrids>,
-    mut commands: Commands,
-) {
-    let event = trigger.event();
-
-    if !grid_nodes.contains(event.dropped) {
-        return;
-    }
-
-    let Ok(grid_target) = power_grid_component_of.get(event.target) else {
-        return;
-    };
-
-    let Ok(grid_dropped) = power_grid_component_of.get(event.dropped) else {
-        return;
-    };
-
-    commands.spawn(PowerLine(event.target, event.dropped));
-
-    events.write(MergeGrids(grid_target.0, grid_dropped.0));
 }
 
 #[derive(Component, Reflect, Default)]
@@ -155,28 +123,32 @@ fn color_indicators(
     }
 }
 
-#[derive(Event, Reflect)]
-pub struct MergeGrids(pub Entity, pub Entity);
-
 fn merge_grids(
-    mut events: EventReader<MergeGrids>,
+    mut events: EventReader<PowerSocketsLinked>,
+    power_grid_component_of: Query<&PowerGridComponentOf>,
     power_grid_components: Query<&PowerGridComponents>,
     mut commands: Commands,
 ) {
     for event in events.read() {
-        if event.0 == event.1 {
+        let Ok(grid_left) = power_grid_component_of.get(event.0) else {
+            return;
+        };
+
+        let Ok(grid_right) = power_grid_component_of.get(event.1) else {
+            return;
+        };
+
+        if grid_left.0 == grid_right.0 {
             continue;
         }
 
-        if let Ok(right_components) = power_grid_components.get(event.1) {
-            for entity in right_components.iter() {
-                commands
-                    .entity(entity)
-                    .insert(PowerGridComponentOf(event.0));
-            }
-        };
+        for entity in power_grid_components.iter_descendants(grid_right.0) {
+            commands
+                .entity(entity)
+                .insert(PowerGridComponentOf(grid_left.0));
+        }
 
-        commands.entity(event.1).despawn();
+        commands.entity(grid_right.0).despawn();
     }
 }
 

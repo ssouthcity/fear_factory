@@ -11,7 +11,7 @@ use crate::{
         power::Powered,
         work::Frequency,
     },
-    power::{PowerConsumer, PowerProducer},
+    power::{PowerConsumer, PowerProducer, socket::PowerSockets},
 };
 
 #[derive(Component)]
@@ -21,7 +21,8 @@ use crate::{
     Sprite::sized(Vec2::splat(64.0)),
     AnimatedMachine("windmill.aseprite"),
     PowerProducer(30.0),
-    Powered
+    Powered,
+    PowerSockets::single()
 )]
 pub struct Windmill;
 
@@ -37,6 +38,7 @@ pub struct Windmill;
     ResourceOutput(HashMap::from([
         (ItemType::Coal, 60)
     ])),
+    PowerSockets::single()
 )]
 pub struct Miner;
 
@@ -51,7 +53,8 @@ pub struct Miner;
     Powered,
     ResourceInput(HashMap::from([
         (ItemType::Coal, 60)
-    ]))
+    ])),
+    PowerSockets::single()
 )]
 pub struct CoalGenerator;
 
@@ -64,6 +67,7 @@ pub struct CoalGenerator;
     PowerConsumer(15.0),
     Frequency(Duration::from_secs(3)),
     Details,
-    Powered
+    Powered,
+    PowerSockets::single()
 )]
 pub struct Constructor;

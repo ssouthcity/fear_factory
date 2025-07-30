@@ -1,18 +1,30 @@
 use bevy::prelude::*;
 
-use crate::FactorySystems;
+use crate::{FactorySystems, power::socket::PowerSocketsLinked};
 
 const POWER_LINE_COLOR: Color = Color::BLACK;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<PowerLine>();
 
-    app.add_systems(Update, draw_power_lines.in_set(FactorySystems::UI));
+    app.add_systems(
+        Update,
+        (
+            create_power_line.in_set(FactorySystems::Build),
+            draw_power_lines.in_set(FactorySystems::UI),
+        ),
+    );
 }
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 pub struct PowerLine(pub Entity, pub Entity);
+
+fn create_power_line(mut events: EventReader<PowerSocketsLinked>, mut commands: Commands) {
+    for event in events.read() {
+        commands.spawn(PowerLine(event.0, event.1));
+    }
+}
 
 fn draw_power_lines(
     power_lines: Query<&PowerLine>,
