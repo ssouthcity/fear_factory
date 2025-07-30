@@ -15,6 +15,11 @@ pub fn plugin(app: &mut App) {
     app.add_event::<MergeGrids>();
 
     app.add_systems(Update, merge_grids);
+
+    app.add_systems(Startup, spawn_power_grid_ui)
+        .add_observer(add_new_grid_to_ui)
+        .add_observer(remove_grid_from_ui)
+        .add_systems(Update, update_power_grid_ui);
 }
 
 #[derive(Component, Reflect, Default)]
@@ -156,5 +161,103 @@ fn merge_grids(
         };
 
         commands.entity(event.1).despawn();
+    }
+}
+
+#[derive(Component, Default)]
+struct PowerGridUI;
+
+#[derive(Component)]
+struct PowerLevelUI(Entity);
+
+fn spawn_power_grid_ui(mut commands: Commands) {
+    commands.spawn((
+        Name::new("Power Grid UI"),
+        PowerGridUI::default(),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::ZERO,
+            right: Val::ZERO,
+            padding: UiRect::axes(Val::Px(16.0), Val::Px(8.0)),
+            margin: UiRect::all(Val::Px(16.0)),
+            display: Display::Flex,
+            flex_direction: FlexDirection::Column,
+            ..default()
+        },
+        BackgroundColor(Color::WHITE.with_alpha(0.2)),
+    ));
+}
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+struct PowerGridUIOf(Entity);
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+struct PowerGridUIColorOf(Entity);
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+struct PowerGridUIPowerOf(Entity);
+
+fn add_new_grid_to_ui(
+    trigger: Trigger<OnAdd, PowerGrid>,
+    power_grid_ui: Single<Entity, With<PowerGridUI>>,
+    mut commands: Commands,
+) {
+    commands.spawn((
+        ChildOf(power_grid_ui.into_inner()),
+        Node {
+            display: Display::Flex,
+            flex_direction: FlexDirection::Row,
+            column_gap: Val::Px(8.0),
+            justify_content: JustifyContent::SpaceBetween,
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        PowerGridUIOf(trigger.target()),
+        children![
+            (
+                PowerGridUIColorOf(trigger.target()),
+                Node {
+                    width: Val::Px(8.0),
+                    height: Val::Px(8.0),
+                    ..default()
+                },
+                BackgroundColor(Color::BLACK),
+            ),
+            (PowerGridUIPowerOf(trigger.target()), Text::default())
+        ],
+    ));
+}
+
+fn remove_grid_from_ui(
+    trigger: Trigger<OnRemove, PowerGrid>,
+    mut commands: Commands,
+    power_grid_ui_elements: Query<(Entity, &PowerGridUIOf)>,
+) {
+    for (element, power_grid_ui_of) in power_grid_ui_elements {
+        if power_grid_ui_of.0 == trigger.target() {
+            commands.entity(element).despawn();
+        }
+    }
+}
+
+fn update_power_grid_ui(
+    power_grids: Query<&PowerGrid>,
+    power_levels: Query<&PowerLevel>,
+    power_grid_ui_colors: Query<(&mut BackgroundColor, &PowerGridUIColorOf)>,
+    power_grid_ui_powers: Query<(&mut Text, &PowerGridUIPowerOf)>,
+) {
+    for (mut background_color, color_of) in power_grid_ui_colors {
+        if let Ok(power_grid) = power_grids.get(color_of.0) {
+            background_color.0 = power_grid.0;
+        }
+    }
+
+    for (mut text, power_of) in power_grid_ui_powers {
+        if let Ok(level) = power_levels.get(power_of.0) {
+            text.0 = level.0.to_string();
+        }
     }
 }
