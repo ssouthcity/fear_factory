@@ -1,9 +1,13 @@
 use bevy::prelude::*;
 use rand::Rng;
 
+use crate::{
+    machine::power::Powered,
+    power::{FuseBlown, PowerConsumer, PowerProducer},
+};
+
 pub fn plugin(app: &mut App) {
     app.register_type::<PowerGrid>();
-    app.register_type::<PowerLevel>();
     app.register_type::<PowerGridComponents>();
     app.register_type::<PowerGridComponentOf>();
 
@@ -20,16 +24,26 @@ pub fn plugin(app: &mut App) {
         .add_observer(add_new_grid_to_ui)
         .add_observer(remove_grid_from_ui)
         .add_systems(Update, update_power_grid_ui);
+
+    app.add_systems(
+        Update,
+        (
+            reset_power_levels,
+            (calculate_power_production, calculate_power_consumption),
+            check_for_overload,
+        )
+            .chain(),
+    );
 }
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[require(Name::new("Power Grid"), PowerLevel)]
-pub struct PowerGrid(pub Color);
-
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct PowerLevel(pub f32);
+#[require(Name::new("Power Grid"))]
+pub struct PowerGrid {
+    color: Color,
+    power_production: f32,
+    power_consumption: f32,
+}
 
 /// Indicates that the entity can be connected to an electrical grid
 #[derive(Component, Reflect, Default)]
@@ -41,11 +55,10 @@ fn on_new_grid_node(trigger: Trigger<OnAdd, GridNode>, mut commands: Commands) {
     let mut rng = rand::rng();
 
     let grid = commands
-        .spawn(PowerGrid(Color::hsl(
-            rng.random_range(0.0..360.0),
-            1.0,
-            0.5,
-        )))
+        .spawn(PowerGrid {
+            color: Color::hsl(rng.random_range(0.0..360.0), 1.0, 0.5),
+            ..default()
+        })
         .id();
 
     commands
@@ -115,7 +128,7 @@ fn add_power_grid_indicator(
         ChildOf(trigger.target()),
         PowerGridIndicatorOf(trigger.target()),
         Transform::from_xyz(32.0, 28.0, 2.0),
-        Sprite::from_color(power_grid.0, Vec2::splat(16.0)),
+        Sprite::from_color(power_grid.color, Vec2::splat(16.0)),
     ));
 }
 
@@ -135,7 +148,7 @@ fn color_indicators(
             continue;
         };
 
-        sprite.color = power_grid.0;
+        sprite.color = power_grid.color;
     }
 }
 
@@ -167,8 +180,14 @@ fn merge_grids(
 #[derive(Component, Default)]
 struct PowerGridUI;
 
-#[derive(Component)]
-struct PowerLevelUI(Entity);
+#[derive(Component, Reflect, PartialEq, Eq)]
+#[reflect(Component)]
+enum PowerGridUIElements {
+    ElementOf(Entity),
+    ColorOf(Entity),
+    PowerProductionOf(Entity),
+    PowerConsumptionOf(Entity),
+}
 
 fn spawn_power_grid_ui(mut commands: Commands) {
     commands.spawn((
@@ -188,18 +207,6 @@ fn spawn_power_grid_ui(mut commands: Commands) {
     ));
 }
 
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-struct PowerGridUIOf(Entity);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-struct PowerGridUIColorOf(Entity);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-struct PowerGridUIPowerOf(Entity);
-
 fn add_new_grid_to_ui(
     trigger: Trigger<OnAdd, PowerGrid>,
     power_grid_ui: Single<Entity, With<PowerGridUI>>,
@@ -215,10 +222,10 @@ fn add_new_grid_to_ui(
             align_items: AlignItems::Center,
             ..default()
         },
-        PowerGridUIOf(trigger.target()),
+        PowerGridUIElements::ElementOf(trigger.target()),
         children![
             (
-                PowerGridUIColorOf(trigger.target()),
+                PowerGridUIElements::ColorOf(trigger.target()),
                 Node {
                     width: Val::Px(8.0),
                     height: Val::Px(8.0),
@@ -226,7 +233,14 @@ fn add_new_grid_to_ui(
                 },
                 BackgroundColor(Color::BLACK),
             ),
-            (PowerGridUIPowerOf(trigger.target()), Text::default())
+            (
+                PowerGridUIElements::PowerProductionOf(trigger.target()),
+                Text::default()
+            ),
+            (
+                PowerGridUIElements::PowerConsumptionOf(trigger.target()),
+                Text::default()
+            )
         ],
     ));
 }
@@ -234,10 +248,10 @@ fn add_new_grid_to_ui(
 fn remove_grid_from_ui(
     trigger: Trigger<OnRemove, PowerGrid>,
     mut commands: Commands,
-    power_grid_ui_elements: Query<(Entity, &PowerGridUIOf)>,
+    power_grid_ui_elements: Query<(Entity, &PowerGridUIElements)>,
 ) {
     for (element, power_grid_ui_of) in power_grid_ui_elements {
-        if power_grid_ui_of.0 == trigger.target() {
+        if *power_grid_ui_of == PowerGridUIElements::ElementOf(trigger.target()) {
             commands.entity(element).despawn();
         }
     }
@@ -245,19 +259,87 @@ fn remove_grid_from_ui(
 
 fn update_power_grid_ui(
     power_grids: Query<&PowerGrid>,
-    power_levels: Query<&PowerLevel>,
-    power_grid_ui_colors: Query<(&mut BackgroundColor, &PowerGridUIColorOf)>,
-    power_grid_ui_powers: Query<(&mut Text, &PowerGridUIPowerOf)>,
+    power_grid_ui_elements: Query<(Entity, &PowerGridUIElements)>,
+    mut background_colors: Query<&mut BackgroundColor>,
+    mut texts: Query<&mut Text>,
 ) {
-    for (mut background_color, color_of) in power_grid_ui_colors {
-        if let Ok(power_grid) = power_grids.get(color_of.0) {
-            background_color.0 = power_grid.0;
+    for (entity, power_grid_ui_element) in power_grid_ui_elements {
+        match power_grid_ui_element {
+            PowerGridUIElements::ColorOf(grid) => {
+                let Ok(power_grid) = power_grids.get(*grid) else {
+                    continue;
+                };
+
+                let Ok(ref mut background_color) = background_colors.get_mut(entity) else {
+                    continue;
+                };
+
+                background_color.0 = power_grid.color;
+            }
+            PowerGridUIElements::PowerProductionOf(grid) => {
+                let Ok(power_grid) = power_grids.get(*grid) else {
+                    continue;
+                };
+
+                let Ok(ref mut text) = texts.get_mut(entity) else {
+                    continue;
+                };
+
+                text.0 = power_grid.power_production.to_string();
+            }
+            PowerGridUIElements::PowerConsumptionOf(grid) => {
+                let Ok(power_grid) = power_grids.get(*grid) else {
+                    continue;
+                };
+
+                let Ok(ref mut text) = texts.get_mut(entity) else {
+                    continue;
+                };
+
+                text.0 = power_grid.power_consumption.to_string();
+            }
+            PowerGridUIElements::ElementOf(_) => continue,
         }
     }
+}
 
-    for (mut text, power_of) in power_grid_ui_powers {
-        if let Ok(level) = power_levels.get(power_of.0) {
-            text.0 = level.0.to_string();
+fn reset_power_levels(power_grids: Query<&mut PowerGrid>) {
+    for mut grid in power_grids {
+        grid.power_production = 0.0;
+        grid.power_consumption = 0.0;
+    }
+}
+
+fn calculate_power_production(
+    power_producers: Query<(&PowerProducer, &PowerGridComponentOf), With<Powered>>,
+    mut power_grids: Query<&mut PowerGrid>,
+) {
+    for (power_producer, power_grid_component_of) in power_producers {
+        let Ok(mut power_grid) = power_grids.get_mut(power_grid_component_of.0) else {
+            continue;
+        };
+
+        power_grid.power_production += power_producer.0;
+    }
+}
+
+fn calculate_power_consumption(
+    power_consumers: Query<(&PowerConsumer, &PowerGridComponentOf), With<Powered>>,
+    mut power_grids: Query<&mut PowerGrid>,
+) {
+    for (power_consumer, power_grid_component_of) in power_consumers {
+        let Ok(mut power_grid) = power_grids.get_mut(power_grid_component_of.0) else {
+            continue;
+        };
+
+        power_grid.power_consumption += power_consumer.0;
+    }
+}
+
+fn check_for_overload(power_grids: Query<(Entity, &PowerGrid)>, mut commands: Commands) {
+    for (entity, grid) in power_grids {
+        if grid.power_consumption > grid.power_production {
+            commands.trigger_targets(FuseBlown, entity);
         }
     }
 }

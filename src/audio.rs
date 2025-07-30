@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
-use crate::power::FuseBroke;
+use crate::power::FuseBlown;
 
 pub fn plugin(app: &mut App) {
     app.add_observer(on_fuse_broke);
 }
 
 fn on_fuse_broke(
-    _trigger: Trigger<FuseBroke>,
+    _trigger: Trigger<FuseBlown>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
 ) {

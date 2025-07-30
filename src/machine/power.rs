@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{machine::Machine, power::FuseBroke};
+use crate::{
+    machine::Machine,
+    power::{FuseBlown, grid::PowerGridComponentOf},
+};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<Powered>();
@@ -8,7 +11,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(PreUpdate, turn_on_global);
 
     app.add_observer(on_power_toggle);
-    app.add_observer(on_broken_fuse);
+    app.add_observer(on_blown_fuse);
 }
 
 #[derive(Component, Reflect, Default)]
@@ -31,13 +34,15 @@ fn on_power_toggle(
     }
 }
 
-fn on_broken_fuse(
-    _trigger: Trigger<FuseBroke>,
+fn on_blown_fuse(
+    trigger: Trigger<FuseBlown>,
     mut commands: Commands,
-    powered: Query<Entity, With<Powered>>,
+    powered_buildings: Query<(Entity, &PowerGridComponentOf), With<Powered>>,
 ) {
-    for entity in powered {
-        commands.entity(entity).remove::<Powered>();
+    for (entity, power_grid_component_of) in powered_buildings {
+        if trigger.target() == power_grid_component_of.0 {
+            commands.entity(entity).remove::<Powered>();
+        }
     }
 }
 

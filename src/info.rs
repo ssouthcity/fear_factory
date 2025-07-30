@@ -73,9 +73,10 @@ fn spawn_details_pane(mut commands: Commands) {
         Visibility::Hidden,
         Node {
             width: Val::Px(256.0),
-            height: Val::Percent(100.0),
+            height: Val::Auto,
             position_type: PositionType::Absolute,
             right: Val::ZERO,
+            bottom: Val::ZERO,
             flex_direction: FlexDirection::Column,
             row_gap: Val::Px(16.0),
             ..default()
