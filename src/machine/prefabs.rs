@@ -38,7 +38,7 @@ pub struct Windmill;
     ResourceOutput(HashMap::from([
         (ItemType::Coal, 60)
     ])),
-    PowerSockets::single()
+    PowerSockets::single(),
 )]
 pub struct Miner;
 

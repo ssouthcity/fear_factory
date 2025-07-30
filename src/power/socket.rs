@@ -65,6 +65,10 @@ fn on_power_socket_drag_start(
     sockets: Query<(&PowerSockets, &PowerSocketConnections)>,
     mut current_dragged_socket: ResMut<CurrentDraggedSocket>,
 ) {
+    if trigger.event().button != PointerButton::Primary {
+        return;
+    }
+
     let Ok((PowerSockets(available_connections), PowerSocketConnections(active_connections))) =
         sockets.get(trigger.target())
     else {
@@ -85,6 +89,10 @@ fn on_power_socket_drag(
     sockets: Query<&PowerSockets>,
     mut current_dragged_socket: ResMut<CurrentDraggedSocket>,
 ) {
+    if trigger.event().button != PointerButton::Primary {
+        return;
+    }
+
     if !sockets.contains(trigger.target()) {
         return;
     }
@@ -99,6 +107,10 @@ fn on_power_socket_drag_end(
     sockets: Query<&PowerSockets>,
     mut current_dragged_socket: ResMut<CurrentDraggedSocket>,
 ) {
+    if trigger.event().button != PointerButton::Primary {
+        return;
+    }
+
     if !sockets.contains(trigger.target()) {
         return;
     }
@@ -113,6 +125,10 @@ fn on_power_socket_drag_drop(
     sockets: Query<(&PowerSockets, &PowerSocketConnections)>,
     mut events: EventWriter<PowerSocketsLinked>,
 ) {
+    if trigger.event().button != PointerButton::Primary {
+        return;
+    }
+
     let event = trigger.event();
 
     let Ok((
