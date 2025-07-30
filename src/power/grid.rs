@@ -4,7 +4,7 @@ use rand::Rng;
 use crate::{
     FactorySystems,
     machine::power::Powered,
-    power::{FuseBlown, PowerConsumer, PowerProducer},
+    power::{FuseBlown, PowerConsumer, PowerProducer, line::PowerLine},
 };
 
 pub fn plugin(app: &mut App) {
@@ -75,6 +75,7 @@ fn on_grid_node_connect(
     grid_nodes: Query<&GridNode>,
     power_grid_component_of: Query<&PowerGridComponentOf>,
     mut events: EventWriter<MergeGrids>,
+    mut commands: Commands,
 ) {
     let event = trigger.event();
 
@@ -89,6 +90,8 @@ fn on_grid_node_connect(
     let Ok(grid_dropped) = power_grid_component_of.get(event.dropped) else {
         return;
     };
+
+    commands.spawn(PowerLine(event.target, event.dropped));
 
     events.write(MergeGrids(grid_target.0, grid_dropped.0));
 }

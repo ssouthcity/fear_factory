@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 
 pub mod grid;
+pub mod line;
 pub mod pole;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((grid::plugin, pole::plugin));
+    app.add_plugins((grid::plugin, pole::plugin, line::plugin));
 
     // components
     app.register_type::<PowerProducer>();
