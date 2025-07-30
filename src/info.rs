@@ -33,6 +33,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(Pickable)]
 pub struct Details;
 
 #[derive(Component, Reflect, Default)]
@@ -54,10 +55,7 @@ pub enum DetailContent {
 }
 
 fn on_detail_insert(trigger: Trigger<OnInsert, Details>, mut commands: Commands) {
-    commands
-        .entity(trigger.target())
-        .insert(Pickable::default())
-        .observe(select_machine);
+    commands.entity(trigger.target()).observe(select_machine);
 }
 
 fn select_machine(

@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     animation::AnimatedMachine,
     power::{grid::GridNode, socket::PowerSockets},
+    ui::Highlightable,
 };
 
 pub fn plugin(app: &mut App) {
@@ -16,6 +17,7 @@ pub fn plugin(app: &mut App) {
     AnimatedMachine("power-pole.aseprite"),
     Sprite::sized(Vec2::splat(64.0)),
     GridNode::default(),
-    PowerSockets::multiple(3)
+    PowerSockets::multiple(3),
+    Highlightable
 )]
 pub struct PowerPole;

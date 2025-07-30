@@ -4,6 +4,7 @@ use crate::{
     info::Details,
     machine::io::{ResourceInput, ResourceInputInventory, ResourceOutput, ResourceOutputInventory},
     power::grid::GridNode,
+    ui::Highlightable,
 };
 
 mod io;
@@ -25,6 +26,7 @@ pub fn plugin(app: &mut App) {
     ResourceOutputInventory,
     ResourceInput,
     ResourceOutput,
-    GridNode
+    GridNode,
+    Highlightable
 )]
 pub struct Machine;
