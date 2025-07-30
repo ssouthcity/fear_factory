@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     info::Details,
     machine::io::{ResourceInput, ResourceOutput},
+    power::grid::GridNode,
 };
 
 mod io;
@@ -18,5 +19,5 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[require(Details, ResourceInput, ResourceOutput)]
+#[require(Details, ResourceInput, ResourceOutput, GridNode)]
 pub struct Machine;
