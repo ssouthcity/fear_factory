@@ -31,7 +31,7 @@ pub struct Windmill;
     PowerConsumer(5.0),
     Powered,
     Frequency(Duration::from_secs(10)),
-    ResourceOutput(ItemCollection::new().with_item(ItemID::Coal, 60)),
+    ResourceOutput(ItemCollection::new().with_item(ItemID::Coal, 30)),
     PowerSockets::single(),
 )]
 pub struct Miner;

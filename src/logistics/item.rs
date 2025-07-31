@@ -55,4 +55,26 @@ impl ItemCollection {
     pub fn clear(&mut self) {
         self.0.clear();
     }
+
+    pub fn pop(&mut self) -> Option<ItemID> {
+        let Some(item_id) = self.0.keys().next() else {
+            return None;
+        };
+
+        let item_id = item_id.clone();
+
+        if let Some(val) = self.0.get_mut(&item_id) {
+            *val -= 1;
+            if *val == 0 {
+                self.0.remove(&item_id);
+            }
+        }
+
+        Some(item_id)
+    }
+
+    pub fn push(&mut self, item_id: ItemID) {
+        let entry = self.0.entry(item_id).or_default();
+        *entry += 1;
+    }
 }
