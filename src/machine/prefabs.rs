@@ -1,16 +1,12 @@
 use std::time::Duration;
 
-use bevy::{platform::collections::HashMap, prelude::*};
+use bevy::prelude::*;
 
 use crate::{
     animation::AnimatedMachine,
     info::Details,
-    machine::{
-        Machine,
-        io::{ItemType, ResourceInput, ResourceOutput},
-        power::Powered,
-        work::Frequency,
-    },
+    logistics::{ItemCollection, ItemID, ResourceInput, ResourceOutput},
+    machine::{Machine, power::Powered, work::Frequency},
     power::{PowerConsumer, PowerProducer, socket::PowerSockets},
 };
 
@@ -35,9 +31,7 @@ pub struct Windmill;
     PowerConsumer(5.0),
     Powered,
     Frequency(Duration::from_secs(10)),
-    ResourceOutput(HashMap::from([
-        (ItemType::Coal, 60)
-    ])),
+    ResourceOutput(ItemCollection::new().with_item(ItemID::Coal, 60)),
     PowerSockets::single(),
 )]
 pub struct Miner;
@@ -51,9 +45,7 @@ pub struct Miner;
     PowerProducer(75.0),
     Frequency(Duration::from_secs(60)),
     Powered,
-    ResourceInput(HashMap::from([
-        (ItemType::Coal, 60)
-    ])),
+    ResourceInput(ItemCollection::new().with_item(ItemID::Coal, 60)),
     PowerSockets::single()
 )]
 pub struct CoalGenerator;

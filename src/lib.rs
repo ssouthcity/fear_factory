@@ -6,6 +6,7 @@ mod animation;
 mod audio;
 mod camera;
 mod info;
+mod logistics;
 mod machine;
 mod power;
 mod ui;
@@ -24,9 +25,10 @@ impl Plugin for FactoryGamePlugin {
             animation::plugin,
             audio::plugin,
             camera::plugin,
-            power::plugin,
-            machine::plugin,
             info::plugin,
+            logistics::plugin,
+            machine::plugin,
+            power::plugin,
             ui::plugin,
             world::plugin,
         ));
