@@ -25,12 +25,15 @@ pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            (reset_power_levels, merge_grids),
-            (calculate_power_production, calculate_power_consumption),
-            check_for_overload,
-        )
-            .chain()
-            .in_set(FactorySystems::Power),
+            garbage_clean_grids.in_set(FactorySystems::GarbageClean),
+            (
+                (reset_power_levels, merge_grids),
+                (calculate_power_production, calculate_power_consumption),
+                check_for_overload,
+            )
+                .chain()
+                .in_set(FactorySystems::Power),
+        ),
     );
 }
 
@@ -275,6 +278,15 @@ fn update_power_grid_ui(
             }
             PowerGridUIElements::ElementOf(_) => continue,
         }
+    }
+}
+
+fn garbage_clean_grids(
+    mut commands: Commands,
+    power_grids: Query<Entity, (With<PowerGrid>, Without<PowerGridComponents>)>,
+) {
+    for entity in power_grids {
+        commands.entity(entity).despawn();
     }
 }
 

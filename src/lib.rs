@@ -4,13 +4,15 @@ use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod animation;
 mod audio;
+mod build;
 mod camera;
 mod info;
+mod input;
 mod logistics;
 mod machine;
 mod power;
+mod sandbox;
 mod ui;
-mod world;
 
 pub struct FactoryGamePlugin;
 
@@ -24,13 +26,15 @@ impl Plugin for FactoryGamePlugin {
         app.add_plugins((
             animation::plugin,
             audio::plugin,
+            build::plugin,
             camera::plugin,
             info::plugin,
+            input::plugin,
             logistics::plugin,
             machine::plugin,
             power::plugin,
             ui::plugin,
-            world::plugin,
+            sandbox::plugin,
         ));
 
         app.insert_resource(ClearColor(Color::BLACK));
@@ -39,6 +43,7 @@ impl Plugin for FactoryGamePlugin {
             Update,
             (
                 FactorySystems::Build,
+                FactorySystems::GarbageClean,
                 FactorySystems::Power,
                 FactorySystems::Logistics,
                 FactorySystems::Work,
@@ -52,6 +57,7 @@ impl Plugin for FactoryGamePlugin {
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum FactorySystems {
     Build,
+    GarbageClean,
     Power,
     Logistics,
     Work,

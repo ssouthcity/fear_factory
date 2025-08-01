@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::{FactorySystems, world::Buildable};
+use crate::{FactorySystems, build::Buildable};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<HotbarSelection>();

@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{FactorySystems, power::socket::PowerSocketsLinked};
+use crate::{
+    FactorySystems,
+    power::socket::{PowerSockets, PowerSocketsLinked},
+};
 
 const POWER_LINE_COLOR: Color = Color::BLACK;
 
@@ -11,6 +14,7 @@ pub fn plugin(app: &mut App) {
         Update,
         (
             create_power_line.in_set(FactorySystems::Build),
+            garbage_clean_power_lines.in_set(FactorySystems::GarbageClean),
             draw_power_lines.in_set(FactorySystems::UI),
         ),
     );
@@ -23,6 +27,18 @@ pub struct PowerLine(pub Entity, pub Entity);
 fn create_power_line(mut events: EventReader<PowerSocketsLinked>, mut commands: Commands) {
     for event in events.read() {
         commands.spawn(PowerLine(event.0, event.1));
+    }
+}
+
+fn garbage_clean_power_lines(
+    power_lines: Query<(Entity, &PowerLine)>,
+    entities: Query<Entity, With<PowerSockets>>,
+    mut commands: Commands,
+) {
+    for (entity, PowerLine(from, to)) in power_lines {
+        if !entities.contains(*from) || !entities.contains(*to) {
+            commands.entity(entity).despawn();
+        }
     }
 }
 
