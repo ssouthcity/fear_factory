@@ -6,7 +6,10 @@ use crate::{
     animation::AnimatedMachine,
     info::Details,
     logistics::{ItemCollection, ItemID, ResourceInput, ResourceOutput},
-    machine::{Machine, power::Powered, work::Frequency},
+    machine::{
+        Machine,
+        work::{Frequency, Working},
+    },
     power::{PowerConsumer, PowerProducer, socket::PowerSockets},
 };
 
@@ -17,7 +20,7 @@ use crate::{
     Sprite::sized(Vec2::splat(64.0)),
     AnimatedMachine("windmill.aseprite"),
     PowerProducer(30.0),
-    Powered,
+    Working::default(),
     PowerSockets::single()
 )]
 pub struct Windmill;
@@ -29,7 +32,6 @@ pub struct Windmill;
     Sprite::sized(Vec2::splat(64.0)),
     AnimatedMachine("miner.aseprite"),
     PowerConsumer(5.0),
-    Powered,
     Frequency(Duration::from_secs(10)),
     ResourceOutput(ItemCollection::new().with_item(ItemID::Coal, 30)),
     PowerSockets::single(),
@@ -44,7 +46,6 @@ pub struct Miner;
     AnimatedMachine("coal-generator.aseprite"),
     PowerProducer(75.0),
     Frequency(Duration::from_secs(60)),
-    Powered,
     ResourceInput(ItemCollection::new().with_item(ItemID::Coal, 60)),
     PowerSockets::single()
 )]
@@ -59,7 +60,6 @@ pub struct CoalGenerator;
     PowerConsumer(15.0),
     Frequency(Duration::from_secs(3)),
     Details,
-    Powered,
     PowerSockets::single()
 )]
 pub struct Constructor;

@@ -3,7 +3,7 @@ use rand::Rng;
 
 use crate::{
     FactorySystems,
-    machine::power::Powered,
+    machine::{power::Powered, work::Working},
     power::{FuseBlown, PowerConsumer, PowerProducer, socket::PowerSocketsLinked},
 };
 
@@ -286,7 +286,7 @@ fn reset_power_levels(power_grids: Query<&mut PowerGrid>) {
 }
 
 fn calculate_power_production(
-    power_producers: Query<(&PowerProducer, &PowerGridComponentOf), With<Powered>>,
+    power_producers: Query<(&PowerProducer, &PowerGridComponentOf), (With<Powered>, With<Working>)>,
     mut power_grids: Query<&mut PowerGrid>,
 ) {
     for (power_producer, power_grid_component_of) in power_producers {
@@ -299,7 +299,7 @@ fn calculate_power_production(
 }
 
 fn calculate_power_consumption(
-    power_consumers: Query<(&PowerConsumer, &PowerGridComponentOf), With<Powered>>,
+    power_consumers: Query<(&PowerConsumer, &PowerGridComponentOf), (With<Powered>, With<Working>)>,
     mut power_grids: Query<&mut PowerGrid>,
 ) {
     for (power_consumer, power_grid_component_of) in power_consumers {

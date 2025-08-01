@@ -32,7 +32,7 @@ pub struct BeginWork(pub Entity);
 #[derive(Event, Reflect)]
 pub struct WorkCompleted(pub Entity);
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Working;
 

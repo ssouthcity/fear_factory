@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     machine::Machine,
-    power::{FuseBlown, grid::PowerGridComponentOf},
+    power::{FuseBlown, grid::PowerGridComponentOf, socket::PowerSocketsLinked},
 };
 
 pub fn plugin(app: &mut App) {
@@ -12,6 +12,8 @@ pub fn plugin(app: &mut App) {
 
     app.add_observer(on_power_toggle);
     app.add_observer(on_blown_fuse);
+
+    app.add_systems(Update, on_power_sockets_linked);
 }
 
 #[derive(Component, Reflect, Default)]
@@ -42,6 +44,22 @@ fn on_blown_fuse(
     for (entity, power_grid_component_of) in powered_buildings {
         if trigger.target() == power_grid_component_of.0 {
             commands.entity(entity).remove::<Powered>();
+        }
+    }
+}
+
+fn on_power_sockets_linked(
+    mut events: EventReader<PowerSocketsLinked>,
+    machines: Query<Entity, With<Machine>>,
+    mut commands: Commands,
+) {
+    for event in events.read() {
+        if machines.contains(event.0) {
+            commands.entity(event.0).insert(Powered);
+        }
+
+        if machines.contains(event.1) {
+            commands.entity(event.1).insert(Powered);
         }
     }
 }

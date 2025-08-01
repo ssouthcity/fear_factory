@@ -17,6 +17,11 @@ use crate::{
 pub fn plugin(app: &mut App) {
     app.register_type::<QueueConveyorSpawn>();
     app.register_type::<ConveyorBelt>();
+    app.register_type::<ConveyorSpeed>();
+    app.register_type::<ConveyorLength>();
+    app.register_type::<ConveyoredItems>();
+    app.register_type::<ConveyoredItem>();
+    app.register_type::<ConveyoredItemOf>();
 
     app.add_event::<QueueConveyorSpawn>();
 
