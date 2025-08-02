@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     FactorySystems,
     power::socket::{PowerSockets, PowerSocketsLinked},
+    sandbox::Sandbox,
 };
 
 const POWER_LINE_COLOR: Color = Color::BLACK;
@@ -24,9 +25,17 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct PowerLine(pub Entity, pub Entity);
 
-fn create_power_line(mut events: EventReader<PowerSocketsLinked>, mut commands: Commands) {
+fn create_power_line(
+    mut events: EventReader<PowerSocketsLinked>,
+    mut commands: Commands,
+    sandbox: Single<Entity, With<Sandbox>>,
+) {
     for event in events.read() {
-        commands.spawn(PowerLine(event.0, event.1));
+        commands.spawn((
+            Name::new("Power Line"),
+            ChildOf(*sandbox),
+            PowerLine(event.0, event.1),
+        ));
     }
 }
 

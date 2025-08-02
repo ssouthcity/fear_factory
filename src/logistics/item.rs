@@ -52,10 +52,6 @@ impl ItemCollection {
         Ok(())
     }
 
-    pub fn clear(&mut self) {
-        self.0.clear();
-    }
-
     pub fn pop(&mut self) -> Option<ItemID> {
         let Some(item_id) = self.0.keys().next() else {
             return None;

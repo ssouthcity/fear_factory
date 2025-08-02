@@ -5,6 +5,7 @@ use crate::{
     machine::prefabs::{CoalGenerator, Constructor, Miner, Windmill},
     power::pole::PowerPole,
     sandbox::Sandbox,
+    ui::YSort,
 };
 
 pub fn plugin(app: &mut App) {
@@ -24,6 +25,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(YSort::default())]
 pub struct Building(Buildable);
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Default, Reflect, Debug, Clone, Copy)]

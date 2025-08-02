@@ -13,6 +13,8 @@ use crate::{
         ItemID, ResourceInput, ResourceOutput,
         io::{ResourceInputInventory, ResourceOutputInventory},
     },
+    sandbox::Sandbox,
+    ui::YSort,
 };
 
 pub fn plugin(app: &mut App) {
@@ -100,7 +102,7 @@ pub struct ConveyoredItemOf(pub Entity);
 pub struct ConveyoredItemProgress(f32);
 
 fn on_drag_queue_conveyor_belt_spawn(
-    trigger: Trigger<Pointer<DragDrop>>,
+    mut trigger: Trigger<Pointer<DragDrop>>,
     resource_inputs: Query<&ResourceInput>,
     resource_outputs: Query<&ResourceOutput>,
     mut events: EventWriter<QueueConveyorSpawn>,
@@ -120,6 +122,8 @@ fn on_drag_queue_conveyor_belt_spawn(
     }
 
     events.write(QueueConveyorSpawn(event.dropped, event.target));
+
+    trigger.propagate(false);
 }
 
 fn build_conveyor_belts(
@@ -127,6 +131,7 @@ fn build_conveyor_belts(
     transforms: Query<&Transform>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
+    sandbox: Single<Entity, With<Sandbox>>,
 ) {
     for event in events.read() {
         let from_transform = transforms.get(event.0).unwrap();
@@ -138,9 +143,11 @@ fn build_conveyor_belts(
 
         commands.spawn((
             Name::new("Conveyor Belt"),
+            ChildOf(*sandbox),
             Transform::default()
-                .with_translation(from_transform.translation.with_z(0.5) + direction * 0.5)
+                .with_translation(from_transform.translation + direction * 0.5)
                 .with_rotation(rotation),
+            YSort(0.5),
             Sprite {
                 custom_size: Some(Vec2::new(direction.length(), 32.0)),
                 image_mode: SpriteImageMode::Tiled {
