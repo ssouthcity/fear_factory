@@ -4,10 +4,14 @@ use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
 use crate::{FactorySystems, build::Building};
 
+const DISMANTLE_BUTTON: KeyCode = KeyCode::KeyF;
+
 pub fn plugin(app: &mut App) {
-    app.init_state::<InputMode>();
+    app.init_resource::<DismantleTimer>()
+        .add_systems(Update, tick_dismantle_timer);
 
     app.init_resource::<Selection>()
+        .init_resource::<DismantleTimer>()
         .add_observer(add_buildings_to_selection)
         .add_observer(remove_buildings_from_selection)
         .add_systems(
@@ -15,33 +19,42 @@ pub fn plugin(app: &mut App) {
             (
                 clear_selection.run_if(input_just_pressed(KeyCode::Escape)),
                 dismantle_selection
-                    .run_if(input_just_pressed(KeyCode::KeyE).and(in_state(InputMode::Dismantle)))
+                    .run_if(dismantle_timer_held)
                     .in_set(FactorySystems::Build),
             ),
         );
-
-    app.add_systems(Update, set_input_mode);
 }
 
 #[derive(Resource, Reflect, Default, Deref, DerefMut)]
 #[reflect(Resource)]
 pub struct Selection(HashSet<Entity>);
 
-#[derive(States, Debug, Hash, PartialEq, Eq, Clone, Copy, Default)]
-pub enum InputMode {
-    #[default]
-    Normal,
-    Dismantle,
+#[derive(Resource, Reflect, Deref, DerefMut)]
+#[reflect(Resource)]
+pub struct DismantleTimer(Timer);
+
+impl Default for DismantleTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(1.0, TimerMode::Once))
+    }
 }
 
-fn set_input_mode(keys: Res<ButtonInput<KeyCode>>, mut input_mode: ResMut<NextState<InputMode>>) {
-    if keys.just_pressed(KeyCode::KeyF) {
-        input_mode.set(InputMode::Dismantle);
+fn tick_dismantle_timer(
+    mut timer: ResMut<DismantleTimer>,
+    keys: Res<ButtonInput<KeyCode>>,
+    time: Res<Time>,
+) {
+    if keys.just_released(DISMANTLE_BUTTON) {
+        timer.reset();
     }
 
-    if keys.just_pressed(KeyCode::Escape) {
-        input_mode.set(InputMode::Normal);
+    if keys.pressed(DISMANTLE_BUTTON) {
+        timer.tick(time.delta());
     }
+}
+
+fn dismantle_timer_held(timer: Res<DismantleTimer>) -> bool {
+    timer.just_finished()
 }
 
 fn add_buildings_to_selection(
@@ -72,16 +85,10 @@ fn clear_selection(mut selection: ResMut<Selection>) {
     selection.clear();
 }
 
-fn dismantle_selection(
-    mut selection: ResMut<Selection>,
-    mut commands: Commands,
-    mut input_mode: ResMut<NextState<InputMode>>,
-) {
+fn dismantle_selection(mut selection: ResMut<Selection>, mut commands: Commands) {
     for building in selection.iter() {
         commands.entity(*building).despawn();
     }
 
     selection.clear();
-
-    input_mode.set(InputMode::Normal);
 }

@@ -6,8 +6,8 @@ mod animation;
 mod audio;
 mod build;
 mod camera;
+mod dismantle;
 mod info;
-mod input;
 mod logistics;
 mod machine;
 mod power;
@@ -29,7 +29,7 @@ impl Plugin for FactoryGamePlugin {
             build::plugin,
             camera::plugin,
             info::plugin,
-            input::plugin,
+            dismantle::plugin,
             logistics::plugin,
             machine::plugin,
             power::plugin,

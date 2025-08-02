@@ -2,11 +2,11 @@ use bevy::prelude::*;
 
 use crate::{
     build::Building,
-    input::{InputMode, Selection},
+    dismantle::{DismantleTimer, Selection},
 };
 
 const DEFAULT_HIGHLIGHT_COLOR: Color = Color::hsl(60.0, 1.0, 0.5);
-const DISMANTLE_HIGHLIGHT_COLOR: Color = Color::hsl(0.0, 1.0, 0.5);
+// const DISMANTLE_HIGHLIGHT_COLOR: Color = Color::hsl(0.0, 1.0, 0.5);
 
 pub fn plugin(app: &mut App) {
     app.register_type::<HighlightColor>();
@@ -14,14 +14,7 @@ pub fn plugin(app: &mut App) {
 
     app.init_resource::<HighlightColor>();
 
-    app.add_systems(
-        Update,
-        (
-            on_input_mode_changed.run_if(state_changed::<InputMode>),
-            highlight,
-        )
-            .chain(),
-    );
+    app.add_systems(Update, (calculate_dismantle_color, highlight).chain());
 }
 
 #[derive(Resource, Reflect)]
@@ -54,12 +47,13 @@ fn highlight(
     }
 }
 
-fn on_input_mode_changed(
+fn calculate_dismantle_color(
+    timer: Res<DismantleTimer>,
     mut highlight_color: ResMut<HighlightColor>,
-    input_mode: Res<State<InputMode>>,
 ) {
-    highlight_color.0 = match input_mode.get() {
-        InputMode::Normal => DEFAULT_HIGHLIGHT_COLOR,
-        InputMode::Dismantle => DISMANTLE_HIGHLIGHT_COLOR,
-    };
+    let inverse_fraction = 1.0 - timer.fraction();
+
+    let hue = 60.0 * inverse_fraction;
+
+    highlight_color.0.set_hue(hue);
 }
