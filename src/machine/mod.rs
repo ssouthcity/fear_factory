@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{info::Details, power::grid::GridNode, ui::Highlightable};
+use crate::{info::Details, ui::Highlightable};
 
 pub mod power;
 pub mod prefabs;
@@ -14,5 +14,5 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[require(Details, GridNode, Highlightable)]
+#[require(Details, Highlightable)]
 pub struct Machine;

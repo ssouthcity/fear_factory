@@ -1,6 +1,10 @@
 use bevy::prelude::*;
+use rand::Rng;
 
-use crate::FactorySystems;
+use crate::{
+    FactorySystems,
+    power::grid::{PowerGrid, PowerGridComponentOf},
+};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<PowerSockets>();
@@ -11,7 +15,8 @@ pub fn plugin(app: &mut App) {
     app.register_type::<PowerSocketsLinked>();
     app.add_event::<PowerSocketsLinked>();
 
-    app.add_observer(on_power_socket_drag_start)
+    app.add_observer(on_power_socket_add)
+        .add_observer(on_power_socket_drag_start)
         .add_observer(on_power_socket_drag)
         .add_observer(on_power_socket_drag_end)
         .add_observer(on_power_socket_drag_drop);
@@ -54,6 +59,18 @@ impl Default for PowerSockets {
     fn default() -> PowerSockets {
         PowerSockets::single()
     }
+}
+
+fn on_power_socket_add(trigger: Trigger<OnAdd, PowerSockets>, mut commands: Commands) {
+    let mut rng = rand::rng();
+
+    let color = Color::hsl(rng.random_range(0.0..360.0), 1.0, 0.5);
+
+    let grid = commands.spawn(PowerGrid::new(color)).id();
+
+    commands
+        .entity(trigger.target())
+        .insert(PowerGridComponentOf(grid));
 }
 
 #[derive(Component, Reflect, Default)]

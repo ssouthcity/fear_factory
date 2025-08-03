@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use rand::Rng;
 
 use crate::{
     FactorySystems,
@@ -12,8 +11,6 @@ pub fn plugin(app: &mut App) {
     app.register_type::<PowerGrid>();
     app.register_type::<PowerGridComponents>();
     app.register_type::<PowerGridComponentOf>();
-
-    app.add_observer(on_new_grid_node);
 
     app.add_observer(add_power_grid_indicator)
         .add_systems(Update, color_indicators.in_set(FactorySystems::UI));
@@ -42,30 +39,15 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 #[require(Name::new("Power Grid"))]
 pub struct PowerGrid {
-    color: Color,
+    pub color: Color,
     power_production: f32,
     power_consumption: f32,
 }
 
-/// Indicates that the entity can be connected to an electrical grid
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-#[require(Pickable)]
-pub struct GridNode;
-
-fn on_new_grid_node(trigger: Trigger<OnAdd, GridNode>, mut commands: Commands) {
-    let mut rng = rand::rng();
-
-    let grid = commands
-        .spawn(PowerGrid {
-            color: Color::hsl(rng.random_range(0.0..360.0), 1.0, 0.5),
-            ..default()
-        })
-        .id();
-
-    commands
-        .entity(trigger.target())
-        .insert(PowerGridComponentOf(grid));
+impl PowerGrid {
+    pub fn new(color: Color) -> Self {
+        Self { color, ..default() }
+    }
 }
 
 #[derive(Component, Reflect, Default)]
