@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::{
-    build::Building,
     dismantle::{DismantleTimer, Selection},
+    sandbox::Building,
 };
 
 const DEFAULT_HIGHLIGHT_COLOR: Color = Color::hsl(60.0, 1.0, 0.5);

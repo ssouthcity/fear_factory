@@ -2,8 +2,7 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    build::QueueSpawnBuilding,
-    sandbox::{SANDBOX_MAP_SIZE, SandboxSpawnSystems},
+    sandbox::{QueueSpawnBuilding, SANDBOX_MAP_SIZE, SandboxSpawnSystems, build::Preview},
     ui::HotbarSelection,
 };
 
@@ -57,7 +56,15 @@ fn spawn_sandbox(mut commands: Commands, sandbox_assets: Res<SandboxAssets>) {
             },
             Pickable::default(),
         ))
-        .observe(queue_spawn_building);
+        .observe(queue_spawn_building)
+        .observe(move_preview);
+}
+
+fn move_preview(
+    trigger: Trigger<Pointer<Move>>,
+    mut preview: Single<&mut Transform, With<Preview>>,
+) {
+    preview.translation = trigger.hit.position.unwrap();
 }
 
 fn queue_spawn_building(
@@ -73,8 +80,12 @@ fn queue_spawn_building(
         return;
     };
 
+    let Some(buildable) = selected_buildable.0 else {
+        return;
+    };
+
     events.write(QueueSpawnBuilding {
-        buildable: selected_buildable.0,
+        buildable: buildable,
         position: cursor_position.truncate(),
         placed_on: trigger.target,
     });

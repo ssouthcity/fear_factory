@@ -12,10 +12,10 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-#[component(immutable, on_add = on_add_animated_machine)]
+#[component(immutable, on_insert = on_insert_animated_machine)]
 pub struct AnimatedMachine(pub &'static str);
 
-fn on_add_animated_machine(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
+fn on_insert_animated_machine(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
     let Some(animated_machine) = world.entity(entity).get::<AnimatedMachine>() else {
         unreachable!(
             "AnimatedMachine component is guaranteed to be on entity because hook was invoked"

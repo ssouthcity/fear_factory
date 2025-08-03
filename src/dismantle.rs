@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
-use crate::{FactorySystems, build::Building};
+use crate::{FactorySystems, sandbox::Building};
 
 const DISMANTLE_BUTTON: KeyCode = KeyCode::KeyF;
 

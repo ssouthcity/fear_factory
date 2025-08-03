@@ -4,7 +4,7 @@ mod highlight;
 mod hotbar;
 mod y_sort;
 
-pub use hotbar::HotbarSelection;
+pub use hotbar::{HotbarItemDeselected, HotbarItemSelected, HotbarSelection};
 pub use y_sort::YSort;
 
 pub fn plugin(app: &mut App) {

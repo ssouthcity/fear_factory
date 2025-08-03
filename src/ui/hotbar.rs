@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::{FactorySystems, build::Buildable};
+use crate::{FactorySystems, sandbox::Buildable};
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<HotbarItemSelected>();
+    app.register_type::<HotbarItemDeselected>();
+
     app.register_type::<HotbarSelection>();
     app.register_type::<HotbarSlot>();
 
@@ -14,9 +17,15 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, highlight_selected_slot.in_set(FactorySystems::UI));
 }
 
+#[derive(Event, Reflect)]
+pub struct HotbarItemSelected(pub Buildable);
+
+#[derive(Event, Reflect)]
+pub struct HotbarItemDeselected;
+
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
-pub struct HotbarSelection(pub Buildable);
+pub struct HotbarSelection(pub Option<Buildable>);
 
 #[derive(Component, Default, Reflect)]
 #[reflect(Component)]
@@ -85,9 +94,16 @@ fn on_build_hotbar_click(
     trigger: Trigger<Pointer<Click>>,
     hotbar_slots: Query<&HotbarSlot>,
     mut hotbar_selection: ResMut<HotbarSelection>,
+    mut commands: Commands,
 ) {
     if let Ok(slot) = hotbar_slots.get(trigger.target()) {
-        hotbar_selection.0 = slot.0;
+        if hotbar_selection.0 == Some(slot.0) {
+            hotbar_selection.0 = None;
+            commands.trigger(HotbarItemDeselected);
+        } else {
+            hotbar_selection.0 = Some(slot.0);
+            commands.trigger(HotbarItemSelected(slot.0));
+        }
     }
 }
 
@@ -97,7 +113,7 @@ fn highlight_selected_slot(
     selection: Res<HotbarSelection>,
 ) {
     for (entity, slot) in hotbar_slots {
-        if slot.0 == selection.0 {
+        if selection.0.is_some_and(|b| b == slot.0) {
             commands
                 .entity(entity)
                 .insert(BackgroundColor(Color::WHITE));

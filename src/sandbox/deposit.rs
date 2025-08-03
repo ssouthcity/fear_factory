@@ -4,12 +4,9 @@ use rand::Rng;
 
 use crate::{
     logistics::ItemID,
-    sandbox::{SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
+    sandbox::{COAL_DEPOSITS, IRON_DEPOSITS, SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
     ui::YSort,
 };
-
-const COAL_DEPOSITS: u8 = 4;
-const IRON_DEPOSITS: u8 = 8;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<DepositAssets>();
