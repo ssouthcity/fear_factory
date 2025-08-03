@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     animation::AnimatedMachine,
     info::Details,
-    logistics::{ItemCollection, ItemID, ResourceInput, ResourceOutput},
+    logistics::{ItemCollection, ItemID, ResourceInput},
     machine::{
         Machine,
         work::{Frequency, Working},
@@ -33,8 +33,7 @@ pub struct Windmill;
     AnimatedMachine("miner.aseprite"),
     PowerConsumer(5.0),
     Frequency(Duration::from_secs(10)),
-    ResourceOutput(ItemCollection::new().with_item(ItemID::Coal, 5)),
-    PowerSockets::single(),
+    PowerSockets::single()
 )]
 pub struct Miner;
 

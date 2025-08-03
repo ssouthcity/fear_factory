@@ -1,0 +1,97 @@
+use bevy::prelude::*;
+use bevy_aseprite_ultra::prelude::*;
+use rand::Rng;
+
+use crate::{
+    logistics::ItemID,
+    sandbox::{Sandbox, SandboxSpawnSystems},
+    ui::YSort,
+};
+
+const COAL_DEPOSITS: u8 = 4;
+const IRON_DEPOSITS: u8 = 8;
+
+pub fn plugin(app: &mut App) {
+    app.register_type::<DepositAssets>();
+
+    app.init_resource::<DepositAssets>();
+
+    app.add_systems(Startup, load_deposit_assets);
+
+    app.add_systems(
+        Startup,
+        spawn_deposits
+            .after(load_deposit_assets)
+            .in_set(SandboxSpawnSystems::SpawnDeposits),
+    );
+}
+
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
+pub struct DepositAssets {
+    aseprite: Handle<Aseprite>,
+}
+
+impl DepositAssets {
+    fn sprite(&self, item_id: ItemID) -> impl Bundle {
+        (
+            Sprite::sized(Vec2::splat(64.0)),
+            AseSlice {
+                aseprite: self.aseprite.clone(),
+                name: match item_id {
+                    ItemID::Coal => "coal deposit".to_string(),
+                    ItemID::IronOre => "iron ore deposit".to_string(),
+                    _ => unreachable!("invalid deposit"),
+                },
+            },
+        )
+    }
+}
+
+fn load_deposit_assets(mut deposit_assets: ResMut<DepositAssets>, asset_server: Res<AssetServer>) {
+    deposit_assets.aseprite = asset_server.load("deposits.aseprite");
+}
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct Deposit(pub ItemID);
+
+fn spawn_deposits(
+    mut commands: Commands,
+    deposit_assets: Res<DepositAssets>,
+    sandbox: Single<Entity, With<Sandbox>>,
+) {
+    let mut rng = rand::rng();
+
+    for _ in 0..COAL_DEPOSITS {
+        commands.spawn((
+            Name::new("Coal Deposit"),
+            Transform::from_xyz(
+                rng.random_range(-800.0..800.0),
+                rng.random_range(-800.0..800.0),
+                1.0,
+            ),
+            YSort(0.1),
+            ChildOf(*sandbox),
+            deposit_assets.sprite(ItemID::Coal),
+            Pickable::default(),
+            Deposit(ItemID::Coal),
+        ));
+    }
+
+    for _ in 0..IRON_DEPOSITS {
+        commands.spawn((
+            Name::new("Iron Deposit"),
+            Transform::from_xyz(
+                rng.random_range(-800.0..800.0),
+                rng.random_range(-800.0..800.0),
+                1.0,
+            ),
+            YSort(0.1),
+            ChildOf(*sandbox),
+            deposit_assets.sprite(ItemID::IronOre),
+            Pickable::default(),
+            Deposit(ItemID::IronOre),
+        ));
+    }
+}

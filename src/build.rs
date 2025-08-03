@@ -2,9 +2,10 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
+    logistics::{ItemCollection, ResourceOutput},
     machine::prefabs::{CoalGenerator, Constructor, Miner, Windmill},
     power::pole::PowerPole,
-    sandbox::Sandbox,
+    sandbox::{Deposit, Sandbox},
     ui::YSort,
 };
 
@@ -42,12 +43,14 @@ pub enum Buildable {
 pub struct QueueSpawnBuilding {
     pub buildable: Buildable,
     pub position: Vec2,
+    pub placed_on: Entity,
 }
 
 fn spawn_buildings(
     mut events: EventReader<QueueSpawnBuilding>,
     mut commands: Commands,
     world: Single<Entity, With<Sandbox>>,
+    deposits: Query<&Deposit>,
 ) {
     for event in events.read() {
         let mut entity = commands.spawn((
@@ -59,7 +62,14 @@ fn spawn_buildings(
         match event.buildable {
             Buildable::Windmill => entity.insert(Windmill),
             Buildable::PowerPole => entity.insert(PowerPole),
-            Buildable::Miner => entity.insert(Miner),
+            Buildable::Miner => {
+                if let Ok(deposit) = deposits.get(event.placed_on) {
+                    entity.insert(ResourceOutput(
+                        ItemCollection::new().with_item(deposit.0, 5),
+                    ));
+                }
+                entity.insert(Miner)
+            }
             Buildable::CoalGenerator => entity.insert(CoalGenerator),
             Buildable::Constructor => entity.insert(Constructor),
         };

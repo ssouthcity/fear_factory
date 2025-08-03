@@ -1,9 +1,14 @@
 use bevy::prelude::*;
 
-use crate::{build::QueueSpawnBuilding, ui::HotbarSelection};
+use crate::{build::QueueSpawnBuilding, sandbox::SandboxSpawnSystems, ui::HotbarSelection};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Startup, spawn_sandbox);
+    app.register_type::<Sandbox>();
+
+    app.add_systems(
+        Startup,
+        spawn_sandbox.in_set(SandboxSpawnSystems::SpawnSandbox),
+    );
 }
 
 #[derive(Component, Reflect, Default)]
@@ -37,5 +42,6 @@ fn queue_spawn_building(
     events.write(QueueSpawnBuilding {
         buildable: selected_buildable.0,
         position: cursor_position.truncate(),
+        placed_on: trigger.target,
     });
 }

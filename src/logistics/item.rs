@@ -26,6 +26,8 @@ impl ItemAssets {
                 aseprite: self.aseprite.clone(),
                 name: match item {
                     ItemID::Coal => "coal".to_string(),
+                    ItemID::IronOre => "iron ore".to_string(),
+                    ItemID::IronIngot => "iron ingot".to_string(),
                 },
             },
         )
@@ -39,6 +41,8 @@ fn load_item_assets(mut item_assets: ResMut<ItemAssets>, asset_server: Res<Asset
 #[derive(Hash, PartialEq, Eq, Reflect, Debug, Clone, Copy)]
 pub enum ItemID {
     Coal,
+    IronOre,
+    IronIngot,
 }
 
 #[derive(Reflect, Default)]

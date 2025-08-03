@@ -192,6 +192,7 @@ fn garbage_clean_conveyor_belts(
 fn place_items_on_belt(
     conveyor_belts: Query<(
         Entity,
+        &Transform,
         &ConveyorBelt,
         &ConveyorLength,
         &mut ConveyorPickupTimer,
@@ -201,7 +202,7 @@ fn place_items_on_belt(
     item_assets: Res<ItemAssets>,
     time: Res<Time>,
 ) {
-    for (entity, belt, length, mut pickup_timer) in conveyor_belts {
+    for (entity, transform, belt, length, mut pickup_timer) in conveyor_belts {
         if !pickup_timer.0.tick(time.delta()).finished() {
             continue;
         }
@@ -214,7 +215,9 @@ fn place_items_on_belt(
             commands
                 .spawn((
                     Name::new("Item"),
-                    Transform::from_xyz(-length.0 / 2.0, 0.0, 0.0),
+                    Transform::default()
+                        .with_translation(Vec3::new(-length.0 / 2.0, 0.0, 0.0))
+                        .with_rotation(transform.rotation.inverse()),
                     item_assets.sprite(item_id),
                     ConveyoredItemProgress(0.0),
                     ConveyoredItem(item_id),
