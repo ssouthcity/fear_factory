@@ -6,6 +6,8 @@ mod sandbox;
 pub use deposit::Deposit;
 pub use sandbox::Sandbox;
 
+pub const SANDBOX_MAP_SIZE: f32 = 1600.0;
+
 pub fn plugin(app: &mut App) {
     app.configure_sets(
         Startup,

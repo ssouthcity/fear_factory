@@ -4,7 +4,7 @@ use rand::Rng;
 
 use crate::{
     logistics::ItemID,
-    sandbox::{Sandbox, SandboxSpawnSystems},
+    sandbox::{SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
     ui::YSort,
 };
 
@@ -67,8 +67,8 @@ fn spawn_deposits(
         commands.spawn((
             Name::new("Coal Deposit"),
             Transform::from_xyz(
-                rng.random_range(-800.0..800.0),
-                rng.random_range(-800.0..800.0),
+                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
+                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
                 1.0,
             ),
             YSort(0.1),
@@ -83,8 +83,8 @@ fn spawn_deposits(
         commands.spawn((
             Name::new("Iron Deposit"),
             Transform::from_xyz(
-                rng.random_range(-800.0..800.0),
-                rng.random_range(-800.0..800.0),
+                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
+                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
                 1.0,
             ),
             YSort(0.1),

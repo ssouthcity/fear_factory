@@ -1,26 +1,60 @@
 use bevy::prelude::*;
+use bevy_aseprite_ultra::prelude::*;
 
-use crate::{build::QueueSpawnBuilding, sandbox::SandboxSpawnSystems, ui::HotbarSelection};
+use crate::{
+    build::QueueSpawnBuilding,
+    sandbox::{SANDBOX_MAP_SIZE, SandboxSpawnSystems},
+    ui::HotbarSelection,
+};
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<SandboxAssets>();
     app.register_type::<Sandbox>();
+
+    app.init_resource::<SandboxAssets>();
+
+    app.add_systems(Startup, load_sandbox_assets);
 
     app.add_systems(
         Startup,
-        spawn_sandbox.in_set(SandboxSpawnSystems::SpawnSandbox),
+        spawn_sandbox
+            .after(load_sandbox_assets)
+            .in_set(SandboxSpawnSystems::SpawnSandbox),
     );
+}
+
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
+pub struct SandboxAssets {
+    aseprite: Handle<Aseprite>,
+}
+
+fn load_sandbox_assets(mut sandbox_assets: ResMut<SandboxAssets>, asset_server: Res<AssetServer>) {
+    sandbox_assets.aseprite = asset_server.load("terrain.aseprite");
 }
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Sandbox;
 
-fn spawn_sandbox(mut commands: Commands) {
+fn spawn_sandbox(mut commands: Commands, sandbox_assets: Res<SandboxAssets>) {
     commands
         .spawn((
             Name::new("Sandbox"),
             Sandbox::default(),
-            Sprite::from_color(Color::hsl(100.0, 0.5, 0.64), Vec2::splat(1600.0)),
+            Sprite {
+                custom_size: Some(Vec2::splat(SANDBOX_MAP_SIZE)),
+                image_mode: SpriteImageMode::Tiled {
+                    tile_x: true,
+                    tile_y: true,
+                    stretch_value: 4.0,
+                },
+                ..default()
+            },
+            AseSlice {
+                aseprite: sandbox_assets.aseprite.clone(),
+                name: "grass".to_string(),
+            },
             Pickable::default(),
         ))
         .observe(queue_spawn_building);
