@@ -17,6 +17,9 @@ use crate::{
     ui::YSort,
 };
 
+/// How much space of the belt should be reserved per item
+const CONVEYOR_BELT_TRAY_SIZE: f32 = 16.0;
+
 pub fn plugin(app: &mut App) {
     app.register_type::<QueueConveyorSpawn>();
     app.register_type::<ConveyorBelt>();
@@ -42,8 +45,6 @@ pub fn plugin(app: &mut App) {
             )
                 .chain()
                 .in_set(FactorySystems::Logistics),
-            adjust_item_sprites.in_set(FactorySystems::UI),
-            // draw_conveyor_belts.in_set(FactorySystems::UI),
         ),
     );
 }
@@ -64,6 +65,10 @@ pub struct ConveyorLength(f32);
 #[reflect(Component)]
 #[component(on_insert = insert_pickup_timer)]
 pub struct ConveyorSpeed(f32);
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct ConveyorCapacity(f32);
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
@@ -162,7 +167,8 @@ fn build_conveyor_belts(
                 animation: Animation::tag("idle"),
             },
             ConveyorBelt(event.0, event.1),
-            ConveyorSpeed(40.0),
+            ConveyorSpeed(60.0),
+            ConveyorCapacity(direction.length() / CONVEYOR_BELT_TRAY_SIZE),
             ConveyorLength(direction.length()),
         ));
     }
@@ -181,12 +187,17 @@ fn garbage_clean_conveyor_belts(
 }
 
 fn place_items_on_belt(
-    conveyor_belts: Query<(Entity, &ConveyorBelt, &mut ConveyorPickupTimer)>,
+    conveyor_belts: Query<(
+        Entity,
+        &ConveyorBelt,
+        &ConveyorLength,
+        &mut ConveyorPickupTimer,
+    )>,
     mut outputs: Query<&mut ResourceOutputInventory>,
     mut commands: Commands,
     time: Res<Time>,
 ) {
-    for (entity, belt, mut pickup_timer) in conveyor_belts {
+    for (entity, belt, length, mut pickup_timer) in conveyor_belts {
         if !pickup_timer.0.tick(time.delta()).finished() {
             continue;
         }
@@ -198,6 +209,7 @@ fn place_items_on_belt(
         if let Some(item_id) = output.pop() {
             commands.spawn((
                 Name::new("Item"),
+                Transform::from_xyz(-length.0 / 2.0, 0.0, 0.0),
                 Sprite::from_color(Color::WHITE, Vec2::splat(8.0)),
                 ConveyoredItemProgress(0.0),
                 ConveyoredItem(item_id),
@@ -209,11 +221,20 @@ fn place_items_on_belt(
 }
 
 fn transfer_belt_contents(
-    conveyored_item_progresses: Query<&mut ConveyoredItemProgress>,
+    query: Query<(
+        &mut Transform,
+        &mut ConveyoredItemProgress,
+        &ConveyoredItemOf,
+    )>,
+    belt_speed_query: Query<(&ConveyorLength, &ConveyorSpeed)>,
     time: Res<Time>,
 ) {
-    for mut progress in conveyored_item_progresses {
-        progress.0 += time.delta_secs() * 2.0;
+    for (mut transform, mut progress, conveyored_item_of) in query {
+        let (length, speed) = belt_speed_query.get(conveyored_item_of.0).unwrap();
+
+        transform.translation.x += speed.0 / 60.0 * time.delta_secs() * CONVEYOR_BELT_TRAY_SIZE;
+
+        progress.0 = (transform.translation.x + length.0 / 2.0) / length.0;
     }
 }
 
@@ -246,26 +267,3 @@ fn receive_items_from_belt(
         commands.entity(entity).despawn();
     }
 }
-
-fn adjust_item_sprites(
-    conveyored_items: Query<(&ConveyoredItemProgress, &ConveyoredItemOf, &mut Transform)>,
-    conveyor_lengths: Query<&ConveyorLength>,
-) {
-    for (progress, conveyored_item_of, mut transform) in conveyored_items {
-        let length = conveyor_lengths.get(conveyored_item_of.0).unwrap();
-        transform.translation.x = (-length.0 * 0.5) + length.0 * progress.0;
-    }
-}
-
-// fn draw_conveyor_belts(
-//     conveyor_belts: Query<&ConveyorBelt>,
-//     transforms: Query<&Transform>,
-//     mut gizmos: Gizmos,
-// ) {
-//     for belt in conveyor_belts {
-//         let from_position = transforms.get(belt.0).unwrap().translation.truncate();
-//         let to_position = transforms.get(belt.1).unwrap().translation.truncate();
-
-//         gizmos.line_2d(from_position, to_position, Color::hsl(180.0, 1.0, 0.5));
-//     }
-// }

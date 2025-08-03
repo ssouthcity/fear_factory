@@ -33,7 +33,7 @@ pub struct Windmill;
     AnimatedMachine("miner.aseprite"),
     PowerConsumer(5.0),
     Frequency(Duration::from_secs(10)),
-    ResourceOutput(ItemCollection::new().with_item(ItemID::Coal, 30)),
+    ResourceOutput(ItemCollection::new().with_item(ItemID::Coal, 5)),
     PowerSockets::single(),
 )]
 pub struct Miner;
