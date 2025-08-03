@@ -3,6 +3,7 @@ use rand::Rng;
 
 use crate::{
     FactorySystems,
+    dismantle::QueueDismantle,
     machine::{power::Powered, work::Working},
     power::{FuseBlown, PowerConsumer, PowerProducer, socket::PowerSocketsLinked},
 };
@@ -25,7 +26,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            garbage_clean_grids.in_set(FactorySystems::GarbageClean),
+            garbage_clean_grids.in_set(FactorySystems::Dismantle),
             (
                 (reset_power_levels, merge_grids),
                 (calculate_power_production, calculate_power_consumption),
@@ -283,10 +284,28 @@ fn update_power_grid_ui(
 
 fn garbage_clean_grids(
     mut commands: Commands,
-    power_grids: Query<Entity, (With<PowerGrid>, Without<PowerGridComponents>)>,
+    mut events: EventReader<QueueDismantle>,
+    power_grid_component_ofs: Query<&PowerGridComponentOf>,
+    power_grids: Query<(Entity, &PowerGridComponents), With<PowerGrid>>,
 ) {
-    for entity in power_grids {
-        commands.entity(entity).despawn();
+    for event in events.read() {
+        let Ok(power_grid_component_of) = power_grid_component_ofs.get(event.0) else {
+            continue;
+        };
+
+        let Ok((entity, power_grid_components)) = power_grids.get(power_grid_component_of.0) else {
+            continue;
+        };
+
+        let grid_redundant = match power_grid_components.0.as_slice() {
+            [] => true,
+            [single] => *single == event.0,
+            _ => false,
+        };
+
+        if grid_redundant {
+            commands.entity(entity).despawn();
+        }
     }
 }
 

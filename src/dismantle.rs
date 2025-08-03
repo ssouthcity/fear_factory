@@ -7,23 +7,35 @@ use crate::{FactorySystems, build::Building};
 const DISMANTLE_BUTTON: KeyCode = KeyCode::KeyF;
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<QueueDismantle>();
+    app.register_type::<Selection>();
+    app.register_type::<DismantleTimer>();
+
+    app.add_event::<QueueDismantle>();
+
     app.init_resource::<DismantleTimer>()
         .add_systems(Update, tick_dismantle_timer);
 
     app.init_resource::<Selection>()
-        .init_resource::<DismantleTimer>()
         .add_observer(add_buildings_to_selection)
-        .add_observer(remove_buildings_from_selection)
-        .add_systems(
-            Update,
-            (
-                clear_selection.run_if(input_just_pressed(KeyCode::Escape)),
-                dismantle_selection
-                    .run_if(dismantle_timer_held)
-                    .in_set(FactorySystems::Build),
-            ),
-        );
+        .add_observer(remove_buildings_from_selection);
+
+    app.add_systems(
+        Update,
+        (
+            clear_selection.run_if(input_just_pressed(KeyCode::Escape)),
+            queue_dismantle_selection.run_if(dismantle_timer_held),
+        ),
+    );
+
+    app.add_systems(
+        Update,
+        dismantle_buildings.in_set(FactorySystems::Dismantle),
+    );
 }
+
+#[derive(Event, Reflect)]
+pub struct QueueDismantle(pub Entity);
 
 #[derive(Resource, Reflect, Default, Deref, DerefMut)]
 #[reflect(Resource)]
@@ -85,10 +97,19 @@ fn clear_selection(mut selection: ResMut<Selection>) {
     selection.clear();
 }
 
-fn dismantle_selection(mut selection: ResMut<Selection>, mut commands: Commands) {
+fn queue_dismantle_selection(
+    mut selection: ResMut<Selection>,
+    mut events: EventWriter<QueueDismantle>,
+) {
     for building in selection.iter() {
-        commands.entity(*building).despawn();
+        events.write(QueueDismantle(*building));
     }
 
     selection.clear();
+}
+
+fn dismantle_buildings(mut events: EventReader<QueueDismantle>, mut commands: Commands) {
+    for event in events.read() {
+        commands.entity(event.0).despawn();
+    }
 }

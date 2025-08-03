@@ -43,10 +43,10 @@ impl Plugin for FactoryGamePlugin {
             Update,
             (
                 FactorySystems::Build,
-                FactorySystems::GarbageClean,
                 FactorySystems::Power,
                 FactorySystems::Logistics,
                 FactorySystems::Work,
+                FactorySystems::Dismantle,
                 FactorySystems::UI,
             )
                 .chain(),
@@ -57,9 +57,9 @@ impl Plugin for FactoryGamePlugin {
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum FactorySystems {
     Build,
-    GarbageClean,
     Power,
     Logistics,
     Work,
+    Dismantle,
     UI,
 }

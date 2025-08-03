@@ -8,7 +8,7 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     FactorySystems,
-    build::Building,
+    dismantle::QueueDismantle,
     logistics::{
         ItemID, ResourceInput, ResourceOutput,
         io::{ResourceInputInventory, ResourceOutputInventory},
@@ -37,7 +37,7 @@ pub fn plugin(app: &mut App) {
         Update,
         (
             build_conveyor_belts.in_set(FactorySystems::Build),
-            garbage_clean_conveyor_belts.in_set(FactorySystems::GarbageClean),
+            garbage_clean_conveyor_belts.in_set(FactorySystems::Dismantle),
             (
                 place_items_on_belt,
                 transfer_belt_contents,
@@ -175,13 +175,15 @@ fn build_conveyor_belts(
 }
 
 fn garbage_clean_conveyor_belts(
+    mut events: EventReader<QueueDismantle>,
     conveyor_belts: Query<(Entity, &ConveyorBelt)>,
-    entities: Query<Entity, With<Building>>,
     mut commands: Commands,
 ) {
-    for (entity, ConveyorBelt(from, to)) in conveyor_belts {
-        if !entities.contains(*from) || !entities.contains(*to) {
-            commands.entity(entity).despawn();
+    for event in events.read() {
+        for (entity, ConveyorBelt(from, to)) in conveyor_belts {
+            if *from == event.0 || *to == event.0 {
+                commands.entity(entity).despawn();
+            }
         }
     }
 }

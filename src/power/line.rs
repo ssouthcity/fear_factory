@@ -1,9 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    FactorySystems,
-    power::socket::{PowerSockets, PowerSocketsLinked},
-    sandbox::Sandbox,
+    FactorySystems, dismantle::QueueDismantle, power::socket::PowerSocketsLinked, sandbox::Sandbox,
 };
 
 const POWER_LINE_COLOR: Color = Color::BLACK;
@@ -15,7 +13,7 @@ pub fn plugin(app: &mut App) {
         Update,
         (
             create_power_line.in_set(FactorySystems::Build),
-            garbage_clean_power_lines.in_set(FactorySystems::GarbageClean),
+            garbage_clean_power_lines.in_set(FactorySystems::Dismantle),
             draw_power_lines.in_set(FactorySystems::UI),
         ),
     );
@@ -40,13 +38,15 @@ fn create_power_line(
 }
 
 fn garbage_clean_power_lines(
+    mut events: EventReader<QueueDismantle>,
     power_lines: Query<(Entity, &PowerLine)>,
-    entities: Query<Entity, With<PowerSockets>>,
     mut commands: Commands,
 ) {
-    for (entity, PowerLine(from, to)) in power_lines {
-        if !entities.contains(*from) || !entities.contains(*to) {
-            commands.entity(entity).despawn();
+    for event in events.read() {
+        for (entity, PowerLine(from, to)) in power_lines {
+            if *from == event.0 || *to == event.0 {
+                commands.entity(entity).despawn();
+            }
         }
     }
 }
