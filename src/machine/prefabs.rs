@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     animation::AnimatedMachine,
     info::Details,
-    logistics::{ItemCollection, ItemID, ResourceInput},
+    logistics::{ItemCollection, ItemID, ResourceInput, ResourceOutput},
     machine::{
         Machine,
         work::{Frequency, Working},
@@ -59,6 +59,8 @@ pub struct CoalGenerator;
     PowerConsumer(15.0),
     Frequency(Duration::from_secs(3)),
     Details,
-    PowerSockets::single()
+    PowerSockets::single(),
+    ResourceInput(ItemCollection::new().with_item(ItemID::IronOre, 30)),
+    ResourceOutput(ItemCollection::new().with_item(ItemID::IronIngot, 30))
 )]
 pub struct Constructor;

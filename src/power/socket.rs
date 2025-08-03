@@ -75,7 +75,7 @@ fn on_power_socket_add(trigger: Trigger<OnAdd, PowerSockets>, mut commands: Comm
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct PowerSocketConnections(u8);
+pub struct PowerSocketConnections(pub u8);
 
 fn on_power_socket_drag_start(
     mut trigger: Trigger<Pointer<DragStart>>,

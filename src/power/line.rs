@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 
 use crate::{
-    FactorySystems, dismantle::QueueDismantle, power::socket::PowerSocketsLinked, sandbox::Sandbox,
+    FactorySystems,
+    dismantle::QueueDismantle,
+    power::socket::{PowerSocketConnections, PowerSocketsLinked},
+    sandbox::Sandbox,
 };
 
 const POWER_LINE_COLOR: Color = Color::BLACK;
@@ -40,11 +43,20 @@ fn create_power_line(
 fn garbage_clean_power_lines(
     mut events: EventReader<QueueDismantle>,
     power_lines: Query<(Entity, &PowerLine)>,
+    mut power_socket_connections: Query<&mut PowerSocketConnections>,
     mut commands: Commands,
 ) {
     for event in events.read() {
         for (entity, PowerLine(from, to)) in power_lines {
             if *from == event.0 || *to == event.0 {
+                if let Ok(mut cons) = power_socket_connections.get_mut(*from) {
+                    cons.0 -= 1;
+                }
+
+                if let Ok(mut cons) = power_socket_connections.get_mut(*to) {
+                    cons.0 -= 1;
+                }
+
                 commands.entity(entity).despawn();
             }
         }
