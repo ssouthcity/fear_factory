@@ -10,7 +10,6 @@ const DEFAULT_HIGHLIGHT_COLOR: Color = Color::hsl(60.0, 1.0, 0.5);
 
 pub fn plugin(app: &mut App) {
     app.register_type::<HighlightColor>();
-    app.register_type::<Highlightable>();
 
     app.init_resource::<HighlightColor>();
 
@@ -26,10 +25,6 @@ impl Default for HighlightColor {
         Self(DEFAULT_HIGHLIGHT_COLOR)
     }
 }
-
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct Highlightable;
 
 fn highlight(
     building_sprites: Query<(Entity, &mut Sprite), With<Building>>,

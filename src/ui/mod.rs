@@ -4,7 +4,6 @@ mod highlight;
 mod hotbar;
 mod y_sort;
 
-pub use highlight::Highlightable;
 pub use hotbar::HotbarSelection;
 pub use y_sort::YSort;
 

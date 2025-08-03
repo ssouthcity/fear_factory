@@ -1,10 +1,39 @@
 use std::collections::HashMap;
 
 use bevy::prelude::*;
+use bevy_aseprite_ultra::prelude::{AseSlice, Aseprite};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ItemID>();
     app.register_type::<ItemCollection>();
+
+    app.register_type::<ItemAssets>();
+    app.init_resource::<ItemAssets>();
+    app.add_systems(Startup, load_item_assets);
+}
+
+#[derive(Resource, Reflect, Default)]
+#[reflect(Resource)]
+pub struct ItemAssets {
+    aseprite: Handle<Aseprite>,
+}
+
+impl ItemAssets {
+    pub fn sprite(&self, item: ItemID) -> impl Bundle {
+        (
+            Sprite::sized(Vec2::splat(16.0)),
+            AseSlice {
+                aseprite: self.aseprite.clone(),
+                name: match item {
+                    ItemID::Coal => "coal".to_string(),
+                },
+            },
+        )
+    }
+}
+
+fn load_item_assets(mut item_assets: ResMut<ItemAssets>, asset_server: Res<AssetServer>) {
+    item_assets.aseprite = asset_server.load("items.aseprite");
 }
 
 #[derive(Hash, PartialEq, Eq, Reflect, Debug, Clone, Copy)]

@@ -12,6 +12,7 @@ use crate::{
     logistics::{
         ItemID, ResourceInput, ResourceOutput,
         io::{ResourceInputInventory, ResourceOutputInventory},
+        item::ItemAssets,
     },
     sandbox::Sandbox,
     ui::YSort,
@@ -197,6 +198,7 @@ fn place_items_on_belt(
     )>,
     mut outputs: Query<&mut ResourceOutputInventory>,
     mut commands: Commands,
+    item_assets: Res<ItemAssets>,
     time: Res<Time>,
 ) {
     for (entity, belt, length, mut pickup_timer) in conveyor_belts {
@@ -209,15 +211,37 @@ fn place_items_on_belt(
         };
 
         if let Some(item_id) = output.pop() {
-            commands.spawn((
-                Name::new("Item"),
-                Transform::from_xyz(-length.0 / 2.0, 0.0, 0.0),
-                Sprite::from_color(Color::WHITE, Vec2::splat(8.0)),
-                ConveyoredItemProgress(0.0),
-                ConveyoredItem(item_id),
-                ConveyoredItemOf(entity),
-                ChildOf(entity),
-            ));
+            commands
+                .spawn((
+                    Name::new("Item"),
+                    Transform::from_xyz(-length.0 / 2.0, 0.0, 0.0),
+                    item_assets.sprite(item_id),
+                    ConveyoredItemProgress(0.0),
+                    ConveyoredItem(item_id),
+                    ConveyoredItemOf(entity),
+                    ChildOf(entity),
+                    Pickable::default(),
+                ))
+                .observe(
+                    |trigger: Trigger<Pointer<Over>>, mut sprites: Query<&mut Sprite>| {
+                        if let Ok(mut sprite) = sprites.get_mut(trigger.target) {
+                            sprite.color = Color::hsl(120.0, 1.0, 0.5);
+                        }
+                    },
+                )
+                .observe(
+                    |mut trigger: Trigger<Pointer<Click>>, mut commands: Commands| {
+                        commands.entity(trigger.target).despawn();
+                        trigger.propagate(false);
+                    },
+                )
+                .observe(
+                    |trigger: Trigger<Pointer<Out>>, mut sprites: Query<&mut Sprite>| {
+                        if let Ok(mut sprite) = sprites.get_mut(trigger.target) {
+                            sprite.color = Color::default();
+                        }
+                    },
+                );
         }
     }
 }
