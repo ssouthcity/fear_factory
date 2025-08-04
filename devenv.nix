@@ -1,7 +1,9 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 
 {
   packages = [
+    pkgs.pkg-config
+
     pkgs.udev
     pkgs.alsa-lib-with-plugins
     pkgs.vulkan-loader
@@ -15,9 +17,6 @@
     # wayland
     pkgs.libxkbcommon
     pkgs.wayland
-
-    # pkgs.libudev0-shim
-    # pkgs.libudev-zero
   ];
 
   languages.rust = {
@@ -26,11 +25,7 @@
     mold.enable = true;
   };
 
-  env.LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-    pkgs.libxkbcommon
-    pkgs.vulkan-loader
-    pkgs.wayland
-  ];
+  env.LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath config.packages;
 
   git-hooks.hooks = {
     # General
