@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{ecs::spawn::SpawnIter, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{FactorySystems, sandbox::Buildable};
@@ -8,14 +8,27 @@ pub fn plugin(app: &mut App) {
     app.register_type::<HotbarItemDeselected>();
 
     app.register_type::<HotbarSelection>();
-    app.register_type::<HotbarSlot>();
+    app.register_type::<HotbarAction>();
+    app.register_type::<HotbarShortcut>();
 
     app.init_resource::<HotbarSelection>();
 
     app.add_systems(Startup, spawn_hotbar);
 
-    app.add_systems(Update, highlight_selected_slot.in_set(FactorySystems::UI));
+    app.add_observer(on_hotbar_slot_click);
+    app.add_observer(on_slot_selected);
+
+    app.add_systems(
+        Update,
+        (
+            check_for_hotbar_shortcuts.in_set(FactorySystems::Input),
+            highlight_selected_slot.in_set(FactorySystems::UI),
+        ),
+    );
 }
+
+#[derive(Event, Reflect)]
+pub struct SelectHotbarSlot(pub Buildable);
 
 #[derive(Event, Reflect)]
 pub struct HotbarItemSelected(pub Buildable);
@@ -29,87 +42,111 @@ pub struct HotbarSelection(pub Option<Buildable>);
 
 #[derive(Component, Default, Reflect)]
 #[reflect(Component)]
-#[require(Pickable)]
-struct HotbarSlot(Buildable);
+struct HotbarAction(Buildable);
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+struct HotbarShortcut(KeyCode);
 
 fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
     let aseprite = asset_server.load::<Aseprite>("build-icons.aseprite");
 
-    let mut hotbar_observer = Observer::new(on_build_hotbar_click);
-
-    let hotbar = commands
-        .spawn((
-            Name::new("Build Hotbar"),
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(8.0),
-                width: Val::Percent(100.0),
-                height: Val::Auto,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                column_gap: Val::Px(8.0),
-                row_gap: Val::Px(8.0),
-                ..default()
-            },
-        ))
-        .id();
-
-    for (building, slice_name) in [
-        (Buildable::Windmill, "Windmill"),
-        (Buildable::PowerPole, "Power Pole"),
-        (Buildable::Miner, "Miner"),
-        (Buildable::CoalGenerator, "Coal Generator"),
-        (Buildable::Constructor, "Constructor"),
-    ] {
-        let id = commands
-            .spawn((
-                Name::new(format!("Hotbar Slot {:?}", building)),
-                Node {
-                    width: Val::Px(64.0),
-                    height: Val::Px(64.0),
-                    border: UiRect::all(Val::Px(4.0)),
-                    ..default()
-                },
-                BorderColor(Color::WHITE),
-                HotbarSlot(building.clone()),
-                children![(
-                    Name::new("Icon"),
-                    ImageNode::default(),
-                    AseSlice {
-                        aseprite: aseprite.clone(),
-                        name: slice_name.to_string(),
+    commands.spawn((
+        Name::new("Build Hotbar"),
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: Val::Px(8.0),
+            width: Val::Percent(100.0),
+            height: Val::Auto,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            column_gap: Val::Px(8.0),
+            row_gap: Val::Px(8.0),
+            ..default()
+        },
+        Pickable::IGNORE,
+        Children::spawn(SpawnIter(
+            [
+                (KeyCode::Digit1, Buildable::Windmill, "Windmill"),
+                (KeyCode::Digit2, Buildable::PowerPole, "Power Pole"),
+                (KeyCode::Digit3, Buildable::Miner, "Miner"),
+                (KeyCode::Digit4, Buildable::CoalGenerator, "Coal Generator"),
+                (KeyCode::Digit5, Buildable::Constructor, "Constructor"),
+            ]
+            .iter()
+            .map(move |(shortcut, action, slice_name)| {
+                (
+                    Name::new(format!("Hotbar Slot {:?}", action.clone())),
+                    Node {
+                        width: Val::Px(64.0),
+                        height: Val::Px(64.0),
+                        border: UiRect::all(Val::Px(4.0)),
+                        ..default()
                     },
-                )],
-            ))
-            .id();
-
-        commands.entity(hotbar).add_child(id);
-        hotbar_observer.watch_entity(id);
-    }
-
-    commands.spawn(hotbar_observer);
+                    Pickable::default(),
+                    BorderColor(Color::WHITE),
+                    HotbarShortcut(shortcut.clone()),
+                    HotbarAction(action.clone()),
+                    children![(
+                        Name::new("Icon"),
+                        ImageNode::default(),
+                        Pickable::IGNORE,
+                        AseSlice {
+                            aseprite: aseprite.clone(),
+                            name: slice_name.to_string(),
+                        },
+                    )],
+                )
+            }),
+        )),
+    ));
 }
 
-fn on_build_hotbar_click(
+fn on_hotbar_slot_click(
     trigger: Trigger<Pointer<Click>>,
-    hotbar_slots: Query<&HotbarSlot>,
+    hotbar_actions: Query<&HotbarAction>,
+    mut commands: Commands,
+) {
+    let Ok(action) = hotbar_actions.get(trigger.target) else {
+        return;
+    };
+
+    commands.trigger(SelectHotbarSlot(action.0));
+}
+
+fn check_for_hotbar_shortcuts(
+    keys: Res<ButtonInput<KeyCode>>,
+    hotbar_slots: Query<(&HotbarAction, &HotbarShortcut)>,
+    mut commands: Commands,
+) {
+    for (action, shortcut) in hotbar_slots {
+        if !keys.just_pressed(shortcut.0) {
+            continue;
+        }
+
+        commands.trigger(SelectHotbarSlot(action.0));
+    }
+}
+
+fn on_slot_selected(
+    trigger: Trigger<SelectHotbarSlot>,
     mut hotbar_selection: ResMut<HotbarSelection>,
     mut commands: Commands,
 ) {
-    if let Ok(slot) = hotbar_slots.get(trigger.target()) {
-        if hotbar_selection.0 == Some(slot.0) {
-            hotbar_selection.0 = None;
-            commands.trigger(HotbarItemDeselected);
-        } else {
-            hotbar_selection.0 = Some(slot.0);
-            commands.trigger(HotbarItemSelected(slot.0));
-        }
+    let event = trigger.event();
+
+    if hotbar_selection.0 == Some(event.0) {
+        hotbar_selection.0 = None;
+        commands.trigger(HotbarItemDeselected);
+    } else {
+        hotbar_selection.0 = Some(event.0);
+        commands.trigger(HotbarItemSelected(event.0));
     }
 }
 
 fn highlight_selected_slot(
     mut commands: Commands,
-    hotbar_slots: Query<(Entity, &HotbarSlot)>,
+    hotbar_slots: Query<(Entity, &HotbarAction)>,
     selection: Res<HotbarSelection>,
 ) {
     for (entity, slot) in hotbar_slots {

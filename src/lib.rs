@@ -40,6 +40,7 @@ impl Plugin for FactoryGamePlugin {
         app.configure_sets(
             Update,
             (
+                FactorySystems::Input,
                 FactorySystems::Build,
                 FactorySystems::Power,
                 FactorySystems::Logistics,
@@ -54,6 +55,7 @@ impl Plugin for FactoryGamePlugin {
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum FactorySystems {
+    Input,
     Build,
     Power,
     Logistics,
