@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::info::Details;
-
 pub mod power;
-pub mod prefabs;
 pub mod work;
 
 pub fn plugin(app: &mut App) {
@@ -14,5 +11,4 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[require(Details)]
 pub struct Machine;

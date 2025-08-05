@@ -1,0 +1,113 @@
+use std::time::Duration;
+
+use bevy::prelude::*;
+
+use crate::{
+    animation::AnimatedMachine,
+    logistics::{ItemCollection, ItemID, ResourceInput, ResourceOutput},
+    machine::{
+        Machine,
+        work::{Frequency, Working},
+    },
+    power::{PowerConsumer, PowerProducer, socket::PowerSockets},
+};
+
+pub fn windmill() -> impl Bundle {
+    (
+        Name::new("Windmill"),
+        Machine::default(),
+        Sprite::sized(Vec2::splat(64.0)),
+        AnimatedMachine("windmill.aseprite"),
+        PowerProducer(30.0),
+        Working::default(),
+        PowerSockets::single(),
+    )
+}
+
+pub fn windmill_preview() -> impl Bundle {
+    (
+        Name::new("Windmill Preview"),
+        Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
+        AnimatedMachine("windmill.aseprite"),
+    )
+}
+
+pub fn miner() -> impl Bundle {
+    (
+        Name::new("Miner"),
+        Machine::default(),
+        Sprite::sized(Vec2::splat(64.0)),
+        AnimatedMachine("miner.aseprite"),
+        PowerConsumer(5.0),
+        Frequency(Duration::from_secs(10)),
+        PowerSockets::single(),
+    )
+}
+
+pub fn miner_preview() -> impl Bundle {
+    (
+        Name::new("Miner Preview"),
+        Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
+        AnimatedMachine("miner.aseprite"),
+    )
+}
+
+pub fn coal_generator() -> impl Bundle {
+    (
+        Name::new("Coal Generator"),
+        Machine::default(),
+        Sprite::sized(Vec2::splat(64.0)),
+        AnimatedMachine("coal-generator.aseprite"),
+        PowerProducer(75.0),
+        Frequency(Duration::from_secs(60)),
+        ResourceInput(ItemCollection::new().with_item(ItemID::Coal, 60)),
+        PowerSockets::single(),
+    )
+}
+
+pub fn coal_generator_preview() -> impl Bundle {
+    (
+        Name::new("Coal Generator Preview"),
+        Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
+        AnimatedMachine("coal-generator.aseprite"),
+    )
+}
+
+pub fn constructor() -> impl Bundle {
+    (
+        Name::new("Constructor"),
+        Machine::default(),
+        Sprite::sized(Vec2::splat(64.0)),
+        AnimatedMachine("constructor.aseprite"),
+        PowerConsumer(15.0),
+        Frequency(Duration::from_secs(3)),
+        PowerSockets::single(),
+        ResourceInput(ItemCollection::new().with_item(ItemID::IronOre, 30)),
+        ResourceOutput(ItemCollection::new().with_item(ItemID::IronIngot, 30)),
+    )
+}
+
+pub fn constructor_preview() -> impl Bundle {
+    (
+        Name::new("Constructor"),
+        Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
+        AnimatedMachine("constructor.aseprite"),
+    )
+}
+
+pub fn power_pole() -> impl Bundle {
+    (
+        Name::new("Power Pole"),
+        Sprite::sized(Vec2::splat(64.0)),
+        AnimatedMachine("power-pole.aseprite"),
+        PowerSockets::multiple(3),
+    )
+}
+
+pub fn power_pole_preview() -> impl Bundle {
+    (
+        Name::new("Power Pole Preview"),
+        Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
+        AnimatedMachine("power-pole.aseprite"),
+    )
+}

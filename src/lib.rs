@@ -10,6 +10,7 @@ mod info;
 mod logistics;
 mod machine;
 mod power;
+mod prefabs;
 mod sandbox;
 mod ui;
 

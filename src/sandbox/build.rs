@@ -2,11 +2,9 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    animation::AnimatedMachine,
     logistics::{ItemCollection, ResourceOutput},
-    machine::prefabs::{CoalGenerator, Constructor, Miner, Windmill},
-    power::pole::PowerPole,
-    sandbox::{Deposit, Sandbox, SandboxSpawnSystems},
+    prefabs,
+    sandbox::{Deposit, Sandbox},
     ui::{HotbarItemDeselected, HotbarItemSelected, YSort},
 };
 
@@ -18,12 +16,8 @@ pub fn plugin(app: &mut App) {
 
     app.add_event::<QueueSpawnBuilding>();
 
-    app.add_systems(
-        Startup,
-        spawn_preview.in_set(SandboxSpawnSystems::SpawnDeposits),
-    )
-    .add_observer(on_hotbar_selection)
-    .add_observer(on_hotbar_deselection);
+    app.add_observer(on_hotbar_selection)
+        .add_observer(on_hotbar_deselection);
 
     app.add_systems(
         Update,
@@ -37,39 +31,33 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Preview;
 
-fn spawn_preview(mut commands: Commands, sandbox: Single<Entity, With<Sandbox>>) {
-    commands.spawn((
-        Preview::default(),
-        Sprite::from_color(Color::WHITE.with_alpha(0.25), Vec2::splat(64.0)),
-        AnimatedMachine("windmill.aseprite"),
-        Visibility::Hidden,
-        ChildOf(*sandbox),
-        YSort::default(),
-    ));
-}
-
 fn on_hotbar_selection(
     trigger: Trigger<HotbarItemSelected>,
-    preview: Single<Entity, With<Preview>>,
     mut commands: Commands,
+    sandbox: Single<Entity, With<Sandbox>>,
+    existing_preview: Option<Single<Entity, With<Preview>>>,
 ) {
-    commands.entity(*preview).insert((
-        Visibility::Inherited,
-        AnimatedMachine(match trigger.0 {
-            Buildable::Windmill => "windmill.aseprite",
-            Buildable::PowerPole => "power-pole.aseprite",
-            Buildable::Miner => "miner.aseprite",
-            Buildable::CoalGenerator => "coal-generator.aseprite",
-            Buildable::Constructor => "constructor.aseprite",
-        }),
-    ));
+    if let Some(existing) = existing_preview {
+        commands.entity(*existing).despawn();
+    }
+
+    let common = (Preview::default(), ChildOf(*sandbox), YSort::default());
+
+    match trigger.0 {
+        Buildable::Windmill => commands.spawn((prefabs::windmill_preview(), common)),
+        Buildable::PowerPole => commands.spawn((prefabs::power_pole_preview(), common)),
+        Buildable::Miner => commands.spawn((prefabs::miner_preview(), common)),
+        Buildable::CoalGenerator => commands.spawn((prefabs::coal_generator_preview(), common)),
+        Buildable::Constructor => commands.spawn((prefabs::constructor_preview(), common)),
+    };
 }
 
 fn on_hotbar_deselection(
     _trigger: Trigger<HotbarItemDeselected>,
-    mut preview: Single<&mut Visibility, With<Preview>>,
+    preview: Single<Entity, With<Preview>>,
+    mut commands: Commands,
 ) {
-    **preview = Visibility::Hidden;
+    commands.entity(*preview).despawn();
 }
 
 #[derive(Component, Reflect, Default)]
@@ -101,25 +89,36 @@ fn spawn_buildings(
     deposits: Query<&Deposit>,
 ) {
     for event in events.read() {
-        let mut entity = commands.spawn((
+        let common = (
             Transform::from_translation(event.position.extend(1.0)),
             ChildOf(*world),
             Building(event.buildable),
-        ));
+        );
 
         match event.buildable {
-            Buildable::Windmill => entity.insert(Windmill),
-            Buildable::PowerPole => entity.insert(PowerPole),
-            Buildable::Miner => {
-                if let Ok(deposit) = deposits.get(event.placed_on) {
-                    entity.insert(ResourceOutput(
-                        ItemCollection::new().with_item(deposit.0, 5),
-                    ));
-                }
-                entity.insert(Miner)
+            Buildable::Windmill => {
+                commands.spawn((prefabs::windmill(), common));
             }
-            Buildable::CoalGenerator => entity.insert(CoalGenerator),
-            Buildable::Constructor => entity.insert(Constructor),
+            Buildable::PowerPole => {
+                commands.spawn((prefabs::power_pole(), common));
+            }
+            Buildable::Miner => {
+                let Ok(deposit) = deposits.get(event.placed_on) else {
+                    return;
+                };
+
+                commands.spawn((
+                    prefabs::miner(),
+                    common,
+                    ResourceOutput(ItemCollection::new().with_item(deposit.0, 5)),
+                ));
+            }
+            Buildable::CoalGenerator => {
+                commands.spawn((prefabs::coal_generator(), common));
+            }
+            Buildable::Constructor => {
+                commands.spawn((prefabs::constructor(), common));
+            }
         };
     }
 }
