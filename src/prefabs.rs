@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::{
     animation::AnimatedMachine,
-    logistics::{ItemCollection, ItemID, ResourceInput, ResourceOutput},
+    logistics::{InputFilter, ItemCollection, ItemID, ResourceInput, ResourceOutput},
     machine::{
         Machine,
         work::{Frequency, Working},
@@ -61,6 +61,7 @@ pub fn coal_generator() -> impl Bundle {
         PowerProducer(75.0),
         Frequency(Duration::from_secs(60)),
         ResourceInput(ItemCollection::new().with_item(ItemID::Coal, 60)),
+        InputFilter::default().with_item(ItemID::Coal),
         PowerSockets::single(),
     )
 }
@@ -100,7 +101,7 @@ pub fn power_pole() -> impl Bundle {
         Name::new("Power Pole"),
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("power-pole.aseprite"),
-        PowerSockets::multiple(3),
+        PowerSockets::multiple(4),
     )
 }
 

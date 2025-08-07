@@ -10,7 +10,7 @@ use crate::{
     FactorySystems,
     dismantle::QueueDismantle,
     logistics::{
-        ItemID, ResourceInput, ResourceOutput,
+        InputFilter, ItemID, ResourceInput, ResourceOutput,
         io::{ResourceInputInventory, ResourceOutputInventory},
         item::ItemAssets,
     },
@@ -195,6 +195,7 @@ fn place_items_on_belt(
         &Transform,
         &ConveyorBelt,
         &ConveyorLength,
+        &ConveyoredItems,
         &mut ConveyorPickupTimer,
     )>,
     mut outputs: Query<&mut ResourceOutputInventory>,
@@ -202,7 +203,7 @@ fn place_items_on_belt(
     item_assets: Res<ItemAssets>,
     time: Res<Time>,
 ) {
-    for (entity, transform, belt, length, mut pickup_timer) in conveyor_belts {
+    for (entity, transform, belt, length, items, mut pickup_timer) in conveyor_belts {
         if !pickup_timer.0.tick(time.delta()).finished() {
             continue;
         }
@@ -210,6 +211,10 @@ fn place_items_on_belt(
         let Ok(mut output) = outputs.get_mut(belt.0) else {
             continue;
         };
+
+        if (length.0 / CONVEYOR_BELT_TRAY_SIZE).ceil() as u8 == items.len() as u8 {
+            continue;
+        }
 
         if let Some(item_id) = output.pop() {
             commands
@@ -250,20 +255,23 @@ fn place_items_on_belt(
 }
 
 fn transfer_belt_contents(
-    query: Query<(
-        &mut Transform,
-        &mut ConveyoredItemProgress,
-        &ConveyoredItemOf,
-    )>,
-    belt_speed_query: Query<(&ConveyorLength, &ConveyorSpeed)>,
+    belt_query: Query<(&ConveyorLength, &ConveyorSpeed, &ConveyoredItems)>,
+    mut item_query: Query<(&mut Transform, &mut ConveyoredItemProgress)>,
     time: Res<Time>,
 ) {
-    for (mut transform, mut progress, conveyored_item_of) in query {
-        let (length, speed) = belt_speed_query.get(conveyored_item_of.0).unwrap();
+    for (length, speed, conveyored_items) in belt_query {
+        for (index, item) in conveyored_items.iter().enumerate() {
+            let (mut transform, mut progress) = item_query.get_mut(item).unwrap();
 
-        transform.translation.x += speed.0 / 60.0 * time.delta_secs() * CONVEYOR_BELT_TRAY_SIZE;
+            transform.translation.x += speed.0 / 60.0 * time.delta_secs() * CONVEYOR_BELT_TRAY_SIZE;
 
-        progress.0 = (transform.translation.x + length.0 / 2.0) / length.0;
+            transform.translation.x = transform.translation.x.clamp(
+                -length.0 / 2.0,
+                length.0 / 2.0 - CONVEYOR_BELT_TRAY_SIZE * index as f32,
+            );
+
+            progress.0 = (transform.translation.x + length.0 / 2.0) / length.0;
+        }
     }
 }
 
@@ -275,7 +283,7 @@ fn receive_items_from_belt(
         &ConveyoredItemProgress,
         &ConveyoredItemOf,
     )>,
-    mut inputs: Query<&mut ResourceInputInventory>,
+    mut inputs: Query<(&mut ResourceInputInventory, Option<&InputFilter>)>,
     mut commands: Commands,
 ) {
     for (entity, item, progress, item_of) in conveyored_items {
@@ -287,9 +295,13 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let Ok(mut input) = inputs.get_mut(belt.1) else {
+        let Ok((mut input, filter)) = inputs.get_mut(belt.1) else {
             continue;
         };
+
+        if filter.is_some_and(|filter| !filter.contains(&item.0)) {
+            continue;
+        }
 
         input.0.push(item.0);
 

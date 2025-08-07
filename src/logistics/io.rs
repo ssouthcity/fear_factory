@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use std::collections::HashSet;
 
 use crate::{
     FactorySystems,
-    logistics::item::ItemCollection,
+    logistics::{ItemID, item::ItemCollection},
     machine::{
         Machine,
         work::{BeginWork, WorkCompleted, Working},
@@ -40,6 +41,17 @@ pub struct ResourceInputInventory(pub ItemCollection);
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
 pub struct ResourceOutputInventory(pub ItemCollection);
+
+#[derive(Component, Reflect, Deref, DerefMut, Default)]
+#[reflect(Component)]
+pub struct InputFilter(HashSet<ItemID>);
+
+impl InputFilter {
+    pub fn with_item(mut self, item_id: ItemID) -> Self {
+        self.insert(item_id);
+        self
+    }
+}
 
 fn begin_work(
     machines: Query<

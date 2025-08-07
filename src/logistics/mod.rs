@@ -4,7 +4,7 @@ mod conveyor;
 mod io;
 mod item;
 
-pub use io::{ResourceInput, ResourceOutput};
+pub use io::{InputFilter, ResourceInput, ResourceOutput};
 pub use item::{ItemCollection, ItemID};
 
 pub fn plugin(app: &mut App) {
