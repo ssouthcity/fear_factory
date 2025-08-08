@@ -1,5 +1,6 @@
-use bevy::prelude::*;
 use std::collections::HashSet;
+
+use bevy::prelude::*;
 
 use crate::{
     FactorySystems,

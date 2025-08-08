@@ -1,8 +1,11 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
     logistics::{ItemCollection, ResourceOutput},
+    machine::work::Frequency,
     prefabs,
     sandbox::{Deposit, Sandbox},
     ui::{HotbarItemDeselected, HotbarItemSelected, YSort},
@@ -110,7 +113,8 @@ fn spawn_buildings(
                 commands.spawn((
                     prefabs::miner(),
                     common,
-                    ResourceOutput(ItemCollection::new().with_item(deposit.0, 5)),
+                    ResourceOutput(ItemCollection::new().with_item(deposit.0, 1)),
+                    Frequency(Duration::from_secs_f32(40.0 / 60.0)),
                 ));
             }
             Buildable::CoalGenerator => {

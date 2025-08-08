@@ -78,7 +78,7 @@ struct ConveyorPickupTimer(Timer);
 fn insert_pickup_timer(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
     let speed = world.get::<ConveyorSpeed>(entity).unwrap();
 
-    let duration = Duration::from_secs_f32(speed.0 / 60.0);
+    let duration = Duration::from_secs_f32(60.0 / speed.0);
 
     world
         .commands()
@@ -263,7 +263,7 @@ fn transfer_belt_contents(
         for (index, item) in conveyored_items.iter().enumerate() {
             let (mut transform, mut progress) = item_query.get_mut(item).unwrap();
 
-            transform.translation.x += speed.0 / 60.0 * time.delta_secs() * CONVEYOR_BELT_TRAY_SIZE;
+            transform.translation.x += speed.0 / 60.0 * CONVEYOR_BELT_TRAY_SIZE * time.delta_secs();
 
             transform.translation.x = transform.translation.x.clamp(
                 -length.0 / 2.0,

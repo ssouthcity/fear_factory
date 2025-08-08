@@ -39,7 +39,6 @@ pub fn miner() -> impl Bundle {
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("miner.aseprite"),
         PowerConsumer(5.0),
-        Frequency(Duration::from_secs(10)),
         PowerSockets::single(),
     )
 }
