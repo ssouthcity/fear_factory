@@ -5,8 +5,7 @@ use crate::{
     sandbox::Building,
 };
 
-const DEFAULT_HIGHLIGHT_COLOR: Color = Color::hsl(60.0, 1.0, 0.5);
-// const DISMANTLE_HIGHLIGHT_COLOR: Color = Color::hsl(0.0, 1.0, 0.5);
+use super::HIGHLIGHT_COLOR;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<HighlightColor>();
@@ -22,7 +21,7 @@ pub struct HighlightColor(Color);
 
 impl Default for HighlightColor {
     fn default() -> Self {
-        Self(DEFAULT_HIGHLIGHT_COLOR)
+        Self(HIGHLIGHT_COLOR)
     }
 }
 

@@ -15,7 +15,7 @@ use crate::{
         item::ItemAssets,
     },
     sandbox::Sandbox,
-    ui::YSort,
+    ui::{Interact, Interactable, YSort},
 };
 
 /// How much space of the belt should be reserved per item
@@ -229,27 +229,11 @@ fn place_items_on_belt(
                     ConveyoredItemOf(entity),
                     ChildOf(entity),
                     Pickable::default(),
+                    Interactable::default(),
                 ))
-                .observe(
-                    |trigger: Trigger<Pointer<Over>>, mut sprites: Query<&mut Sprite>| {
-                        if let Ok(mut sprite) = sprites.get_mut(trigger.target) {
-                            sprite.color = Color::hsl(120.0, 1.0, 0.5);
-                        }
-                    },
-                )
-                .observe(
-                    |mut trigger: Trigger<Pointer<Click>>, mut commands: Commands| {
-                        commands.entity(trigger.target).despawn();
-                        trigger.propagate(false);
-                    },
-                )
-                .observe(
-                    |trigger: Trigger<Pointer<Out>>, mut sprites: Query<&mut Sprite>| {
-                        if let Ok(mut sprite) = sprites.get_mut(trigger.target) {
-                            sprite.color = Color::default();
-                        }
-                    },
-                );
+                .observe(|trigger: Trigger<Interact>, mut commands: Commands| {
+                    commands.entity(trigger.target()).despawn();
+                });
         }
     }
 }

@@ -10,6 +10,7 @@ use crate::{
         work::{Frequency, Working},
     },
     power::{PowerConsumer, PowerProducer, socket::PowerSockets},
+    ui::Interactable,
 };
 
 pub fn windmill() -> impl Bundle {
@@ -21,6 +22,7 @@ pub fn windmill() -> impl Bundle {
         PowerProducer(30.0),
         Working::default(),
         PowerSockets::single(),
+        Interactable::default(),
     )
 }
 
@@ -40,6 +42,7 @@ pub fn miner() -> impl Bundle {
         AnimatedMachine("miner.aseprite"),
         PowerConsumer(5.0),
         PowerSockets::single(),
+        Interactable::default(),
     )
 }
 
@@ -62,6 +65,7 @@ pub fn coal_generator() -> impl Bundle {
         ResourceInput(ItemCollection::new().with_item(ItemID::Coal, 60)),
         InputFilter::default().with_item(ItemID::Coal),
         PowerSockets::single(),
+        Interactable::default(),
     )
 }
 
@@ -84,6 +88,7 @@ pub fn constructor() -> impl Bundle {
         PowerSockets::single(),
         ResourceInput(ItemCollection::new().with_item(ItemID::IronOre, 30)),
         ResourceOutput(ItemCollection::new().with_item(ItemID::IronIngot, 30)),
+        Interactable::default(),
     )
 }
 
@@ -101,6 +106,7 @@ pub fn power_pole() -> impl Bundle {
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("power-pole.aseprite"),
         PowerSockets::multiple(4),
+        Interactable::default(),
     )
 }
 
