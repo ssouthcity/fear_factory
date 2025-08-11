@@ -4,17 +4,23 @@ use bevy::{
 };
 
 use crate::{
-    item::{RecipeCollection, SelectedRecipe},
+    item::{RecipeCollection, RecipeID, SelectRecipe, SelectedRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<SelectRecipeButton>();
+
     app.add_systems(
         OnEnter(InspectionMenuState::RecipeSelect),
         recipe_select_menu,
     );
 }
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+struct SelectRecipeButton(RecipeID);
 
 pub fn recipe_select_menu(mut commands: Commands, recipes: Res<RecipeCollection>) {
     let recipes = recipes.keys().map(|n| n.to_owned()).collect::<Vec<_>>();
@@ -28,29 +34,61 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<RecipeCollection>
                 width: Val::Percent(70.0),
                 height: Val::Percent(70.0),
                 display: Display::Flex,
-                flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::Start,
-                align_items: AlignItems::Start,
+                flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(32.0)),
                 ..default()
             },
-            BackgroundColor(Color::BLACK.with_alpha(0.5)),
-            Children::spawn(SpawnWith(move |parent: &mut RelatedSpawner<ChildOf>| {
-                for recipe in recipes {
-                    parent
-                        .spawn((
-                            Node {
-                                padding: UiRect::all(Val::Px(32.0)),
-                                ..default()
-                            },
-                            BackgroundColor(Color::BLACK.with_alpha(0.5)),
-                            children![Text::new(recipe.to_owned()),],
-                        ))
-                        .observe(on_recipe_hover)
-                        .observe(on_recipe_click)
-                        .observe(on_recipe_out);
-                }
-            })),
+            BackgroundColor(Color::WHITE.with_alpha(0.5)),
+            Children::spawn((
+                Spawn((
+                    Node {
+                        width: Val::Percent(100.0),
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::SpaceBetween,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    Children::spawn((SpawnWith(|parent: &mut RelatedSpawner<ChildOf>| {
+                        parent
+                            .spawn((
+                                Text::new("Close"),
+                                TextColor(Color::BLACK),
+                                Node {
+                                    align_self: AlignSelf::End,
+                                    ..default()
+                                },
+                            ))
+                            .observe(on_close_menu);
+                    }),)),
+                )),
+                Spawn((
+                    Node {
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::Start,
+                        align_items: AlignItems::Start,
+                        ..default()
+                    },
+                    Children::spawn(SpawnWith(move |parent: &mut RelatedSpawner<ChildOf>| {
+                        for recipe_id in recipes {
+                            parent
+                                .spawn((
+                                    Node {
+                                        padding: UiRect::all(Val::Px(32.0)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::BLACK.with_alpha(0.5)),
+                                    SelectRecipeButton(recipe_id.to_owned()),
+                                    children![Text::new(recipe_id.to_string()),],
+                                ))
+                                .observe(on_recipe_hover)
+                                .observe(on_recipe_click)
+                                .observe(on_recipe_out);
+                        }
+                    })),
+                )),
+            )),
         )),
     ));
 }
@@ -68,21 +106,24 @@ fn on_recipe_out(trigger: Trigger<Pointer<Out>>, mut commands: Commands) {
 }
 
 fn on_recipe_click(
-    _trigger: Trigger<Pointer<Click>>,
-    mut next_state: ResMut<NextState<InspectionMenuState>>,
-    mut selected_recipes: Query<&mut SelectedRecipe>,
+    trigger: Trigger<Pointer<Click>>,
+    buttons: Query<&SelectRecipeButton>,
     inspected_entity: Res<InspectedEntity>,
-    recipes: Res<RecipeCollection>,
+    mut next_state: ResMut<NextState<InspectionMenuState>>,
+    mut commands: Commands,
 ) {
-    let Ok(mut selected_recipe) = selected_recipes.get_mut(inspected_entity.0) else {
+    let Ok(button) = buttons.get(trigger.target()) else {
         return;
     };
 
-    let Some(recipe) = recipes.get("Standard Iron") else {
-        return;
-    };
-
-    selected_recipe.0 = Some(recipe.to_owned());
+    commands.trigger_targets(SelectRecipe(button.0), inspected_entity.0);
 
     next_state.set(InspectionMenuState::RecipeInspect);
+}
+
+fn on_close_menu(
+    _trigger: Trigger<Pointer<Click>>,
+    mut next_state: ResMut<NextState<InspectionMenuState>>,
+) {
+    next_state.set(InspectionMenuState::Closed);
 }

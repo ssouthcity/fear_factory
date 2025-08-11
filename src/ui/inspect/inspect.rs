@@ -7,7 +7,7 @@ use bevy::{
 };
 
 use crate::{
-    item::{ItemAssets, ItemCollection, SelectedRecipe},
+    item::{ItemAssets, ItemCollection, RecipeCollection, SelectedRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
@@ -24,12 +24,17 @@ pub fn open_recipe_menu(
     inspected_entity: Res<InspectedEntity>,
     selected_recipes: Query<&SelectedRecipe>,
     icons: Res<ItemAssets>,
+    recipe_collection: Res<RecipeCollection>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
         return;
     };
 
-    let Some(recipe) = selected_recipe.0.clone() else {
+    let Some(recipe_id) = selected_recipe.0 else {
+        return;
+    };
+
+    let Some(recipe) = recipe_collection.get(&recipe_id) else {
         return;
     };
 
@@ -41,17 +46,36 @@ pub fn open_recipe_menu(
             Node {
                 width: Val::Percent(70.0),
                 height: Val::Percent(70.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(32.0)),
                 ..default()
             },
             BackgroundColor(Color::WHITE.with_alpha(0.5)),
             Children::spawn((
-                SpawnWith(|parent: &mut RelatedSpawner<ChildOf>| {
-                    parent.spawn(Text::new("X")).observe(on_deselect_recipe);
-                }),
                 Spawn((
                     Node {
-                        width: Val::Percent(60.0),
-                        height: Val::Percent(60.0),
+                        width: Val::Percent(100.0),
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::SpaceBetween,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    Children::spawn((SpawnWith(|parent: &mut RelatedSpawner<ChildOf>| {
+                        parent
+                            .spawn((Text::new("Deselect"), TextColor(Color::BLACK)))
+                            .observe(on_deselect_recipe);
+
+                        parent
+                            .spawn((Text::new("Close"), TextColor(Color::BLACK)))
+                            .observe(on_close_menu);
+                    }),)),
+                )),
+                Spawn((
+                    Node {
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
                         display: Display::Flex,
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::Center,
@@ -59,7 +83,7 @@ pub fn open_recipe_menu(
                         ..default()
                     },
                     children![
-                        item_collection_column(recipe.input, &icons),
+                        item_collection_column(&recipe.input, &icons),
                         (
                             TextLayout::new_with_justify(JustifyText::Center),
                             Text::new(format!(
@@ -68,7 +92,7 @@ pub fn open_recipe_menu(
                             )),
                             TextColor(Color::BLACK),
                         ),
-                        item_collection_column(recipe.output, &icons),
+                        item_collection_column(&recipe.output, &icons),
                     ],
                 )),
             )),
@@ -76,7 +100,7 @@ pub fn open_recipe_menu(
     ));
 }
 
-fn item_collection_column(items: ItemCollection, icons: &ItemAssets) -> impl Bundle {
+fn item_collection_column(items: &ItemCollection, icons: &ItemAssets) -> impl Bundle {
     (
         Name::new("Item Column"),
         Node {
@@ -135,4 +159,11 @@ fn on_deselect_recipe(
     }
 
     next_state.set(InspectionMenuState::RecipeSelect);
+}
+
+fn on_close_menu(
+    _trigger: Trigger<Pointer<Click>>,
+    mut next_state: ResMut<NextState<InspectionMenuState>>,
+) {
+    next_state.set(InspectionMenuState::Closed);
 }

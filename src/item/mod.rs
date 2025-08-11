@@ -8,7 +8,7 @@ mod recipes;
 pub use assets::ItemAssets;
 pub use collection::ItemCollection;
 pub use item_id::ItemID;
-pub use recipes::{Recipe, RecipeCollection, SelectRecipe, SelectedRecipe};
+pub use recipes::{Recipe, RecipeCollection, RecipeID, SelectRecipe, SelectedRecipe};
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((

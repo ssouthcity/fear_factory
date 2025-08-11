@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     animation::AnimatedMachine,
     item::{ItemCollection, ItemID, SelectedRecipe},
-    logistics::{InputFilter, ResourceInput, ResourceOutput},
+    logistics::{InputFilter, ResourceInput},
     machine::{
         Machine,
         work::{Frequency, Working},
@@ -24,7 +24,6 @@ pub fn windmill() -> impl Bundle {
         Working::default(),
         PowerSockets::single(),
         Interactable::default(),
-        SelectedRecipe::default(),
     )
 }
 
@@ -88,9 +87,8 @@ pub fn constructor() -> impl Bundle {
         PowerConsumer(15.0),
         Frequency(Duration::from_secs(3)),
         PowerSockets::single(),
-        ResourceInput(ItemCollection::new().with_item(ItemID("coal"), 30)),
-        ResourceOutput(ItemCollection::new().with_item(ItemID("coal"), 30)),
         Interactable::default(),
+        SelectedRecipe::default(),
     )
 }
 

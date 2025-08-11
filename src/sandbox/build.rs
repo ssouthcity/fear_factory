@@ -111,11 +111,7 @@ fn spawn_buildings(
 
         match event.buildable {
             Buildable::Windmill => {
-                commands.spawn((prefabs::windmill(), common)).observe(
-                    |trigger: Trigger<Interact>, mut commands: Commands| {
-                        commands.trigger_targets(Inspect, trigger.target());
-                    },
-                );
+                commands.spawn((prefabs::windmill(), common));
             }
             Buildable::PowerPole => {
                 commands.spawn((prefabs::power_pole(), common));
@@ -136,7 +132,11 @@ fn spawn_buildings(
                 commands.spawn((prefabs::coal_generator(), common));
             }
             Buildable::Constructor => {
-                commands.spawn((prefabs::constructor(), common));
+                commands.spawn((prefabs::constructor(), common)).observe(
+                    |trigger: Trigger<Interact>, mut commands: Commands| {
+                        commands.trigger_targets(Inspect, trigger.target());
+                    },
+                );
             }
         };
     }
