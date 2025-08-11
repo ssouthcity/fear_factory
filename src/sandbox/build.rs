@@ -4,11 +4,12 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    logistics::{ItemCollection, ResourceOutput},
+    item::ItemCollection,
+    logistics::ResourceOutput,
     machine::work::Frequency,
     prefabs,
     sandbox::{Deposit, Sandbox},
-    ui::{HotbarItemDeselected, HotbarItemSelected, YSort},
+    ui::{HotbarItemDeselected, HotbarItemSelected, Inspect, Interact, YSort},
 };
 
 pub fn plugin(app: &mut App) {
@@ -47,11 +48,21 @@ fn on_hotbar_selection(
     let common = (Preview::default(), ChildOf(*sandbox), YSort::default());
 
     match trigger.0 {
-        Buildable::Windmill => commands.spawn((prefabs::windmill_preview(), common)),
-        Buildable::PowerPole => commands.spawn((prefabs::power_pole_preview(), common)),
-        Buildable::Miner => commands.spawn((prefabs::miner_preview(), common)),
-        Buildable::CoalGenerator => commands.spawn((prefabs::coal_generator_preview(), common)),
-        Buildable::Constructor => commands.spawn((prefabs::constructor_preview(), common)),
+        Buildable::Windmill => {
+            commands.spawn((prefabs::windmill_preview(), common));
+        }
+        Buildable::PowerPole => {
+            commands.spawn((prefabs::power_pole_preview(), common));
+        }
+        Buildable::Miner => {
+            commands.spawn((prefabs::miner_preview(), common));
+        }
+        Buildable::CoalGenerator => {
+            commands.spawn((prefabs::coal_generator_preview(), common));
+        }
+        Buildable::Constructor => {
+            commands.spawn((prefabs::constructor_preview(), common));
+        }
     };
 }
 
@@ -100,7 +111,11 @@ fn spawn_buildings(
 
         match event.buildable {
             Buildable::Windmill => {
-                commands.spawn((prefabs::windmill(), common));
+                commands.spawn((prefabs::windmill(), common)).observe(
+                    |trigger: Trigger<Interact>, mut commands: Commands| {
+                        commands.trigger_targets(Inspect, trigger.target());
+                    },
+                );
             }
             Buildable::PowerPole => {
                 commands.spawn((prefabs::power_pole(), common));

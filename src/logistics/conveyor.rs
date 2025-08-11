@@ -9,10 +9,10 @@ use bevy_aseprite_ultra::prelude::*;
 use crate::{
     FactorySystems,
     dismantle::QueueDismantle,
+    item::{ItemAssets, ItemID},
     logistics::{
-        InputFilter, ItemID, ResourceInput, ResourceOutput,
+        InputFilter, ResourceInput, ResourceOutput,
         io::{ResourceInputInventory, ResourceOutputInventory},
-        item::ItemAssets,
     },
     sandbox::Sandbox,
     ui::{Interact, Interactable, YSort},

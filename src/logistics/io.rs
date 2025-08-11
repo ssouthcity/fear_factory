@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    logistics::{ItemID, item::ItemCollection},
+    item::{ItemCollection, ItemID},
     machine::{
         Machine,
         work::{BeginWork, WorkCompleted, Working},

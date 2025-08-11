@@ -4,7 +4,8 @@ use bevy::prelude::*;
 
 use crate::{
     animation::AnimatedMachine,
-    logistics::{InputFilter, ItemCollection, ItemID, ResourceInput, ResourceOutput},
+    item::{ItemCollection, ItemID, SelectedRecipe},
+    logistics::{InputFilter, ResourceInput, ResourceOutput},
     machine::{
         Machine,
         work::{Frequency, Working},
@@ -23,6 +24,7 @@ pub fn windmill() -> impl Bundle {
         Working::default(),
         PowerSockets::single(),
         Interactable::default(),
+        SelectedRecipe::default(),
     )
 }
 
@@ -62,8 +64,8 @@ pub fn coal_generator() -> impl Bundle {
         AnimatedMachine("coal-generator.aseprite"),
         PowerProducer(75.0),
         Frequency(Duration::from_secs(60)),
-        ResourceInput(ItemCollection::new().with_item(ItemID::Coal, 60)),
-        InputFilter::default().with_item(ItemID::Coal),
+        ResourceInput(ItemCollection::new().with_item(ItemID("coal"), 60)),
+        InputFilter::default().with_item(ItemID("coal")),
         PowerSockets::single(),
         Interactable::default(),
     )
@@ -86,8 +88,8 @@ pub fn constructor() -> impl Bundle {
         PowerConsumer(15.0),
         Frequency(Duration::from_secs(3)),
         PowerSockets::single(),
-        ResourceInput(ItemCollection::new().with_item(ItemID::IronOre, 30)),
-        ResourceOutput(ItemCollection::new().with_item(ItemID::IronIngot, 30)),
+        ResourceInput(ItemCollection::new().with_item(ItemID("coal"), 30)),
+        ResourceOutput(ItemCollection::new().with_item(ItemID("coal"), 30)),
         Interactable::default(),
     )
 }

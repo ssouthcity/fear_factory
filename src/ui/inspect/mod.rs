@@ -1,0 +1,69 @@
+use bevy::{input::common_conditions::input_just_pressed, prelude::*};
+
+use crate::item::SelectedRecipe;
+
+mod inspect;
+mod select;
+
+pub fn plugin(app: &mut App) {
+    app.register_type::<InspectionMenuState>();
+    app.register_type::<InspectedEntity>();
+    app.register_type::<Inspect>();
+
+    app.init_state::<InspectionMenuState>();
+    app.init_resource::<InspectedEntity>();
+
+    app.add_plugins((inspect::plugin, select::plugin));
+
+    app.add_observer(on_inspect);
+
+    app.add_systems(
+        Update,
+        close_menu.run_if(input_just_pressed(KeyCode::Escape)),
+    );
+}
+
+#[derive(States, Reflect, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
+#[states(scoped_entities)]
+pub enum InspectionMenuState {
+    #[default]
+    Closed,
+    RecipeSelect,
+    RecipeInspect,
+}
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+pub struct InspectedEntity(Entity);
+
+impl Default for InspectedEntity {
+    fn default() -> Self {
+        Self(Entity::PLACEHOLDER)
+    }
+}
+
+#[derive(Event, Reflect)]
+pub struct Inspect;
+
+fn on_inspect(
+    trigger: Trigger<Inspect>,
+    mut next_state: ResMut<NextState<InspectionMenuState>>,
+    mut inspected_entity: ResMut<InspectedEntity>,
+    selected_recipes: Query<&SelectedRecipe>,
+) {
+    let Ok(selected_recipe) = selected_recipes.get(trigger.target()) else {
+        return;
+    };
+
+    inspected_entity.0 = trigger.target();
+
+    if selected_recipe.is_some() {
+        next_state.set(InspectionMenuState::RecipeInspect);
+    } else {
+        next_state.set(InspectionMenuState::RecipeSelect);
+    }
+}
+
+fn close_menu(mut next_state: ResMut<NextState<InspectionMenuState>>) {
+    next_state.set(InspectionMenuState::Closed);
+}

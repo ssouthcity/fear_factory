@@ -7,11 +7,13 @@ mod audio;
 mod camera;
 mod dismantle;
 mod info;
+mod item;
 mod logistics;
 mod machine;
 mod power;
 mod prefabs;
 mod sandbox;
+mod theme;
 mod ui;
 
 pub struct FactoryGamePlugin;
@@ -28,12 +30,13 @@ impl Plugin for FactoryGamePlugin {
             audio::plugin,
             camera::plugin,
             info::plugin,
+            item::plugin,
             dismantle::plugin,
             logistics::plugin,
             machine::plugin,
             power::plugin,
-            ui::plugin,
             sandbox::plugin,
+            ui::plugin,
         ));
 
         app.insert_resource(ClearColor(Color::BLACK));

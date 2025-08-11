@@ -3,7 +3,7 @@ use bevy_aseprite_ultra::prelude::*;
 use rand::Rng;
 
 use crate::{
-    logistics::ItemID,
+    item::ItemID,
     sandbox::{COAL_DEPOSITS, IRON_DEPOSITS, SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
     ui::YSort,
 };
@@ -36,8 +36,8 @@ impl DepositAssets {
             AseSlice {
                 aseprite: self.aseprite.clone(),
                 name: match item_id {
-                    ItemID::Coal => "coal deposit".to_string(),
-                    ItemID::IronOre => "iron ore deposit".to_string(),
+                    ItemID("coal") => "coal deposit".to_string(),
+                    ItemID("iron_ore") => "iron ore deposit".to_string(),
                     _ => unreachable!("invalid deposit"),
                 },
             },
@@ -70,9 +70,9 @@ fn spawn_deposits(
             ),
             YSort(0.1),
             ChildOf(*sandbox),
-            deposit_assets.sprite(ItemID::Coal),
+            deposit_assets.sprite(ItemID("coal")),
             Pickable::default(),
-            Deposit(ItemID::Coal),
+            Deposit(ItemID("coal")),
         ));
     }
 
@@ -86,9 +86,9 @@ fn spawn_deposits(
             ),
             YSort(0.1),
             ChildOf(*sandbox),
-            deposit_assets.sprite(ItemID::IronOre),
+            deposit_assets.sprite(ItemID("iron_ore")),
             Pickable::default(),
-            Deposit(ItemID::IronOre),
+            Deposit(ItemID("iron_ore")),
         ));
     }
 }

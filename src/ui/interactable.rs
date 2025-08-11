@@ -128,7 +128,7 @@ fn on_interact_button_click(
     hovered_interactable: Res<HoveredInteractable>,
     mut commands: Commands,
 ) {
-    if !keys.pressed(INTERACTABLE_BUTTON) {
+    if !keys.just_pressed(INTERACTABLE_BUTTON) {
         return;
     }
 
