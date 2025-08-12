@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::window::{PresentMode, WindowMode};
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -19,7 +20,19 @@ pub struct FactoryGamePlugin;
 
 impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()));
+        app.add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Bevy Factory".to_string(),
+                        present_mode: PresentMode::AutoNoVsync,
+                        mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(ImagePlugin::default_nearest()),
+        );
 
         app.add_plugins(EguiPlugin::default());
         app.add_plugins(WorldInspectorPlugin::new());
