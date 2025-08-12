@@ -75,7 +75,6 @@ fn on_hover(
     interactables: Query<Entity, With<Interactable>>,
     mut commands: Commands,
     mut hovered_interactable: ResMut<HoveredInteractable>,
-    mut sprites: Query<&mut Sprite>,
     interaction_assets: Res<InteractionAssets>,
 ) {
     if !interactables.contains(trigger.target) {
@@ -83,10 +82,6 @@ fn on_hover(
     }
 
     hovered_interactable.0 = Some(trigger.target);
-
-    if let Ok(mut sprite) = sprites.get_mut(trigger.target) {
-        sprite.color = HIGHLIGHT_COLOR;
-    }
 
     commands.spawn((
         Name::new("Interact Indicator"),
@@ -104,17 +99,12 @@ fn on_leave(
     interactables: Query<Entity, With<Interactable>>,
     mut commands: Commands,
     mut hovered_interactable: ResMut<HoveredInteractable>,
-    mut sprites: Query<&mut Sprite>,
 ) {
     if !interactables.contains(trigger.target) {
         return;
     }
 
     hovered_interactable.0 = None;
-
-    if let Ok(mut sprite) = sprites.get_mut(trigger.target) {
-        sprite.color = Default::default();
-    }
 
     commands
         .entity(trigger.target)

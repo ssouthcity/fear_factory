@@ -1,8 +1,8 @@
-use bevy::prelude::*;
+use bevy::{picking::hover::PickingInteraction, prelude::*};
 
 use crate::{
     dismantle::{DismantleTimer, Selection},
-    sandbox::Building,
+    sandbox::{Building, Sandbox},
 };
 
 use super::HIGHLIGHT_COLOR;
@@ -12,7 +12,10 @@ pub fn plugin(app: &mut App) {
 
     app.init_resource::<HighlightColor>();
 
-    app.add_systems(Update, (calculate_dismantle_color, highlight).chain());
+    app.add_systems(
+        Update,
+        (highlight_pickable, calculate_dismantle_color, highlight).chain(),
+    );
 }
 
 #[derive(Resource, Reflect)]
@@ -22,6 +25,16 @@ pub struct HighlightColor(Color);
 impl Default for HighlightColor {
     fn default() -> Self {
         Self(HIGHLIGHT_COLOR)
+    }
+}
+
+fn highlight_pickable(query: Query<(&mut Sprite, &PickingInteraction), Without<Sandbox>>) {
+    for (mut sprite, picking_interaction) in query {
+        if *picking_interaction != PickingInteraction::None {
+            sprite.color = HIGHLIGHT_COLOR;
+        } else {
+            sprite.color = default();
+        }
     }
 }
 
