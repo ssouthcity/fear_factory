@@ -1,7 +1,10 @@
 use bevy::{ecs::spawn::SpawnIter, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::{FactorySystems, sandbox::Buildable};
+use crate::{
+    FactorySystems,
+    sandbox::{Buildable, QueueSpawnBuilding},
+};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<HotbarItemSelected>();
@@ -23,6 +26,7 @@ pub fn plugin(app: &mut App) {
         (
             check_for_hotbar_shortcuts.in_set(FactorySystems::Input),
             highlight_selected_slot.in_set(FactorySystems::UI),
+            deselect_slot.run_if(on_event::<QueueSpawnBuilding>),
         ),
     );
 }
@@ -158,4 +162,9 @@ fn highlight_selected_slot(
             commands.entity(entity).remove::<BackgroundColor>();
         }
     }
+}
+
+fn deselect_slot(mut hotbar_selection: ResMut<HotbarSelection>, mut commands: Commands) {
+    hotbar_selection.0 = None;
+    commands.trigger(HotbarItemDeselected);
 }
