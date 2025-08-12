@@ -11,7 +11,7 @@ use crate::{
     dismantle::QueueDismantle,
     item::{ItemAssets, ItemID},
     logistics::{
-        InputFilter, ResourceInput, ResourceOutput,
+        ConveyorHoleOf, InputFilter,
         io::{ResourceInputInventory, ResourceOutputInventory},
     },
     sandbox::Sandbox,
@@ -26,13 +26,12 @@ pub fn plugin(app: &mut App) {
     app.register_type::<ConveyorBelt>();
     app.register_type::<ConveyorSpeed>();
     app.register_type::<ConveyorLength>();
+
     app.register_type::<ConveyoredItems>();
     app.register_type::<ConveyoredItem>();
     app.register_type::<ConveyoredItemOf>();
 
     app.add_event::<QueueConveyorSpawn>();
-
-    app.add_observer(on_drag_queue_conveyor_belt_spawn);
 
     app.add_systems(
         Update,
@@ -51,7 +50,7 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Event, Reflect)]
-struct QueueConveyorSpawn(Entity, Entity);
+pub struct QueueConveyorSpawn(pub Entity, pub Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -107,34 +106,9 @@ pub struct ConveyoredItemOf(pub Entity);
 #[reflect(Component)]
 pub struct ConveyoredItemProgress(f32);
 
-fn on_drag_queue_conveyor_belt_spawn(
-    mut trigger: Trigger<Pointer<DragDrop>>,
-    resource_inputs: Query<&ResourceInput>,
-    resource_outputs: Query<&ResourceOutput>,
-    mut events: EventWriter<QueueConveyorSpawn>,
-) {
-    let event = trigger.event();
-
-    if event.button != PointerButton::Middle {
-        return;
-    }
-
-    if !resource_outputs.contains(event.dropped) {
-        return;
-    }
-
-    if !resource_inputs.contains(event.target) {
-        return;
-    }
-
-    events.write(QueueConveyorSpawn(event.dropped, event.target));
-
-    trigger.propagate(false);
-}
-
 fn build_conveyor_belts(
     mut events: EventReader<QueueConveyorSpawn>,
-    transforms: Query<&Transform>,
+    transforms: Query<&GlobalTransform>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
     sandbox: Single<Entity, With<Sandbox>>,
@@ -143,7 +117,7 @@ fn build_conveyor_belts(
         let from_transform = transforms.get(event.0).unwrap();
         let to_transform = transforms.get(event.1).unwrap();
 
-        let direction = to_transform.translation - from_transform.translation;
+        let direction = to_transform.translation() - from_transform.translation();
 
         let rotation = Quat::from_rotation_z(direction.xy().to_angle());
 
@@ -151,7 +125,7 @@ fn build_conveyor_belts(
             Name::new("Conveyor Belt"),
             ChildOf(*sandbox),
             Transform::default()
-                .with_translation(from_transform.translation + direction * 0.5)
+                .with_translation(from_transform.translation() + direction * 0.5)
                 .with_rotation(rotation),
             YSort(0.5),
             Sprite {
@@ -198,6 +172,7 @@ fn place_items_on_belt(
         &ConveyoredItems,
         &mut ConveyorPickupTimer,
     )>,
+    conveyor_holes: Query<&ConveyorHoleOf>,
     mut outputs: Query<&mut ResourceOutputInventory>,
     mut commands: Commands,
     item_assets: Res<ItemAssets>,
@@ -208,7 +183,14 @@ fn place_items_on_belt(
             continue;
         }
 
-        let Ok(mut output) = outputs.get_mut(belt.0) else {
+        let Ok(pickup_point) = conveyor_holes
+            .get(belt.0)
+            .map(|conveyor_hole_of| conveyor_hole_of.0)
+        else {
+            continue;
+        };
+
+        let Ok(mut output) = outputs.get_mut(pickup_point) else {
             continue;
         };
 
@@ -267,6 +249,7 @@ fn receive_items_from_belt(
         &ConveyoredItemProgress,
         &ConveyoredItemOf,
     )>,
+    conveyor_holes: Query<&ConveyorHoleOf>,
     mut inputs: Query<(&mut ResourceInputInventory, Option<&InputFilter>)>,
     mut commands: Commands,
 ) {
@@ -279,7 +262,14 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let Ok((mut input, filter)) = inputs.get_mut(belt.1) else {
+        let Ok(dropoff_point) = conveyor_holes
+            .get(belt.1)
+            .map(|conveyor_hole_of| conveyor_hole_of.0)
+        else {
+            continue;
+        };
+
+        let Ok((mut input, filter)) = inputs.get_mut(dropoff_point) else {
             continue;
         };
 

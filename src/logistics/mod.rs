@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 
-mod conveyor;
+mod conveyor_belt;
+mod conveyor_hole;
 mod io;
 
+pub use conveyor_hole::{ConveyorHole, ConveyorHoleOf, ConveyorHoles};
 pub use io::{InputFilter, ResourceInput, ResourceOutput};
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((conveyor::plugin, io::plugin));
+    app.add_plugins((conveyor_belt::plugin, conveyor_hole::plugin, io::plugin));
 }

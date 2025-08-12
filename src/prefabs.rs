@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     animation::AnimatedMachine,
     item::{ItemCollection, ItemID, SelectedRecipe},
-    logistics::{InputFilter, ResourceInput},
+    logistics::{ConveyorHole, ConveyorHoles, InputFilter, ResourceInput},
     machine::{
         Machine,
         work::{Frequency, Working},
@@ -44,6 +44,13 @@ pub fn miner() -> impl Bundle {
         PowerConsumer(5.0),
         PowerSockets::single(),
         Interactable::default(),
+        related!(ConveyorHoles[
+            (
+                Name::new("Conveyor Hole Outbound"),
+                Transform::from_xyz(16.0, 16.0, 10.0),
+                ConveyorHole::Outbound,
+            ),
+        ]),
     )
 }
 
@@ -67,6 +74,13 @@ pub fn coal_generator() -> impl Bundle {
         InputFilter::default().with_item(ItemID("coal")),
         PowerSockets::single(),
         Interactable::default(),
+        related!(
+            ConveyorHoles[(
+                Name::new("Conveyor Hole Inbound"),
+                Transform::from_xyz(-28.0, -16.0, 10.0),
+                ConveyorHole::Inbound
+            )]
+        ),
     )
 }
 
@@ -89,6 +103,18 @@ pub fn constructor() -> impl Bundle {
         PowerSockets::single(),
         Interactable::default(),
         SelectedRecipe::default(),
+        related!(ConveyorHoles[
+            (
+                Name::new("Conveyor Hole Inbound"),
+                Transform::from_xyz(-18.0, -12.0, 10.0),
+                ConveyorHole::Inbound
+            ),
+            (
+                Name::new("Conveyor Hole Outbound"),
+                Transform::from_xyz(18.0, -12.0, 10.0),
+                ConveyorHole::Outbound,
+            ),
+        ]),
     )
 }
 

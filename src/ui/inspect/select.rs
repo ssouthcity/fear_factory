@@ -4,7 +4,7 @@ use bevy::{
 };
 
 use crate::{
-    item::{RecipeCollection, RecipeID, SelectRecipe, SelectedRecipe},
+    item::{RecipeCollection, RecipeID, SelectRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };

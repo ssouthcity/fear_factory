@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
-use super::HIGHLIGHT_COLOR;
-
 const INTERACTABLE_BUTTON: KeyCode = KeyCode::KeyE;
 
 pub fn plugin(app: &mut App) {
