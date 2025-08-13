@@ -4,6 +4,7 @@ use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod animation;
+mod assets;
 mod audio;
 mod camera;
 mod dismantle;
@@ -38,6 +39,7 @@ impl Plugin for FactoryGamePlugin {
         app.add_plugins(WorldInspectorPlugin::new());
 
         app.add_plugins((
+            assets::plugin,
             animation::plugin,
             audio::plugin,
             camera::plugin,

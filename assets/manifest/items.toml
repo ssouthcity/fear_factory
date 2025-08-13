@@ -1,0 +1,11 @@
+[items.coal]
+name = "Coal"
+stack_size = 100
+
+[items.iron_ore]
+name = "Iron Ore"
+stack_size = 100
+
+[items.iron_ingot]
+name = "Iron Ingot"
+stack_size = 60
