@@ -2,12 +2,13 @@ use std::{collections::HashMap, marker::PhantomData};
 
 use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
+    ecs::system::SystemParam,
     prelude::*,
 };
 use serde::Deserialize;
 use thiserror::Error;
 
-#[derive(Asset, TypePath, Deserialize)]
+#[derive(Asset, TypePath, Deserialize, Resource)]
 pub struct Manifest<T: TypePath + Sync + Send> {
     pub items: HashMap<String, T>,
 }
@@ -58,12 +59,14 @@ where
 }
 
 pub struct ManifestPlugin<T> {
+    pub path: &'static str,
     _phantom: PhantomData<T>,
 }
 
-impl<T> Default for ManifestPlugin<T> {
-    fn default() -> Self {
+impl<T> ManifestPlugin<T> {
+    pub fn new(path: &'static str) -> Self {
         Self {
+            path,
             _phantom: PhantomData,
         }
     }
@@ -75,6 +78,55 @@ where
 {
     fn build(&self, app: &mut App) {
         app.init_asset::<Manifest<T>>()
-            .register_asset_loader(ManifestLoader::<T>::default());
+            .register_asset_loader(ManifestLoader::<T>::default())
+            .insert_resource(ManifestPath::<T>::new(self.path))
+            .insert_resource(ManifestHandle::<T>::default())
+            .add_systems(Startup, load_manifest::<T>);
+    }
+}
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+struct ManifestPath<T> {
+    path: &'static str,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> ManifestPath<T> {
+    fn new(path: &'static str) -> Self {
+        Self {
+            path,
+            _phantom: PhantomData,
+        }
+    }
+}
+
+#[derive(Resource, Reflect)]
+#[reflect(Resource)]
+struct ManifestHandle<T: TypePath + Sync + Send>(Handle<Manifest<T>>);
+
+impl<T: TypePath + Sync + Send> Default for ManifestHandle<T> {
+    fn default() -> Self {
+        Self(Handle::<Manifest<T>>::default())
+    }
+}
+
+fn load_manifest<T: TypePath + Sync + Send + 'static>(
+    path: Res<ManifestPath<T>>,
+    asset_server: Res<AssetServer>,
+    mut handle: ResMut<ManifestHandle<T>>,
+) {
+    handle.0 = asset_server.load(path.path);
+}
+
+#[derive(SystemParam)]
+pub struct ManifestParam<'w, T: TypePath + Sync + Send> {
+    assets: Res<'w, Assets<Manifest<T>>>,
+    handle: Res<'w, ManifestHandle<T>>,
+}
+
+impl<'w, T: TypePath + Sync + Send> ManifestParam<'w, T> {
+    pub fn get(&self) -> Option<&Manifest<T>> {
+        self.assets.get(&self.handle.0)
     }
 }

@@ -9,3 +9,7 @@ stack_size = 100
 [items.iron_ingot]
 name = "Iron Ingot"
 stack_size = 60
+
+[items.iron_plate]
+name = "Iron Plate"
+stack_size = 30
