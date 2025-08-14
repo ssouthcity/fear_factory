@@ -39,7 +39,6 @@ impl Plugin for FactoryGamePlugin {
         app.add_plugins(WorldInspectorPlugin::new());
 
         app.add_plugins((
-            assets::plugin,
             animation::plugin,
             audio::plugin,
             camera::plugin,

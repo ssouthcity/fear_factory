@@ -70,8 +70,8 @@ pub fn coal_generator() -> impl Bundle {
         AnimatedMachine("coal-generator.aseprite"),
         PowerProducer(75.0),
         Frequency(Duration::from_secs(60)),
-        ResourceInput(ItemCollection::new().with_item(ItemID("coal"), 60)),
-        InputFilter::default().with_item(ItemID("coal")),
+        ResourceInput(ItemCollection::new().with_item(ItemID("coal".into()), 60)),
+        InputFilter::default().with_item(ItemID("coal".into())),
         PowerSockets::single(),
         Interactable::default(),
         related!(

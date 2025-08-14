@@ -124,7 +124,7 @@ fn spawn_buildings(
                 commands.spawn((
                     prefabs::miner(),
                     common,
-                    ResourceOutput(ItemCollection::new().with_item(deposit.0, 1)),
+                    ResourceOutput(ItemCollection::new().with_item(deposit.0.clone(), 1)),
                     Frequency(Duration::from_secs_f32(40.0 / 60.0)),
                 ));
             }

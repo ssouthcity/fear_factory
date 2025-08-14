@@ -1,4 +1,4 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::{collections::HashMap, hash::Hash, marker::PhantomData};
 
 use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
@@ -8,10 +8,55 @@ use bevy::{
 use serde::Deserialize;
 use thiserror::Error;
 
-#[derive(Asset, TypePath, Deserialize, Resource)]
-pub struct Manifest<T: TypePath + Sync + Send> {
-    pub items: HashMap<String, T>,
+#[derive(Reflect)]
+pub struct Id<T> {
+    pub id: String,
+    #[reflect(ignore)]
+    _phantom: PhantomData<T>,
 }
+
+impl<'de, T> Deserialize<'de> for Id<T> {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let id: String = Deserialize::deserialize(deserializer)?;
+        Ok(Id {
+            id,
+            _phantom: PhantomData,
+        })
+    }
+}
+
+impl<T> Clone for Id<T> {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id.clone(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T> Hash for Id<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
+impl<T> PartialEq for Id<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
+}
+
+impl<T> Eq for Id<T> {}
+
+#[derive(Asset, TypePath, Deserialize, Deref)]
+pub struct Manifest<T: TypePath + Sync + Send>(pub HashMap<Id<T>, T>);
 
 #[derive(Debug, Error)]
 pub enum RawManifestLoaderError {

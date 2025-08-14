@@ -1,15 +1,15 @@
-[items.coal]
+[coal]
 name = "Coal"
-stack_size = 100
+stack_size = 30
 
-[items.iron_ore]
+[iron_ore]
 name = "Iron Ore"
 stack_size = 100
 
-[items.iron_ingot]
+[iron_ingot]
 name = "Iron Ingot"
-stack_size = 60
+stack_size = 100
 
-[items.iron_plate]
+[iron_plate]
 name = "Iron Plate"
-stack_size = 30
+stack_size = 50

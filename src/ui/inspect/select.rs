@@ -4,7 +4,8 @@ use bevy::{
 };
 
 use crate::{
-    item::{RecipeCollection, RecipeID, SelectRecipe},
+    assets::{Id, ManifestParam},
+    item::{Recipe, SelectRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
@@ -20,10 +21,17 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-struct SelectRecipeButton(RecipeID);
+struct SelectRecipeButton(Id<Recipe>);
 
-pub fn recipe_select_menu(mut commands: Commands, recipes: Res<RecipeCollection>) {
-    let recipes = recipes.keys().map(|n| n.to_owned()).collect::<Vec<_>>();
+pub fn recipe_select_menu(mut commands: Commands, recipe_manifest: ManifestParam<Recipe>) {
+    let Some(manifest) = recipe_manifest.get() else {
+        return;
+    };
+
+    let recipes = manifest
+        .iter()
+        .map(|(id, recipe)| (id.to_owned(), recipe.name.to_owned()))
+        .collect::<Vec<_>>();
 
     commands.spawn((
         Name::new("Recipe Selection Menu Container"),
@@ -71,7 +79,7 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<RecipeCollection>
                         ..default()
                     },
                     Children::spawn(SpawnWith(move |parent: &mut RelatedSpawner<ChildOf>| {
-                        for recipe_id in recipes {
+                        for (recipe_id, recipe_name) in recipes {
                             parent
                                 .spawn((
                                     Node {
@@ -80,7 +88,7 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<RecipeCollection>
                                     },
                                     BackgroundColor(Color::BLACK.with_alpha(0.5)),
                                     SelectRecipeButton(recipe_id.to_owned()),
-                                    children![Text::new(recipe_id.to_string()),],
+                                    children![Text::new(recipe_name.to_string()),],
                                 ))
                                 .observe(on_recipe_hover)
                                 .observe(on_recipe_click)
@@ -116,7 +124,7 @@ fn on_recipe_click(
         return;
     };
 
-    commands.trigger_targets(SelectRecipe(button.0), inspected_entity.0);
+    commands.trigger_targets(SelectRecipe(button.0.clone()), inspected_entity.0);
 
     next_state.set(InspectionMenuState::RecipeInspect);
 }

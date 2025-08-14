@@ -205,9 +205,9 @@ fn place_items_on_belt(
                     Transform::default()
                         .with_translation(Vec3::new(-length.0 / 2.0, 0.0, 0.0))
                         .with_rotation(transform.rotation.inverse()),
-                    item_assets.sprite(item_id),
+                    item_assets.sprite(item_id.clone()),
                     ConveyoredItemProgress(0.0),
-                    ConveyoredItem(item_id),
+                    ConveyoredItem(item_id.clone()),
                     ConveyoredItemOf(entity),
                     ChildOf(entity),
                     Pickable::default(),
@@ -277,7 +277,7 @@ fn receive_items_from_belt(
             continue;
         }
 
-        input.0.push(item.0);
+        input.0.push(item.0.clone());
 
         commands.entity(entity).despawn();
     }

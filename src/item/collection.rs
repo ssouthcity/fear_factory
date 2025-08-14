@@ -28,7 +28,7 @@ impl ItemCollection {
 
     pub fn add(&mut self, other: &Self) {
         for (item_id, quantity) in other.0.iter() {
-            let entry = self.0.entry(*item_id).or_default();
+            let entry = self.0.entry(item_id.clone()).or_default();
             *entry += quantity;
         }
     }
@@ -39,7 +39,7 @@ impl ItemCollection {
         }
 
         for (item_id, quantity) in other.0.iter() {
-            let entry = self.0.entry(*item_id).or_default();
+            let entry = self.0.entry(item_id.clone()).or_default();
             *entry -= quantity;
         }
 

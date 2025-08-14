@@ -7,7 +7,8 @@ use bevy::{
 };
 
 use crate::{
-    item::{ItemAssets, ItemCollection, RecipeCollection, SelectedRecipe},
+    assets::ManifestParam,
+    item::{ItemAssets, ItemCollection, Recipe, SelectedRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
@@ -24,17 +25,21 @@ pub fn open_recipe_menu(
     inspected_entity: Res<InspectedEntity>,
     selected_recipes: Query<&SelectedRecipe>,
     icons: Res<ItemAssets>,
-    recipe_collection: Res<RecipeCollection>,
+    recipe_manifest: ManifestParam<Recipe>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
         return;
     };
 
-    let Some(recipe_id) = selected_recipe.0 else {
+    let Some(ref recipe_id) = selected_recipe.0 else {
         return;
     };
 
-    let Some(recipe) = recipe_collection.get(&recipe_id) else {
+    let Some(manifest) = recipe_manifest.get() else {
+        return;
+    };
+
+    let Some(recipe) = manifest.get(&recipe_id) else {
         return;
     };
 
@@ -83,7 +88,7 @@ pub fn open_recipe_menu(
                         ..default()
                     },
                     children![
-                        item_collection_column(&recipe.input, &icons),
+                        // item_collection_column(&recipe.input, &icons),
                         (
                             TextLayout::new_with_justify(JustifyText::Center),
                             Text::new(format!(
@@ -92,7 +97,7 @@ pub fn open_recipe_menu(
                             )),
                             TextColor(Color::BLACK),
                         ),
-                        item_collection_column(&recipe.output, &icons),
+                        // item_collection_column(&recipe.output, &icons),
                     ],
                 )),
             )),

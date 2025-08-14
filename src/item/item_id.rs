@@ -9,10 +9,10 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Startup, register_items);
 }
 
-#[derive(Component, Hash, PartialEq, Eq, Reflect, Debug, Clone, Copy)]
+#[derive(Component, Hash, PartialEq, Eq, Reflect, Debug, Clone)]
 #[reflect(Component)]
 #[component(immutable)]
-pub struct ItemID(pub &'static str);
+pub struct ItemID(pub String);
 
 impl std::fmt::Display for ItemID {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -25,7 +25,7 @@ impl std::fmt::Display for ItemID {
 pub struct ItemLexicon(pub HashSet<ItemID>);
 
 fn register_items(mut lexicon: ResMut<ItemLexicon>) {
-    lexicon.insert(ItemID("coal"));
-    lexicon.insert(ItemID("iron_ore"));
-    lexicon.insert(ItemID("iron_ingot"));
+    lexicon.insert(ItemID("coal".into()));
+    lexicon.insert(ItemID("iron_ore".into()));
+    lexicon.insert(ItemID("iron_ingot".into()));
 }

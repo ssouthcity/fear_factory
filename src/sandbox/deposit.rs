@@ -35,9 +35,9 @@ impl DepositAssets {
             Sprite::sized(Vec2::splat(64.0)),
             AseSlice {
                 aseprite: self.aseprite.clone(),
-                name: match item_id {
-                    ItemID("coal") => "coal deposit".to_string(),
-                    ItemID("iron_ore") => "iron ore deposit".to_string(),
+                name: match item_id.0.as_str() {
+                    "coal" => "coal deposit".to_string(),
+                    "iron_ore" => "iron ore deposit".to_string(),
                     _ => unreachable!("invalid deposit"),
                 },
             },
@@ -70,9 +70,9 @@ fn spawn_deposits(
             ),
             YSort(0.1),
             ChildOf(*sandbox),
-            deposit_assets.sprite(ItemID("coal")),
+            deposit_assets.sprite(ItemID("coal".into())),
             Pickable::default(),
-            Deposit(ItemID("coal")),
+            Deposit(ItemID("coal".into())),
         ));
     }
 
@@ -86,9 +86,9 @@ fn spawn_deposits(
             ),
             YSort(0.1),
             ChildOf(*sandbox),
-            deposit_assets.sprite(ItemID("iron_ore")),
+            deposit_assets.sprite(ItemID("iron_ore".into())),
             Pickable::default(),
-            Deposit(ItemID("iron_ore")),
+            Deposit(ItemID("iron_ore".into())),
         ));
     }
 }
