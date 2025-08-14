@@ -8,8 +8,9 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     FactorySystems,
+    assets::manifest::Id,
     dismantle::QueueDismantle,
-    item::{ItemAssets, ItemID},
+    item::{Item, ItemAssets},
     logistics::{
         ConveyorHoleOf, InputFilter,
         io::{ResourceInputInventory, ResourceOutputInventory},
@@ -95,7 +96,7 @@ pub struct ConveyoredItems(Vec<Entity>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct ConveyoredItem(ItemID);
+pub struct ConveyoredItem(Id<Item>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -198,7 +199,7 @@ fn place_items_on_belt(
             continue;
         }
 
-        if let Some(item_id) = output.pop() {
+        if let Ok(item_id) = output.pop() {
             commands
                 .spawn((
                     Name::new("Item"),
@@ -277,8 +278,8 @@ fn receive_items_from_belt(
             continue;
         }
 
-        input.0.push(item.0.clone());
-
-        commands.entity(entity).despawn();
+        if input.0.push(&item.0).is_ok() {
+            commands.entity(entity).despawn();
+        }
     }
 }

@@ -1,72 +1,95 @@
 use bevy::prelude::*;
 
 use crate::{
-    assets::{Definition, Id},
-    item::Item,
+    assets::manifest::Id,
+    item::{Item, Stack},
 };
 
-#[derive(Debug, Clone)]
-pub struct Stack {
-    pub item_id: Id<Item>,
-    pub quantity: u32,
-    pub max_quantity: u32,
+#[derive(Debug, thiserror::Error)]
+pub enum InventoryError {
+    #[error("Insufficient items")]
+    InsufficientItems,
+    #[error("Inventory empty")]
+    InventoryEmpty,
+    #[error("Inventory full")]
+    InventoryFull,
 }
 
-impl Stack {
-    pub fn space_left(&self) -> u32 {
-        self.max_quantity - self.quantity
+#[derive(Debug, Reflect, Default)]
+pub struct Inventory {
+    slots: Vec<Option<Stack>>,
+}
+
+#[allow(dead_code)]
+impl Inventory {
+    pub fn sized(max_slots: usize) -> Self {
+        Self {
+            slots: vec![None; max_slots],
+        }
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.slots.len()
+    }
+
+    pub fn len(&self) -> usize {
+        self.slots.iter().filter(|s| s.is_some()).count()
     }
 
     pub fn is_full(&self) -> bool {
-        self.quantity >= self.max_quantity
+        self.len() >= self.capacity()
     }
-}
 
-impl<'a> From<&Definition<'a, Item>> for Stack {
-    fn from(value: &Definition<'a, Item>) -> Self {
-        Self {
-            item_id: value.id.clone(),
-            quantity: 0,
-            max_quantity: value.definition.stack_size,
-        }
+    pub fn slots(&self) -> &[Option<Stack>] {
+        &self.slots
     }
-}
 
-#[derive(Debug, Default)]
-pub struct Inventory {
-    pub slots: Vec<Stack>,
-}
-
-impl Inventory {
-    pub fn add_stack(&mut self, stack: &mut Stack) {
-        let mut existing_stacks = self.slots.iter_mut().filter(|s| s.item_id == stack.item_id);
-
-        while stack.quantity > 0 {
-            let Some(current) = existing_stacks.next() else {
-                break;
-            };
-
-            let diff = stack.quantity.min(current.space_left());
-            current.quantity += diff;
-            stack.quantity -= diff;
+    pub fn add_stack(&mut self, stack: &mut Stack) -> Result<(), InventoryError> {
+        for slot in self.slots.iter_mut() {
+            if let Some(slot) = slot {
+                if slot.item_id == stack.item_id && stack.quantity > 0 {
+                    let add = stack.quantity.min(slot.remaining_space());
+                    slot.quantity += add;
+                    stack.quantity -= add;
+                }
+            }
         }
 
-        // TODO: might add a max_slot check here to ensure that a new slot can be added
         if stack.quantity > 0 {
-            self.slots.push(stack.clone());
+            if let Some(slot) = self.slots.iter_mut().find(|s| s.is_none()) {
+                *slot = Some(stack.clone());
+                stack.quantity = 0;
+            } else {
+                return Err(InventoryError::InventoryFull);
+            }
         }
+
+        Ok(())
     }
 
-    pub fn stacks_of(&self, item_id: &Id<Item>) -> Vec<&Stack> {
-        self.slots
-            .iter()
-            .filter(|stack| stack.item_id == *item_id)
-            .collect()
+    pub fn remove_stack(&mut self, stack: &Stack) -> Result<(), InventoryError> {
+        if self.total_quantity_of(&stack.item_id) < stack.quantity {
+            return Err(InventoryError::InsufficientItems);
+        }
+
+        let mut remaining = stack.quantity;
+        for slot in self.slots.iter_mut() {
+            if let Some(slot) = slot {
+                if slot.item_id == stack.item_id && remaining > 0 {
+                    let take = remaining.min(slot.quantity);
+                    slot.quantity -= take;
+                    remaining -= take;
+                }
+            }
+        }
+
+        Ok(())
     }
 
     pub fn total_quantity_of(&self, item_id: &Id<Item>) -> u32 {
         self.slots
             .iter()
+            .filter_map(|slot| slot.as_ref())
             .filter(|stack| stack.item_id == *item_id)
             .map(|stack| stack.quantity)
             .sum()
@@ -76,6 +99,56 @@ impl Inventory {
         other
             .slots
             .iter()
+            .filter_map(|slot| slot.as_ref())
             .all(|stack| self.total_quantity_of(&stack.item_id) >= stack.quantity)
+    }
+
+    pub fn add_inventory(&mut self, other: &mut Inventory) -> Result<(), InventoryError> {
+        for slot in other.slots.iter_mut() {
+            if let Some(stack) = slot {
+                self.add_stack(stack)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn remove_inventory(&mut self, other: &Inventory) -> Result<(), InventoryError> {
+        if !self.contains(other) {
+            return Err(InventoryError::InsufficientItems);
+        }
+
+        for stack in other.slots.iter().filter_map(|slot| slot.as_ref()) {
+            self.remove_stack(stack)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn pop(&mut self) -> Result<Id<Item>, InventoryError> {
+        for slot in self.slots.iter_mut() {
+            if let Some(stack) = slot
+                && stack.quantity > 0
+            {
+                stack.quantity -= 1;
+                return Ok(stack.item_id.clone());
+            }
+        }
+
+        return Err(InventoryError::InventoryEmpty);
+    }
+
+    pub fn push(&mut self, item_id: &Id<Item>) -> Result<(), InventoryError> {
+        for slot in self.slots.iter_mut() {
+            if let Some(stack) = slot
+                && stack.item_id == *item_id
+                && !stack.is_full()
+            {
+                stack.quantity += 1;
+                return Ok(());
+            }
+        }
+
+        return Err(InventoryError::InventoryFull);
     }
 }

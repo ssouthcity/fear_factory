@@ -1,14 +1,11 @@
 use bevy::{
-    ecs::{
-        relationship::RelatedSpawner,
-        spawn::{SpawnIter, SpawnWith},
-    },
+    ecs::{relationship::RelatedSpawner, spawn::SpawnWith},
     prelude::*,
 };
 
 use crate::{
-    assets::ManifestParam,
-    item::{ItemAssets, ItemCollection, Recipe, SelectedRecipe},
+    assets::manifest::ManifestParam,
+    item::{Recipe, SelectedRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
@@ -24,7 +21,7 @@ pub fn open_recipe_menu(
     mut commands: Commands,
     inspected_entity: Res<InspectedEntity>,
     selected_recipes: Query<&SelectedRecipe>,
-    icons: Res<ItemAssets>,
+    // icons: Res<ItemAssets>,
     recipe_manifest: ManifestParam<Recipe>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
@@ -87,70 +84,18 @@ pub fn open_recipe_menu(
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    children![
-                        // item_collection_column(&recipe.input, &icons),
-                        (
-                            TextLayout::new_with_justify(JustifyText::Center),
-                            Text::new(format!(
-                                "{} seconds",
-                                recipe.duration.as_secs_f32().to_string()
-                            )),
-                            TextColor(Color::BLACK),
-                        ),
-                        // item_collection_column(&recipe.output, &icons),
-                    ],
+                    children![(
+                        TextLayout::new_with_justify(JustifyText::Center),
+                        Text::new(format!(
+                            "{} seconds",
+                            recipe.duration.as_secs_f32().to_string()
+                        )),
+                        TextColor(Color::BLACK),
+                    ),],
                 )),
             )),
         )),
     ));
-}
-
-fn item_collection_column(items: &ItemCollection, icons: &ItemAssets) -> impl Bundle {
-    (
-        Name::new("Item Column"),
-        Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            column_gap: Val::Px(8.0),
-            ..default()
-        },
-        Children::spawn(SpawnIter(
-            items
-                .iter()
-                .map(|(item_id, quantity)| {
-                    (
-                        Name::new("Item Badge"),
-                        Node {
-                            padding: UiRect::all(Val::Px(8.0)),
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Column,
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            row_gap: Val::Px(4.0),
-                            ..default()
-                        },
-                        BackgroundColor(Color::BLACK),
-                        children![
-                            (
-                                Node {
-                                    width: Val::Px(64.0),
-                                    height: Val::Px(64.0),
-                                    ..default()
-                                },
-                                icons.ui_icon(item_id.to_owned())
-                            ),
-                            Text::new(quantity.to_owned().to_string()),
-                        ],
-                    )
-                })
-                .collect::<Vec<_>>()
-                .into_iter(),
-        )),
-    )
 }
 
 fn on_deselect_recipe(

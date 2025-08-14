@@ -4,8 +4,6 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    item::ItemCollection,
-    logistics::ResourceOutput,
     machine::work::Frequency,
     prefabs,
     sandbox::{Deposit, Sandbox},
@@ -117,14 +115,13 @@ fn spawn_buildings(
                 commands.spawn((prefabs::power_pole(), common));
             }
             Buildable::Miner => {
-                let Ok(deposit) = deposits.get(event.placed_on) else {
+                let Ok(_deposit) = deposits.get(event.placed_on) else {
                     return;
                 };
 
                 commands.spawn((
                     prefabs::miner(),
                     common,
-                    ResourceOutput(ItemCollection::new().with_item(deposit.0.clone(), 1)),
                     Frequency(Duration::from_secs_f32(40.0 / 60.0)),
                 ));
             }

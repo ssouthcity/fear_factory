@@ -3,7 +3,8 @@ use bevy_aseprite_ultra::prelude::*;
 use rand::Rng;
 
 use crate::{
-    item::ItemID,
+    assets::manifest::Id,
+    item::Item,
     sandbox::{COAL_DEPOSITS, IRON_DEPOSITS, SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
     ui::YSort,
 };
@@ -30,12 +31,12 @@ pub struct DepositAssets {
 }
 
 impl DepositAssets {
-    fn sprite(&self, item_id: ItemID) -> impl Bundle {
+    fn sprite(&self, item_id: Id<Item>) -> impl Bundle {
         (
             Sprite::sized(Vec2::splat(64.0)),
             AseSlice {
                 aseprite: self.aseprite.clone(),
-                name: match item_id.0.as_str() {
+                name: match item_id.id.as_str() {
                     "coal" => "coal deposit".to_string(),
                     "iron_ore" => "iron ore deposit".to_string(),
                     _ => unreachable!("invalid deposit"),
@@ -51,7 +52,7 @@ fn load_deposit_assets(mut deposit_assets: ResMut<DepositAssets>, asset_server: 
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct Deposit(pub ItemID);
+pub struct Deposit(pub Id<Item>);
 
 fn spawn_deposits(
     mut commands: Commands,
@@ -70,9 +71,9 @@ fn spawn_deposits(
             ),
             YSort(0.1),
             ChildOf(*sandbox),
-            deposit_assets.sprite(ItemID("coal".into())),
+            deposit_assets.sprite("coal".into()),
             Pickable::default(),
-            Deposit(ItemID("coal".into())),
+            Deposit("coal".into()),
         ));
     }
 
@@ -86,9 +87,9 @@ fn spawn_deposits(
             ),
             YSort(0.1),
             ChildOf(*sandbox),
-            deposit_assets.sprite(ItemID("iron_ore".into())),
+            deposit_assets.sprite("iron_ore".into()),
             Pickable::default(),
-            Deposit(ItemID("iron_ore".into())),
+            Deposit("iron_ore".into()),
         ));
     }
 }

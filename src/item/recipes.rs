@@ -4,9 +4,9 @@ use bevy::prelude::*;
 use serde::Deserialize;
 
 use crate::{
-    assets::{Id, ManifestParam, ManifestPlugin},
-    item::ItemID,
-    logistics::{InputFilter, ResourceInput, ResourceOutput},
+    assets::manifest::{Id, ManifestParam, ManifestPlugin},
+    item::Item,
+    logistics::InputFilter,
     machine::work::Frequency,
 };
 
@@ -20,10 +20,11 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Debug, Deserialize, TypePath)]
+#[allow(dead_code)]
 pub struct Recipe {
     pub name: String,
-    pub input: Vec<(String, u32)>,
-    pub output: Vec<(String, u32)>,
+    pub input: Vec<(Id<Item>, u32)>,
+    pub output: Vec<(Id<Item>, u32)>,
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
 }
@@ -54,7 +55,7 @@ fn on_select_recipe(
 
     let mut input_filter = InputFilter::default();
     for (item_id, _) in recipe.input.iter() {
-        input_filter.insert(ItemID(item_id.clone()));
+        input_filter.insert(item_id.clone().into());
     }
 
     commands.entity(trigger.target()).insert((

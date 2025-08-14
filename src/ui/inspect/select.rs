@@ -4,7 +4,7 @@ use bevy::{
 };
 
 use crate::{
-    assets::{Id, ManifestParam},
+    assets::manifest::{Id, ManifestParam},
     item::{Recipe, SelectRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},

@@ -4,8 +4,8 @@ use bevy::prelude::*;
 
 use crate::{
     animation::AnimatedMachine,
-    item::{ItemCollection, ItemID, SelectedRecipe},
-    logistics::{ConveyorHole, ConveyorHoles, InputFilter, ResourceInput},
+    item::SelectedRecipe,
+    logistics::{ConveyorHole, ConveyorHoles},
     machine::{
         Machine,
         work::{Frequency, Working},
@@ -70,8 +70,11 @@ pub fn coal_generator() -> impl Bundle {
         AnimatedMachine("coal-generator.aseprite"),
         PowerProducer(75.0),
         Frequency(Duration::from_secs(60)),
-        ResourceInput(ItemCollection::new().with_item(ItemID("coal".into()), 60)),
-        InputFilter::default().with_item(ItemID("coal".into())),
+        // ResourceInput(Inventory::default().add_stack(&Stack {
+        //     item_id: "coal".into(),
+        //     quantity: 60,
+        //     max_quantity: 100,
+        // })),
         PowerSockets::single(),
         Interactable::default(),
         related!(

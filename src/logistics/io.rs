@@ -4,7 +4,8 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    item::{ItemCollection, ItemID},
+    assets::manifest::Id,
+    item::{Inventory, Item},
     machine::{
         Machine,
         work::{BeginWork, WorkCompleted, Working},
@@ -28,27 +29,28 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
 #[require(ResourceInput, ResourceOutputInventory)]
-pub struct ResourceOutput(pub ItemCollection);
+pub struct ResourceOutput(pub Inventory);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
 #[require(ResourceInputInventory)]
-pub struct ResourceInput(pub ItemCollection);
+pub struct ResourceInput(pub Inventory);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
-pub struct ResourceInputInventory(pub ItemCollection);
+pub struct ResourceInputInventory(pub Inventory);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
-pub struct ResourceOutputInventory(pub ItemCollection);
+pub struct ResourceOutputInventory(pub Inventory);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
-pub struct InputFilter(HashSet<ItemID>);
+pub struct InputFilter(HashSet<Id<Item>>);
 
 impl InputFilter {
-    pub fn with_item(mut self, item_id: ItemID) -> Self {
+    #[allow(dead_code)]
+    pub fn with_item(mut self, item_id: Id<Item>) -> Self {
         self.insert(item_id);
         self
     }
@@ -62,7 +64,7 @@ fn begin_work(
     mut events: EventWriter<BeginWork>,
 ) {
     for (entity, resource_input, mut inventory) in machines {
-        if inventory.0.subtract(&resource_input.0).is_ok() {
+        if inventory.0.remove_inventory(&resource_input.0).is_ok() {
             events.write(BeginWork(entity));
         }
     }
@@ -70,13 +72,13 @@ fn begin_work(
 
 fn move_output_to_output_inventory(
     mut events: EventReader<WorkCompleted>,
-    mut outputs: Query<(&ResourceOutput, &mut ResourceOutputInventory)>,
+    mut outputs: Query<(&mut ResourceOutput, &mut ResourceOutputInventory)>,
 ) {
     for event in events.read() {
-        let Ok((output, mut output_inventory)) = outputs.get_mut(event.0) else {
+        let Ok((mut output, mut output_inventory)) = outputs.get_mut(event.0) else {
             continue;
         };
 
-        output_inventory.0.add(&output.0);
+        let _ = output_inventory.0.add_inventory(&mut output.0);
     }
 }

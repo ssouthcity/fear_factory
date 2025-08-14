@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::item::ItemID;
+use crate::{assets::manifest::Id, item::Item};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ItemAssets>();
@@ -24,18 +24,14 @@ impl FromWorld for ItemAssets {
 }
 
 impl ItemAssets {
-    fn slice(&self, item: ItemID) -> impl Bundle {
+    fn slice(&self, item: Id<Item>) -> impl Bundle {
         AseSlice {
             aseprite: self.aseprite.clone(),
-            name: item.0.to_string(),
+            name: item.id,
         }
     }
 
-    pub fn sprite(&self, item: ItemID) -> impl Bundle {
+    pub fn sprite(&self, item: Id<Item>) -> impl Bundle {
         (Sprite::sized(Vec2::splat(16.0)), self.slice(item))
-    }
-
-    pub fn ui_icon(&self, item: ItemID) -> impl Bundle {
-        (ImageNode::default(), self.slice(item))
     }
 }
