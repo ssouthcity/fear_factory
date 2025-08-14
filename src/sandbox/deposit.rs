@@ -3,10 +3,10 @@ use bevy_aseprite_ultra::prelude::*;
 use rand::Rng;
 
 use crate::{
-    assets::manifest::Id,
-    item::Item,
+    assets::manifest::{Id, ManifestParam},
+    item::{Item, PlayerInventory, Stack},
     sandbox::{COAL_DEPOSITS, IRON_DEPOSITS, SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
-    ui::YSort,
+    ui::{Interact, Interactable, YSort},
 };
 
 pub fn plugin(app: &mut App) {
@@ -22,6 +22,8 @@ pub fn plugin(app: &mut App) {
             .after(load_deposit_assets)
             .in_set(SandboxSpawnSystems::SpawnDeposits),
     );
+
+    app.add_observer(on_mine_deposit);
 }
 
 #[derive(Resource, Reflect, Default)]
@@ -74,6 +76,7 @@ fn spawn_deposits(
             deposit_assets.sprite("coal".into()),
             Pickable::default(),
             Deposit("coal".into()),
+            Interactable::default(),
         ));
     }
 
@@ -90,6 +93,31 @@ fn spawn_deposits(
             deposit_assets.sprite("iron_ore".into()),
             Pickable::default(),
             Deposit("iron_ore".into()),
+            Interactable::default(),
         ));
     }
+}
+
+fn on_mine_deposit(
+    trigger: Trigger<Interact>,
+    deposits: Query<&Deposit>,
+    mut inventory: Single<&mut PlayerInventory>,
+    item_manifest: ManifestParam<Item>,
+) {
+    let Some(items) = item_manifest.get() else {
+        return;
+    };
+
+    let Ok(deposit) = deposits.get(trigger.target()) else {
+        return;
+    };
+
+    let Some(ore_definition) = items.get(&deposit.0) else {
+        return;
+    };
+
+    let mut stack = Stack::from(&ore_definition);
+    stack.quantity = 1;
+
+    let _ = inventory.add_stack(&mut stack);
 }

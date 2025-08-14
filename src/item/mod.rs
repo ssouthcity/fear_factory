@@ -17,6 +17,9 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((ManifestPlugin::<Item>::new("manifest/items.toml"),));
 
     app.add_plugins((assets::plugin, recipes::plugin));
+
+    app.register_type::<PlayerInventory>()
+        .add_systems(Startup, spawn_player_inventory);
 }
 
 #[derive(Debug, Deserialize, TypePath)]
@@ -24,4 +27,15 @@ pub fn plugin(app: &mut App) {
 pub struct Item {
     name: String,
     stack_size: u32,
+}
+
+#[derive(Component, Reflect, Deref, DerefMut)]
+#[reflect(Component)]
+pub struct PlayerInventory(Inventory);
+
+fn spawn_player_inventory(mut commands: Commands) {
+    commands.spawn((
+        Name::new("Player Inventory"),
+        PlayerInventory(Inventory::sized(9)),
+    ));
 }
