@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash, marker::PhantomData};
+use std::{collections::HashMap, fmt::Debug, hash::Hash, marker::PhantomData, ops::Deref};
 
 use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
@@ -13,6 +13,30 @@ pub struct Id<T> {
     pub id: String,
     #[reflect(ignore)]
     _phantom: PhantomData<T>,
+}
+
+impl<T> Debug for Id<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Id<{}>({:?})", std::any::type_name::<T>(), self.id)
+    }
+}
+
+impl<T> From<&'static str> for Id<T> {
+    fn from(value: &'static str) -> Self {
+        Self {
+            id: value.into(),
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<T> From<String> for Id<T> {
+    fn from(value: String) -> Self {
+        Self {
+            id: value,
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl<'de, T> Deserialize<'de> for Id<T> {
@@ -56,7 +80,32 @@ impl<T> PartialEq for Id<T> {
 impl<T> Eq for Id<T> {}
 
 #[derive(Asset, TypePath, Deserialize, Deref)]
-pub struct Manifest<T: TypePath + Sync + Send>(pub HashMap<Id<T>, T>);
+pub struct Manifest<T: TypePath + Sync + Send>(HashMap<Id<T>, T>);
+
+pub struct Definition<'a, T> {
+    pub id: Id<T>,
+    pub definition: &'a T,
+}
+
+impl<'a, T> Deref for Definition<'a, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.definition
+    }
+}
+
+impl<T> Manifest<T>
+where
+    T: TypePath + Sync + Send,
+{
+    pub fn get(&'_ self, id: &Id<T>) -> Option<Definition<'_, T>> {
+        self.0.get(id).map(|definition| Definition {
+            id: id.clone(),
+            definition,
+        })
+    }
+}
 
 #[derive(Debug, Error)]
 pub enum RawManifestLoaderError {

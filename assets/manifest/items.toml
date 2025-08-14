@@ -1,6 +1,6 @@
 [coal]
 name = "Coal"
-stack_size = 30
+stack_size = 100
 
 [iron_ore]
 name = "Iron Ore"

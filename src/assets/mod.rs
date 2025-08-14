@@ -1,3 +1,3 @@
 mod manifest;
 
-pub use manifest::{Id, Manifest, ManifestParam, ManifestPlugin};
+pub use manifest::{Definition, Id, ManifestParam, ManifestPlugin};
