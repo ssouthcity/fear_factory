@@ -8,7 +8,7 @@ use bevy::{
 use serde::Deserialize;
 use thiserror::Error;
 
-#[derive(Reflect)]
+#[derive(Reflect, Component)]
 pub struct Id<T> {
     pub id: String,
     #[reflect(ignore)]
@@ -220,7 +220,7 @@ pub struct ManifestParam<'w, T: TypePath + Sync + Send> {
 }
 
 impl<'w, T: TypePath + Sync + Send> ManifestParam<'w, T> {
-    pub fn get(&self) -> Option<&Manifest<T>> {
+    pub fn read(&self) -> Option<&Manifest<T>> {
         self.assets.get(&self.handle.0)
     }
 }

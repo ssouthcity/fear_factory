@@ -1,29 +1,38 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 use rand::Rng;
+use serde::Deserialize;
 
 use crate::{
-    assets::manifest::{Id, ManifestParam},
+    assets::manifest::{Id, ManifestParam, ManifestPlugin},
     item::{Item, PlayerInventory, Stack},
-    sandbox::{COAL_DEPOSITS, IRON_DEPOSITS, SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
+    sandbox::{SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
+    screens::Screen,
     ui::{Interact, Interactable, YSort},
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<DepositAssets>();
+    app.add_plugins(ManifestPlugin::<Deposit>::new("manifest/deposits.toml"));
 
-    app.init_resource::<DepositAssets>();
-
-    app.add_systems(Startup, load_deposit_assets);
+    app.register_type::<DepositAssets>()
+        .init_resource::<DepositAssets>()
+        .add_systems(Startup, load_deposit_assets);
 
     app.add_systems(
-        Startup,
+        OnEnter(Screen::Gameplay),
         spawn_deposits
             .after(load_deposit_assets)
             .in_set(SandboxSpawnSystems::SpawnDeposits),
     );
 
     app.add_observer(on_mine_deposit);
+}
+
+#[derive(Debug, Deserialize, TypePath)]
+pub struct Deposit {
+    name: String,
+    item_id: Id<Item>,
+    quantity: u32,
 }
 
 #[derive(Resource, Reflect, Default)]
@@ -33,14 +42,14 @@ pub struct DepositAssets {
 }
 
 impl DepositAssets {
-    fn sprite(&self, item_id: Id<Item>) -> impl Bundle {
+    fn sprite(&self, item_id: &Id<Deposit>) -> impl Bundle {
         (
             Sprite::sized(Vec2::splat(64.0)),
             AseSlice {
                 aseprite: self.aseprite.clone(),
                 name: match item_id.id.as_str() {
                     "coal" => "coal deposit".to_string(),
-                    "iron_ore" => "iron ore deposit".to_string(),
+                    "iron" => "iron ore deposit".to_string(),
                     _ => unreachable!("invalid deposit"),
                 },
             },
@@ -54,57 +63,47 @@ fn load_deposit_assets(mut deposit_assets: ResMut<DepositAssets>, asset_server: 
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct Deposit(pub Id<Item>);
+pub struct DepositItem(pub Id<Item>);
 
 fn spawn_deposits(
     mut commands: Commands,
     deposit_assets: Res<DepositAssets>,
     sandbox: Single<Entity, With<Sandbox>>,
+    deposit_manifest: ManifestParam<Deposit>,
 ) {
     let mut rng = rand::rng();
 
-    for _ in 0..COAL_DEPOSITS {
-        commands.spawn((
-            Name::new("Coal Deposit"),
-            Transform::from_xyz(
-                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
-                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
-                1.0,
-            ),
-            YSort(0.1),
-            ChildOf(*sandbox),
-            deposit_assets.sprite("coal".into()),
-            Pickable::default(),
-            Deposit("coal".into()),
-            Interactable::default(),
-        ));
-    }
+    let Some(deposits) = deposit_manifest.read() else {
+        return;
+    };
 
-    for _ in 0..IRON_DEPOSITS {
-        commands.spawn((
-            Name::new("Iron Deposit"),
-            Transform::from_xyz(
-                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
-                rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
-                1.0,
-            ),
-            YSort(0.1),
-            ChildOf(*sandbox),
-            deposit_assets.sprite("iron_ore".into()),
-            Pickable::default(),
-            Deposit("iron_ore".into()),
-            Interactable::default(),
-        ));
+    for (id, deposit) in deposits.iter() {
+        for _ in 0..deposit.quantity {
+            commands.spawn((
+                Name::new(deposit.name.clone()),
+                Transform::from_xyz(
+                    rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
+                    rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
+                    1.0,
+                ),
+                ChildOf(*sandbox),
+                YSort(0.1),
+                deposit_assets.sprite(id),
+                Pickable::default(),
+                Interactable::default(),
+                DepositItem(deposit.item_id.clone()),
+            ));
+        }
     }
 }
 
 fn on_mine_deposit(
     trigger: Trigger<Interact>,
-    deposits: Query<&Deposit>,
+    deposits: Query<&DepositItem>,
     mut inventory: Single<&mut PlayerInventory>,
     item_manifest: ManifestParam<Item>,
 ) {
-    let Some(items) = item_manifest.get() else {
+    let Some(items) = item_manifest.read() else {
         return;
     };
 

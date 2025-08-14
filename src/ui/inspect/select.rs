@@ -24,7 +24,7 @@ pub fn plugin(app: &mut App) {
 struct SelectRecipeButton(Id<Recipe>);
 
 pub fn recipe_select_menu(mut commands: Commands, recipe_manifest: ManifestParam<Recipe>) {
-    let Some(manifest) = recipe_manifest.get() else {
+    let Some(manifest) = recipe_manifest.read() else {
         return;
     };
 

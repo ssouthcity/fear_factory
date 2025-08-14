@@ -5,16 +5,16 @@ mod deposit;
 mod sandbox;
 
 pub use build::{Buildable, Building, QueueSpawnBuilding};
-pub use deposit::Deposit;
+pub use deposit::DepositItem;
 pub use sandbox::Sandbox;
 
+use crate::screens::Screen;
+
 pub const SANDBOX_MAP_SIZE: f32 = 1600.0;
-pub const COAL_DEPOSITS: u8 = 4;
-pub const IRON_DEPOSITS: u8 = 8;
 
 pub fn plugin(app: &mut App) {
     app.configure_sets(
-        Startup,
+        OnEnter(Screen::Gameplay),
         (
             SandboxSpawnSystems::SpawnSandbox,
             SandboxSpawnSystems::SpawnDeposits,

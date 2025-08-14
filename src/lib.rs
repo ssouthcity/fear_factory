@@ -14,6 +14,7 @@ mod machine;
 mod power;
 mod prefabs;
 mod sandbox;
+mod screens;
 mod theme;
 mod ui;
 
@@ -48,6 +49,7 @@ impl Plugin for FactoryGamePlugin {
             machine::plugin,
             power::plugin,
             sandbox::plugin,
+            screens::plugin,
             ui::plugin,
         ));
 

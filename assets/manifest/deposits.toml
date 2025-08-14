@@ -1,0 +1,9 @@
+[coal]
+name = "Coal"
+item_id = "coal"
+quantity = 6
+
+[iron]
+name = "Iron"
+item_id = "iron_ore"
+quantity = 14

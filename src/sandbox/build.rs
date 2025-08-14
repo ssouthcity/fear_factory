@@ -6,7 +6,7 @@ use crate::{
     FactorySystems,
     machine::work::Frequency,
     prefabs,
-    sandbox::{Deposit, Sandbox},
+    sandbox::{DepositItem, Sandbox},
     ui::{HotbarItemDeselected, HotbarItemSelected, Inspect, Interact, YSort},
 };
 
@@ -98,7 +98,7 @@ fn spawn_buildings(
     mut events: EventReader<QueueSpawnBuilding>,
     mut commands: Commands,
     world: Single<Entity, With<Sandbox>>,
-    deposits: Query<&Deposit>,
+    deposits: Query<&DepositItem>,
 ) {
     for event in events.read() {
         let common = (

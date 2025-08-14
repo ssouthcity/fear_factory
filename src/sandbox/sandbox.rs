@@ -3,6 +3,7 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     sandbox::{QueueSpawnBuilding, SANDBOX_MAP_SIZE, SandboxSpawnSystems, build::Preview},
+    screens::Screen,
     ui::HotbarSelection,
 };
 
@@ -15,7 +16,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Startup, load_sandbox_assets);
 
     app.add_systems(
-        Startup,
+        OnEnter(Screen::Gameplay),
         spawn_sandbox
             .after(load_sandbox_assets)
             .in_set(SandboxSpawnSystems::SpawnSandbox),

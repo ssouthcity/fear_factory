@@ -32,7 +32,7 @@ pub fn open_recipe_menu(
         return;
     };
 
-    let Some(manifest) = recipe_manifest.get() else {
+    let Some(manifest) = recipe_manifest.read() else {
         return;
     };
 

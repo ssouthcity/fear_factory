@@ -43,7 +43,7 @@ fn on_select_recipe(
 ) {
     let event = trigger.event();
 
-    let Some(manifest) = recipe_manifest.get() else {
+    let Some(manifest) = recipe_manifest.read() else {
         warn!("Recipes have not been loaded");
         return;
     };
