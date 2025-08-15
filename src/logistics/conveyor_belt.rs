@@ -8,11 +8,11 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     FactorySystems,
-    assets::manifest::Id,
+    assets::manifest::{Id, ManifestParam},
     dismantle::QueueDismantle,
-    item::{Item, ItemAssets},
+    item::{Item, ItemAssets, Stack},
     logistics::{
-        ConveyorHoleOf, InputFilter,
+        ConveyorHoleOf,
         io::{ResourceInputInventory, ResourceOutputInventory},
     },
     sandbox::Sandbox,
@@ -251,9 +251,14 @@ fn receive_items_from_belt(
         &ConveyoredItemOf,
     )>,
     conveyor_holes: Query<&ConveyorHoleOf>,
-    mut inputs: Query<(&mut ResourceInputInventory, Option<&InputFilter>)>,
+    mut inputs: Query<&mut ResourceInputInventory>,
     mut commands: Commands,
+    item_manifest: ManifestParam<Item>,
 ) {
+    let Some(items) = item_manifest.read() else {
+        return;
+    };
+
     for (entity, item, progress, item_of) in conveyored_items {
         if progress.0 < 1.0 {
             continue;
@@ -270,15 +275,17 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let Ok((mut input, filter)) = inputs.get_mut(dropoff_point) else {
+        let Ok(mut input) = inputs.get_mut(dropoff_point) else {
             continue;
         };
 
-        if filter.is_some_and(|filter| !filter.contains(&item.0)) {
+        let Some(item_def) = items.get(&item.0) else {
             continue;
-        }
+        };
 
-        if input.0.push(&item.0).is_ok() {
+        let mut stack = Stack::from(&item_def).with_quantity(1);
+
+        if input.add_stack(&mut stack).is_ok() {
             commands.entity(entity).despawn();
         }
     }

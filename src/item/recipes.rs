@@ -1,12 +1,12 @@
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 
 use bevy::prelude::*;
 use serde::Deserialize;
 
 use crate::{
     assets::manifest::{Id, ManifestParam, ManifestPlugin},
-    item::Item,
-    logistics::InputFilter,
+    item::{Item, Stack},
+    logistics::{ResourceInput, ResourceOutput},
     machine::work::Frequency,
 };
 
@@ -20,11 +20,10 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Debug, Deserialize, TypePath)]
-#[allow(dead_code)]
 pub struct Recipe {
     pub name: String,
-    pub input: Vec<(Id<Item>, u32)>,
-    pub output: Vec<(Id<Item>, u32)>,
+    pub input: HashMap<Id<Item>, u32>,
+    pub output: HashMap<Id<Item>, u32>,
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
 }
@@ -39,30 +38,48 @@ pub struct SelectRecipe(pub Id<Recipe>);
 fn on_select_recipe(
     trigger: Trigger<SelectRecipe>,
     recipe_manifest: ManifestParam<Recipe>,
+    item_manifest: ManifestParam<Item>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
 
-    let Some(manifest) = recipe_manifest.read() else {
+    let Some(recipes) = recipe_manifest.read() else {
         warn!("Recipes have not been loaded");
         return;
     };
 
-    let Some(recipe) = manifest.get(&event.0) else {
+    let Some(items) = item_manifest.read() else {
+        warn!("Items have not been loaded");
+        return;
+    };
+
+    let Some(recipe) = recipes.get(&event.0) else {
         warn!("Attempted to select invalid recipe");
         return;
     };
 
-    let mut input_filter = InputFilter::default();
-    for (item_id, _) in recipe.input.iter() {
-        input_filter.insert(item_id.clone().into());
-    }
+    let input_items = recipe
+        .input
+        .iter()
+        .map(|(id, quantity)| {
+            let def = items.get(id).expect("Recipe refers to non-existent item");
+            Stack::from(&def).with_quantity(*quantity)
+        })
+        .collect();
+
+    let output_items = recipe
+        .output
+        .iter()
+        .map(|(id, quantity)| {
+            let def = items.get(id).expect("Recipe refers to non-existent item");
+            Stack::from(&def).with_quantity(*quantity)
+        })
+        .collect();
 
     commands.entity(trigger.target()).insert((
         SelectedRecipe(Some(event.0.clone())),
-        // ResourceInput(recipe.input.clone()),
-        // ResourceOutput(recipe.output.clone()),
+        ResourceInput(input_items),
+        ResourceOutput(output_items),
         Frequency(recipe.duration),
-        input_filter,
     ));
 }

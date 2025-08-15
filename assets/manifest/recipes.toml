@@ -1,19 +1,11 @@
 [smelt_iron]
 name = "Smelt Iron"
-input = [
-  ["iron_ore", 30]
-]
-output = [
-  ["iron_ingot", 30]
-]
+input.iron_ore = 30
+output.iron_ingot = 30
 duration = "20s"
 
 [iron_plates]
 name = "Iron Plates"
-input = [
-  ["iron_ingot", 30]
-]
-output = [
-  ["iron_plate", 15]
-]
+input.iron_ingot = 30
+output.iron_plate = 15
 duration = "30s"

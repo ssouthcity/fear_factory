@@ -15,9 +15,15 @@ pub enum InventoryError {
     InventoryFull,
 }
 
-#[derive(Debug, Reflect, Default)]
+#[derive(Debug, Reflect)]
 pub struct Inventory {
     slots: Vec<Option<Stack>>,
+}
+
+impl Default for Inventory {
+    fn default() -> Self {
+        Self::sized(1)
+    }
 }
 
 #[allow(dead_code)]

@@ -1,11 +1,8 @@
-use std::collections::HashSet;
-
 use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    assets::manifest::Id,
-    item::{Inventory, Item},
+    item::{Inventory, Stack},
     machine::{
         Machine,
         work::{BeginWork, WorkCompleted, Working},
@@ -29,12 +26,12 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
 #[require(ResourceInput, ResourceOutputInventory)]
-pub struct ResourceOutput(pub Inventory);
+pub struct ResourceOutput(pub Vec<Stack>);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
 #[require(ResourceInputInventory)]
-pub struct ResourceInput(pub Inventory);
+pub struct ResourceInput(pub Vec<Stack>);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
@@ -44,18 +41,6 @@ pub struct ResourceInputInventory(pub Inventory);
 #[reflect(Component)]
 pub struct ResourceOutputInventory(pub Inventory);
 
-#[derive(Component, Reflect, Deref, DerefMut, Default)]
-#[reflect(Component)]
-pub struct InputFilter(HashSet<Id<Item>>);
-
-impl InputFilter {
-    #[allow(dead_code)]
-    pub fn with_item(mut self, item_id: Id<Item>) -> Self {
-        self.insert(item_id);
-        self
-    }
-}
-
 fn begin_work(
     machines: Query<
         (Entity, &ResourceInput, &mut ResourceInputInventory),
@@ -64,21 +49,34 @@ fn begin_work(
     mut events: EventWriter<BeginWork>,
 ) {
     for (entity, resource_input, mut inventory) in machines {
-        if inventory.0.remove_inventory(&resource_input.0).is_ok() {
-            events.write(BeginWork(entity));
+        let has_enough_items = resource_input
+            .0
+            .iter()
+            .all(|stack| inventory.total_quantity_of(&stack.item_id) >= stack.quantity);
+
+        if !has_enough_items {
+            return;
         }
+
+        for stack in resource_input.0.iter() {
+            let _ = inventory.remove_stack(stack);
+        }
+
+        events.write(BeginWork(entity));
     }
 }
 
 fn move_output_to_output_inventory(
     mut events: EventReader<WorkCompleted>,
-    mut outputs: Query<(&mut ResourceOutput, &mut ResourceOutputInventory)>,
+    mut outputs: Query<(&ResourceOutput, &mut ResourceOutputInventory)>,
 ) {
     for event in events.read() {
-        let Ok((mut output, mut output_inventory)) = outputs.get_mut(event.0) else {
+        let Ok((output, mut output_inventory)) = outputs.get_mut(event.0) else {
             continue;
         };
 
-        let _ = output_inventory.0.add_inventory(&mut output.0);
+        for stack in output.0.clone().iter_mut() {
+            let _ = output_inventory.0.add_stack(stack);
+        }
     }
 }

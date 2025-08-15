@@ -12,7 +12,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]
 pub struct ItemAssets {
-    aseprite: Handle<Aseprite>,
+    pub aseprite: Handle<Aseprite>,
 }
 
 impl FromWorld for ItemAssets {

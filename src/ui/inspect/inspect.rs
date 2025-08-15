@@ -40,6 +40,18 @@ pub fn open_recipe_menu(
         return;
     };
 
+    let inputs: Vec<_> = recipe
+        .input
+        .iter()
+        .map(|(item_id, quantity)| Text::new(format!("{:?} {}", item_id, quantity)))
+        .collect();
+
+    let outputs: Vec<_> = recipe
+        .output
+        .iter()
+        .map(|(item_id, quantity)| Text::new(format!("{:?} {}", item_id, quantity)))
+        .collect();
+
     commands.spawn((
         Name::new("Recipe Menu"),
         StateScoped(InspectionMenuState::RecipeInspect),
@@ -84,14 +96,30 @@ pub fn open_recipe_menu(
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    children![(
-                        TextLayout::new_with_justify(JustifyText::Center),
-                        Text::new(format!(
-                            "{} seconds",
-                            recipe.duration.as_secs_f32().to_string()
-                        )),
-                        TextColor(Color::BLACK),
-                    ),],
+                    children![
+                        (
+                            Node {
+                                flex_direction: FlexDirection::Column,
+                                ..default()
+                            },
+                            Children::spawn(inputs),
+                        ),
+                        (
+                            TextLayout::new_with_justify(JustifyText::Center),
+                            Text::new(format!(
+                                "{} seconds",
+                                recipe.duration.as_secs_f32().to_string()
+                            )),
+                            TextColor(Color::BLACK),
+                        ),
+                        (
+                            Node {
+                                flex_direction: FlexDirection::Column,
+                                ..default()
+                            },
+                            Children::spawn(outputs),
+                        ),
+                    ],
                 )),
             )),
         )),

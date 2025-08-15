@@ -13,6 +13,11 @@ pub struct Stack {
 }
 
 impl Stack {
+    pub fn with_quantity(mut self, quantity: u32) -> Self {
+        self.quantity = quantity;
+        self
+    }
+
     pub fn remaining_space(&self) -> u32 {
         self.max_quantity - self.quantity
     }
