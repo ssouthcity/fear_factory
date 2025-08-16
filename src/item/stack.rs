@@ -27,12 +27,12 @@ impl Stack {
     }
 }
 
-impl<'a> From<&Definition<'a, Item>> for Stack {
-    fn from(value: &Definition<'a, Item>) -> Self {
+impl<'a> From<&Definition<Item>> for Stack {
+    fn from(value: &Definition<Item>) -> Self {
         Self {
             item_id: value.id.clone(),
             quantity: 0,
-            max_quantity: value.definition.stack_size,
+            max_quantity: value.stack_size,
         }
     }
 }

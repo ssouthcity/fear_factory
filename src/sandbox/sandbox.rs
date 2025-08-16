@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
+    assets::LoadResource,
     sandbox::{QueueSpawnBuilding, SANDBOX_MAP_SIZE, SandboxSpawnSystems, build::Preview},
     screens::Screen,
     ui::HotbarSelection,
@@ -11,26 +12,28 @@ pub fn plugin(app: &mut App) {
     app.register_type::<SandboxAssets>();
     app.register_type::<Sandbox>();
 
-    app.init_resource::<SandboxAssets>();
-
-    app.add_systems(Startup, load_sandbox_assets);
+    app.load_resource::<SandboxAssets>();
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
-        spawn_sandbox
-            .after(load_sandbox_assets)
-            .in_set(SandboxSpawnSystems::SpawnSandbox),
+        spawn_sandbox.in_set(SandboxSpawnSystems::SpawnSandbox),
     );
 }
 
-#[derive(Resource, Reflect, Default)]
+#[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
 pub struct SandboxAssets {
     aseprite: Handle<Aseprite>,
 }
 
-fn load_sandbox_assets(mut sandbox_assets: ResMut<SandboxAssets>, asset_server: Res<AssetServer>) {
-    sandbox_assets.aseprite = asset_server.load("terrain.aseprite");
+impl FromWorld for SandboxAssets {
+    fn from_world(world: &mut World) -> Self {
+        let assets = world.resource::<AssetServer>();
+
+        Self {
+            aseprite: assets.load("terrain.aseprite"),
+        }
+    }
 }
 
 #[derive(Component, Reflect, Default)]

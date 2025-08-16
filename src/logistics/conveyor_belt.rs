@@ -8,11 +8,11 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     FactorySystems,
-    assets::manifest::{Id, ManifestParam},
+    assets::manifest::{Id, Manifest},
     dismantle::QueueDismantle,
     item::{Item, ItemAssets, Stack},
     logistics::{
-        ConveyorHoleOf,
+        ConveyorHoleOf, LogisticAssets,
         io::{ResourceInputInventory, ResourceOutputInventory},
     },
     sandbox::Sandbox,
@@ -110,7 +110,7 @@ pub struct ConveyoredItemProgress(f32);
 fn build_conveyor_belts(
     mut events: EventReader<QueueConveyorSpawn>,
     transforms: Query<&GlobalTransform>,
-    asset_server: Res<AssetServer>,
+    logistic_assets: Res<LogisticAssets>,
     mut commands: Commands,
     sandbox: Single<Entity, With<Sandbox>>,
 ) {
@@ -139,7 +139,7 @@ fn build_conveyor_belts(
                 ..default()
             },
             AseAnimation {
-                aseprite: asset_server.load("conveyor.aseprite"),
+                aseprite: logistic_assets.conveyor_belt.clone(),
                 animation: Animation::tag("idle"),
             },
             ConveyorBelt(event.0, event.1),
@@ -253,11 +253,12 @@ fn receive_items_from_belt(
     conveyor_holes: Query<&ConveyorHoleOf>,
     mut inputs: Query<&mut ResourceInputInventory>,
     mut commands: Commands,
-    item_manifest: ManifestParam<Item>,
+    item_manifests: Res<Assets<Manifest<Item>>>,
+    item_assets: Res<ItemAssets>,
 ) {
-    let Some(items) = item_manifest.read() else {
-        return;
-    };
+    let items = item_manifests
+        .get(&item_assets.manifest)
+        .expect("Item manifest not loaded");
 
     for (entity, item, progress, item_of) in conveyored_items {
         if progress.0 < 1.0 {
@@ -283,7 +284,7 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let mut stack = Stack::from(&item_def).with_quantity(1);
+        let mut stack = Stack::from(item_def).with_quantity(1);
 
         if input.add_stack(&mut stack).is_ok() {
             commands.entity(entity).despawn();

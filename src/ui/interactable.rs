@@ -1,9 +1,14 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
+use crate::assets::LoadResource;
+
 const INTERACTABLE_BUTTON: KeyCode = KeyCode::KeyE;
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<InteractionAssets>()
+        .load_resource::<InteractionAssets>();
+
     app.register_type::<Interactable>();
     app.register_type::<Interact>();
 
@@ -12,7 +17,6 @@ pub fn plugin(app: &mut App) {
     app.register_type::<ButtonIndicatorOf>();
 
     app.init_resource::<HoveredInteractable>();
-    app.init_resource::<InteractionAssets>();
 
     app.add_observer(on_hover);
     app.add_observer(on_leave);
@@ -31,7 +35,7 @@ pub struct Interact;
 #[reflect(Resource)]
 struct HoveredInteractable(Option<Entity>);
 
-#[derive(Resource, Reflect)]
+#[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
 struct InteractionAssets(Handle<Aseprite>);
 

@@ -4,8 +4,8 @@ use bevy::{
 };
 
 use crate::{
-    assets::manifest::{Id, ManifestParam},
-    item::{Recipe, SelectRecipe},
+    assets::manifest::{Id, Manifest},
+    item::{Recipe, RecipeAssets, SelectRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
@@ -23,10 +23,14 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 struct SelectRecipeButton(Id<Recipe>);
 
-pub fn recipe_select_menu(mut commands: Commands, recipe_manifest: ManifestParam<Recipe>) {
-    let Some(manifest) = recipe_manifest.read() else {
-        return;
-    };
+pub fn recipe_select_menu(
+    mut commands: Commands,
+    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
+    recipe_assets: Res<RecipeAssets>,
+) {
+    let manifest = recipe_manifests
+        .get(&recipe_assets.manifest)
+        .expect("Recipe manifest not loaded");
 
     let recipes = manifest
         .iter()

@@ -1,9 +1,9 @@
-[coal]
-name = "Coal"
+[coal_deposit]
+name = "Coal Deposit"
 item_id = "coal"
 quantity = 6
 
-[iron]
-name = "Iron"
+[iron_ore_deposit]
+name = "Iron Ore Deposit"
 item_id = "iron_ore"
 quantity = 14

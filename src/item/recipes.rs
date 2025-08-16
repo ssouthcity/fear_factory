@@ -4,8 +4,11 @@ use bevy::prelude::*;
 use serde::Deserialize;
 
 use crate::{
-    assets::manifest::{Id, ManifestParam, ManifestPlugin},
-    item::{Item, Stack},
+    assets::{
+        LoadResource,
+        manifest::{Id, Manifest, ManifestPlugin},
+    },
+    item::{Item, ItemAssets, Stack},
     logistics::{ResourceInput, ResourceOutput},
     machine::work::Frequency,
 };
@@ -13,10 +16,27 @@ use crate::{
 pub fn plugin(app: &mut App) {
     app.register_type::<SelectedRecipe>();
     app.register_type::<SelectRecipe>();
+    app.register_type::<RecipeAssets>();
 
-    app.add_plugins(ManifestPlugin::<Recipe>::new("manifest/recipes.toml"));
+    app.add_plugins(ManifestPlugin::<Recipe>::default())
+        .load_resource::<RecipeAssets>();
 
     app.add_observer(on_select_recipe);
+}
+
+#[derive(Asset, Resource, Reflect, Clone)]
+#[reflect(Resource)]
+pub struct RecipeAssets {
+    pub manifest: Handle<Manifest<Recipe>>,
+}
+
+impl FromWorld for RecipeAssets {
+    fn from_world(world: &mut World) -> Self {
+        let assets = world.resource::<AssetServer>();
+        Self {
+            manifest: assets.load("manifest/recipes.toml"),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, TypePath)]
@@ -37,23 +57,23 @@ pub struct SelectRecipe(pub Id<Recipe>);
 
 fn on_select_recipe(
     trigger: Trigger<SelectRecipe>,
-    recipe_manifest: ManifestParam<Recipe>,
-    item_manifest: ManifestParam<Item>,
+    recipe_assets: Res<RecipeAssets>,
+    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
+    item_assets: Res<ItemAssets>,
+    item_manifests: Res<Assets<Manifest<Item>>>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
 
-    let Some(recipes) = recipe_manifest.read() else {
-        warn!("Recipes have not been loaded");
-        return;
-    };
+    let recipe_manifest = recipe_manifests
+        .get(&recipe_assets.manifest)
+        .expect("Recipe manifests not loaded");
 
-    let Some(items) = item_manifest.read() else {
-        warn!("Items have not been loaded");
-        return;
-    };
+    let item_manifest = item_manifests
+        .get(&item_assets.manifest)
+        .expect("Item manifests not loaded");
 
-    let Some(recipe) = recipes.get(&event.0) else {
+    let Some(recipe) = recipe_manifest.get(&event.0) else {
         warn!("Attempted to select invalid recipe");
         return;
     };
@@ -62,8 +82,10 @@ fn on_select_recipe(
         .input
         .iter()
         .map(|(id, quantity)| {
-            let def = items.get(id).expect("Recipe refers to non-existent item");
-            Stack::from(&def).with_quantity(*quantity)
+            let def = item_manifest
+                .get(id)
+                .expect("Recipe refers to non-existent item");
+            Stack::from(def).with_quantity(*quantity)
         })
         .collect();
 
@@ -71,8 +93,10 @@ fn on_select_recipe(
         .output
         .iter()
         .map(|(id, quantity)| {
-            let def = items.get(id).expect("Recipe refers to non-existent item");
-            Stack::from(&def).with_quantity(*quantity)
+            let def = item_manifest
+                .get(id)
+                .expect("Recipe refers to non-existent item");
+            Stack::from(def).with_quantity(*quantity)
         })
         .collect();
 

@@ -4,8 +4,8 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    assets::manifest::ManifestParam,
-    item::{Item, Stack},
+    assets::manifest::Manifest,
+    item::{Item, ItemAssets, Stack},
     logistics::ResourceOutput,
     machine::work::Frequency,
     prefabs,
@@ -102,7 +102,8 @@ fn spawn_buildings(
     mut commands: Commands,
     world: Single<Entity, With<Sandbox>>,
     deposits: Query<&DepositItem>,
-    item_manifest: ManifestParam<Item>,
+    item_manifests: Res<Assets<Manifest<Item>>>,
+    item_assets: Res<ItemAssets>,
 ) {
     for event in events.read() {
         let common = (
@@ -123,9 +124,9 @@ fn spawn_buildings(
                     return;
                 };
 
-                let Some(items) = item_manifest.read() else {
-                    return;
-                };
+                let items = item_manifests
+                    .get(&item_assets.manifest)
+                    .expect("Item manifest not loaded");
 
                 let Some(item_definition) = items.get(&deposit.0) else {
                     error!("Deposit refers to non-existent item {:?}", deposit.0);
@@ -136,7 +137,7 @@ fn spawn_buildings(
                     prefabs::miner(),
                     common,
                     Frequency(Duration::from_secs_f32(40.0 / 60.0)),
-                    ResourceOutput(vec![Stack::from(&item_definition).with_quantity(1)]),
+                    ResourceOutput(vec![Stack::from(item_definition).with_quantity(1)]),
                 ));
             }
             Buildable::CoalGenerator => {

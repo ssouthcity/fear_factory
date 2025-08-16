@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::AseSlice;
 
-use crate::logistics::conveyor_belt::QueueConveyorSpawn;
+use crate::{
+    FactorySystems,
+    logistics::{LogisticAssets, conveyor_belt::QueueConveyorSpawn},
+};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ConveyorHole>();
@@ -12,7 +15,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (add_child_of_to_conveyor_hole, add_sprite_to_conveyor_hole),
+        (add_child_of_to_conveyor_hole, add_sprite_to_conveyor_hole).in_set(FactorySystems::UI),
     );
 }
 
@@ -46,14 +49,14 @@ fn add_child_of_to_conveyor_hole(
 
 fn add_sprite_to_conveyor_hole(
     query: Query<(Entity, &Transform), Added<ConveyorHole>>,
-    asset_server: Res<AssetServer>,
+    logistic_assets: Res<LogisticAssets>,
     mut commands: Commands,
 ) {
     for (entity, transform) in query {
         commands.entity(entity).insert((
             Sprite::sized(Vec2::splat(24.0)),
             AseSlice {
-                aseprite: asset_server.load("conveyor_holes.aseprite"),
+                aseprite: logistic_assets.conveyor_holes.clone(),
                 name: if transform.translation.x >= 0.0 {
                     "right".to_string()
                 } else {

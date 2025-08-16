@@ -4,8 +4,8 @@ use bevy::{
 };
 
 use crate::{
-    assets::manifest::ManifestParam,
-    item::{Recipe, SelectedRecipe},
+    assets::manifest::Manifest,
+    item::{Recipe, RecipeAssets, SelectedRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
@@ -22,7 +22,8 @@ pub fn open_recipe_menu(
     inspected_entity: Res<InspectedEntity>,
     selected_recipes: Query<&SelectedRecipe>,
     // icons: Res<ItemAssets>,
-    recipe_manifest: ManifestParam<Recipe>,
+    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
+    recipe_assets: Res<RecipeAssets>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
         return;
@@ -32,9 +33,9 @@ pub fn open_recipe_menu(
         return;
     };
 
-    let Some(manifest) = recipe_manifest.read() else {
-        return;
-    };
+    let manifest = recipe_manifests
+        .get(&recipe_assets.manifest)
+        .expect("Recipe manifest not loaded");
 
     let Some(recipe) = manifest.get(&recipe_id) else {
         return;

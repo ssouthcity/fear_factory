@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::once_after_delay};
 
-use crate::screens::Screen;
+use crate::{assets::is_finished_loading, screens::Screen};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Loading), spawn_loading_screen);
@@ -11,7 +11,8 @@ pub fn plugin(app: &mut App) {
         Update,
         transition_to_gameplay
             .run_if(once_after_delay(Duration::from_secs(1)))
-            .run_if(in_state(Screen::Loading)),
+            .run_if(in_state(Screen::Loading))
+            .run_if(is_finished_loading),
     );
 }
 
