@@ -10,7 +10,6 @@ use crate::{
     },
     item::{Inventory, Item, ItemAssets, Stack},
     logistics::{InputInventory, OutputInventory},
-    machine::work::Frequency,
 };
 
 pub fn plugin(app: &mut App) {
@@ -81,23 +80,23 @@ fn on_select_recipe(
     };
 
     let mut input_inventory = Inventory::default();
-    for (id, quantity) in recipe.input.iter() {
+    for id in recipe.input.keys() {
         let def = item_manifest
             .get(id)
             .expect("Recipe refers to non-existent item");
 
-        let slot = Stack::from(def).with_quantity(*quantity);
+        let slot = Stack::from(def);
 
         input_inventory.add_slot(slot);
     }
 
     let mut output_inventory = Inventory::default();
-    for (id, quantity) in recipe.output.iter() {
+    for id in recipe.output.keys() {
         let def = item_manifest
             .get(id)
             .expect("Recipe refers to non-existent item");
 
-        let slot = Stack::from(def).with_quantity(*quantity);
+        let slot = Stack::from(def);
 
         output_inventory.add_slot(slot);
     }
@@ -106,6 +105,5 @@ fn on_select_recipe(
         SelectedRecipe(Some(event.0.clone())),
         InputInventory(input_inventory),
         OutputInventory(output_inventory),
-        Frequency(recipe.duration),
     ));
 }

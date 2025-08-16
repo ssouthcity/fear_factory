@@ -4,7 +4,7 @@ use crate::{
     animation::AnimatedMachine,
     item::SelectedRecipe,
     logistics::{ConveyorHole, ConveyorHoles},
-    machine::{Machine, work::Working},
+    machine::{Machine, WorkState, power::Powered},
     power::{PowerConsumer, PowerProducer, socket::PowerSockets},
     ui::Interactable,
 };
@@ -16,8 +16,9 @@ pub fn windmill() -> impl Bundle {
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("windmill.aseprite"),
         PowerProducer(30.0),
-        Working,
         PowerSockets::single(),
+        WorkState::PerpetualWorker,
+        Powered,
         Interactable,
     )
 }

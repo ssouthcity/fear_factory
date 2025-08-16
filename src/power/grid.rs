@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     FactorySystems,
     dismantle::QueueDismantle,
-    machine::{power::Powered, work::Working},
+    machine::{WorkState, power::Powered},
     power::{FuseBlown, PowerConsumer, PowerProducer, socket::PowerSocketsLinked},
 };
 
@@ -299,10 +299,14 @@ fn reset_power_levels(power_grids: Query<&mut PowerGrid>) {
 }
 
 fn calculate_power_production(
-    power_producers: Query<(&PowerProducer, &PowerGridComponentOf), (With<Powered>, With<Working>)>,
+    power_producers: Query<(&WorkState, &PowerProducer, &PowerGridComponentOf), With<Powered>>,
     mut power_grids: Query<&mut PowerGrid>,
 ) {
-    for (power_producer, power_grid_component_of) in power_producers {
+    for (work_state, power_producer, power_grid_component_of) in power_producers {
+        if !work_state.is_working() {
+            continue;
+        }
+
         let Ok(mut power_grid) = power_grids.get_mut(power_grid_component_of.0) else {
             continue;
         };
@@ -312,10 +316,14 @@ fn calculate_power_production(
 }
 
 fn calculate_power_consumption(
-    power_consumers: Query<(&PowerConsumer, &PowerGridComponentOf), (With<Powered>, With<Working>)>,
+    power_consumers: Query<(&WorkState, &PowerConsumer, &PowerGridComponentOf), With<Powered>>,
     mut power_grids: Query<&mut PowerGrid>,
 ) {
-    for (power_consumer, power_grid_component_of) in power_consumers {
+    for (work_state, power_consumer, power_grid_component_of) in power_consumers {
+        if !work_state.is_working() {
+            continue;
+        }
+
         let Ok(mut power_grid) = power_grids.get_mut(power_grid_component_of.0) else {
             continue;
         };
