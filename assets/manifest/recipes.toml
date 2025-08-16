@@ -13,9 +13,15 @@ name = "Smelt Iron"
 input.iron_ore = 30
 output.iron_ingot = 30
 duration = "20s"
+tags = [
+  { kind = "structure_id", value = "constructor" },
+]
 
 [iron_plates]
 name = "Iron Plates"
 input.iron_ingot = 30
 output.iron_plate = 15
 duration = "30s"
+tags = [
+  { kind = "structure_id", value = "constructor" },
+]

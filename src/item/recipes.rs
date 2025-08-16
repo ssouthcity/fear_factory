@@ -47,6 +47,15 @@ pub struct Recipe {
     pub output: HashMap<Id<Item>, u32>,
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
+    #[serde(default)]
+    pub tags: Vec<RecipeTags>,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+pub enum RecipeTags {
+    // TODO: change into Id<Structure> when implemented
+    StructureId(String),
 }
 
 #[derive(Component, Reflect, Default, Deref, DerefMut)]

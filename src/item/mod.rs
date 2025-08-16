@@ -8,7 +8,7 @@ mod stack;
 
 pub use assets::ItemAssets;
 pub use inventory::Inventory;
-pub use recipes::{Recipe, RecipeAssets, SelectRecipe, SelectedRecipe};
+pub use recipes::{Recipe, RecipeAssets, RecipeTags, SelectRecipe, SelectedRecipe};
 pub use stack::Stack;
 
 pub fn plugin(app: &mut App) {
