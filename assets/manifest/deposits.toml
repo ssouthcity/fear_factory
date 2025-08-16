@@ -1,9 +1,9 @@
 [coal_deposit]
 name = "Coal Deposit"
-item_id = "coal"
+recipe_id = "coal"
 quantity = 6
 
 [iron_ore_deposit]
 name = "Iron Ore Deposit"
-item_id = "iron_ore"
+recipe_id = "iron_ore"
 quantity = 14

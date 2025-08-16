@@ -8,10 +8,10 @@ use crate::{
         LoadResource,
         manifest::{Id, Manifest, ManifestPlugin},
     },
-    item::{Item, ItemAssets, PlayerInventory, Stack},
-    sandbox::{SANDBOX_MAP_SIZE, Sandbox, SandboxSpawnSystems},
+    item::{Item, ItemAssets, PlayerInventory, Recipe, RecipeAssets, Stack},
     screens::Screen,
     ui::{Interact, Interactable, YSort},
+    world::{MAP_SIZE, Terrain, WorldSpawnSystems},
 };
 
 pub fn plugin(app: &mut App) {
@@ -21,7 +21,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
-        spawn_deposits.in_set(SandboxSpawnSystems::SpawnDeposits),
+        spawn_deposits.in_set(WorldSpawnSystems::SpawnDeposits),
     );
 
     app.add_observer(on_mine_deposit);
@@ -30,7 +30,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Debug, Deserialize, TypePath)]
 pub struct Deposit {
     name: String,
-    item_id: Id<Item>,
+    recipe_id: Id<Recipe>,
     quantity: u32,
 }
 
@@ -66,11 +66,11 @@ impl DepositAssets {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct DepositItem(pub Id<Item>);
+pub struct DepositRecipe(pub Id<Recipe>);
 
 fn spawn_deposits(
     mut commands: Commands,
-    sandbox: Single<Entity, With<Sandbox>>,
+    terrain: Single<Entity, With<Terrain>>,
     deposit_assets: Res<DepositAssets>,
     deposit_manifests: Res<Assets<Manifest<Deposit>>>,
 ) {
@@ -85,16 +85,16 @@ fn spawn_deposits(
             commands.spawn((
                 Name::new(deposit.name.clone()),
                 Transform::from_xyz(
-                    rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
-                    rng.random_range(0.0..SANDBOX_MAP_SIZE) - SANDBOX_MAP_SIZE / 2.0,
+                    rng.random_range(0.0..MAP_SIZE) - MAP_SIZE / 2.0,
+                    rng.random_range(0.0..MAP_SIZE) - MAP_SIZE / 2.0,
                     1.0,
                 ),
-                ChildOf(*sandbox),
+                ChildOf(*terrain),
                 YSort(0.1),
                 deposit_assets.sprite(id),
                 Pickable::default(),
-                Interactable::default(),
-                DepositItem(deposit.item_id.clone()),
+                Interactable,
+                DepositRecipe(deposit.recipe_id.clone()),
             ));
         }
     }
@@ -102,24 +102,34 @@ fn spawn_deposits(
 
 fn on_mine_deposit(
     trigger: Trigger<Interact>,
-    deposits: Query<&DepositItem>,
+    deposits: Query<&DepositRecipe>,
     mut inventory: Single<&mut PlayerInventory>,
+    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
+    recipe_assets: Res<RecipeAssets>,
     item_manifests: Res<Assets<Manifest<Item>>>,
     item_assets: Res<ItemAssets>,
 ) {
+    let Ok(deposit_recipe) = deposits.get(trigger.target()) else {
+        return;
+    };
+
+    let recipe = recipe_manifests
+        .get(&recipe_assets.manifest)
+        .expect("Recipe manifest is not loaded")
+        .get(&deposit_recipe.0)
+        .expect("Deposit refers to non-existent recipe");
+
     let items = item_manifests
         .get(&item_assets.manifest)
-        .expect("Item manifest not loaded");
+        .expect("Item manifest is not loaded");
 
-    let Ok(deposit) = deposits.get(trigger.target()) else {
-        return;
-    };
+    for (item_id, quantity) in recipe.output.iter() {
+        let item = items
+            .get(item_id)
+            .expect("Recipe refers to invalid item id");
 
-    let Some(ore_definition) = items.get(&deposit.0) else {
-        return;
-    };
+        let mut stack = Stack::from(item).with_quantity(*quantity);
 
-    let mut stack = Stack::from(ore_definition).with_quantity(1);
-
-    let _ = inventory.add_stack(&mut stack);
+        let _ = inventory.add_stack(&mut stack);
+    }
 }

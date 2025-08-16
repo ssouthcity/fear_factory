@@ -13,10 +13,10 @@ use crate::{
     item::{Item, ItemAssets, Stack},
     logistics::{
         ConveyorHoleOf, LogisticAssets,
-        io::{ResourceInputInventory, ResourceOutputInventory},
+        io::{InputInventory, OutputInventory},
     },
-    sandbox::Sandbox,
     ui::{Interact, Interactable, YSort},
+    world::Terrain,
 };
 
 /// How much space of the belt should be reserved per item
@@ -112,7 +112,7 @@ fn build_conveyor_belts(
     transforms: Query<&GlobalTransform>,
     logistic_assets: Res<LogisticAssets>,
     mut commands: Commands,
-    sandbox: Single<Entity, With<Sandbox>>,
+    sandbox: Single<Entity, With<Terrain>>,
 ) {
     for event in events.read() {
         let from_transform = transforms.get(event.0).unwrap();
@@ -174,7 +174,7 @@ fn place_items_on_belt(
         &mut ConveyorPickupTimer,
     )>,
     conveyor_holes: Query<&ConveyorHoleOf>,
-    mut outputs: Query<&mut ResourceOutputInventory>,
+    mut outputs: Query<&mut OutputInventory>,
     mut commands: Commands,
     item_assets: Res<ItemAssets>,
     time: Res<Time>,
@@ -212,7 +212,7 @@ fn place_items_on_belt(
                     ConveyoredItemOf(entity),
                     ChildOf(entity),
                     Pickable::default(),
-                    Interactable::default(),
+                    Interactable,
                 ))
                 .observe(|trigger: Trigger<Interact>, mut commands: Commands| {
                     commands.entity(trigger.target()).despawn();
@@ -251,7 +251,7 @@ fn receive_items_from_belt(
         &ConveyoredItemOf,
     )>,
     conveyor_holes: Query<&ConveyorHoleOf>,
-    mut inputs: Query<&mut ResourceInputInventory>,
+    mut inputs: Query<&mut InputInventory>,
     mut commands: Commands,
     item_manifests: Res<Assets<Manifest<Item>>>,
     item_assets: Res<ItemAssets>,

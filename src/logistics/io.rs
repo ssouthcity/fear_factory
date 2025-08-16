@@ -2,7 +2,8 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    item::{Inventory, Stack},
+    assets::manifest::Manifest,
+    item::{Inventory, Item, ItemAssets, Recipe, RecipeAssets, SelectedRecipe, Stack},
     machine::{
         Machine,
         work::{BeginWork, WorkCompleted, Working},
@@ -10,10 +11,8 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<ResourceInput>();
-    app.register_type::<ResourceInputInventory>();
-    app.register_type::<ResourceOutput>();
-    app.register_type::<ResourceOutputInventory>();
+    app.register_type::<InputInventory>();
+    app.register_type::<OutputInventory>();
 
     app.add_systems(
         Update,
@@ -25,58 +24,79 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
-#[require(ResourceInput, ResourceOutputInventory)]
-pub struct ResourceOutput(pub Vec<Stack>);
+pub struct InputInventory(pub Inventory);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
-#[require(ResourceInputInventory)]
-pub struct ResourceInput(pub Vec<Stack>);
-
-#[derive(Component, Reflect, Deref, DerefMut, Default)]
-#[reflect(Component)]
-pub struct ResourceInputInventory(pub Inventory);
-
-#[derive(Component, Reflect, Deref, DerefMut, Default)]
-#[reflect(Component)]
-pub struct ResourceOutputInventory(pub Inventory);
+pub struct OutputInventory(pub Inventory);
 
 fn begin_work(
+    mut events: EventWriter<BeginWork>,
     machines: Query<
-        (Entity, &ResourceInput, &mut ResourceInputInventory),
+        (Entity, &SelectedRecipe, &mut InputInventory),
         (With<Machine>, Without<Working>),
     >,
-    mut events: EventWriter<BeginWork>,
+    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
+    recipe_assets: Res<RecipeAssets>,
 ) {
-    for (entity, resource_input, mut inventory) in machines {
-        let has_enough_items = resource_input
-            .0
-            .iter()
-            .all(|stack| inventory.total_quantity_of(&stack.item_id) >= stack.quantity);
+    for (entity, selected_recipe, mut inventory) in machines {
+        let Some(ref recipe_id) = selected_recipe.0 else {
+            continue;
+        };
 
-        if !has_enough_items {
-            return;
-        }
+        let recipe = recipe_manifests
+            .get(&recipe_assets.manifest)
+            .expect("Recipe manifest not loaded")
+            .get(recipe_id)
+            .expect("Selected recipe refers to non-existent id");
 
-        for stack in resource_input.0.iter() {
-            let _ = inventory.remove_stack(stack);
-        }
-
-        events.write(BeginWork(entity));
+        if inventory.consume_input(recipe).is_ok() {
+            events.write(BeginWork(entity));
+        };
     }
 }
 
 fn move_output_to_output_inventory(
     mut events: EventReader<WorkCompleted>,
-    mut outputs: Query<(&ResourceOutput, &mut ResourceOutputInventory)>,
+    mut outputs: Query<(&SelectedRecipe, &mut OutputInventory)>,
+    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
+    recipe_assets: Res<RecipeAssets>,
+    item_manifests: Res<Assets<Manifest<Item>>>,
+    item_assets: Res<ItemAssets>,
 ) {
     for event in events.read() {
-        let Ok((output, mut output_inventory)) = outputs.get_mut(event.0) else {
+        let Ok((selected_recipe, mut output_inventory)) = outputs.get_mut(event.0) else {
             continue;
         };
 
-        for stack in output.0.clone().iter_mut() {
-            let _ = output_inventory.0.add_stack(stack);
+        let Some(ref recipe_id) = selected_recipe.0 else {
+            continue;
+        };
+
+        let recipe = recipe_manifests
+            .get(&recipe_assets.manifest)
+            .expect("Recipe manifest not loaded")
+            .get(recipe_id)
+            .expect("Selected recipe refers to non-existent id");
+
+        let items = item_manifests
+            .get(&item_assets.manifest)
+            .expect("Item manifest not loaded");
+
+        let mut stacks: Vec<Stack> = recipe
+            .output
+            .iter()
+            .map(|(item_id, quantity)| {
+                let item = items
+                    .get(item_id)
+                    .expect("Recipe refers to non-existent item");
+
+                Stack::from(item).with_quantity(*quantity)
+            })
+            .collect();
+
+        for stack in stacks.iter_mut() {
+            let _ = output_inventory.add_stack(stack);
         }
     }
 }

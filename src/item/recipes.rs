@@ -8,8 +8,8 @@ use crate::{
         LoadResource,
         manifest::{Id, Manifest, ManifestPlugin},
     },
-    item::{Item, ItemAssets, Stack},
-    logistics::{ResourceInput, ResourceOutput},
+    item::{Inventory, Item, ItemAssets, Stack},
+    logistics::{InputInventory, OutputInventory},
     machine::work::Frequency,
 };
 
@@ -42,7 +42,9 @@ impl FromWorld for RecipeAssets {
 #[derive(Debug, Deserialize, TypePath)]
 pub struct Recipe {
     pub name: String,
+    #[serde(default)]
     pub input: HashMap<Id<Item>, u32>,
+    #[serde(default)]
     pub output: HashMap<Id<Item>, u32>,
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
@@ -78,32 +80,32 @@ fn on_select_recipe(
         return;
     };
 
-    let input_items = recipe
-        .input
-        .iter()
-        .map(|(id, quantity)| {
-            let def = item_manifest
-                .get(id)
-                .expect("Recipe refers to non-existent item");
-            Stack::from(def).with_quantity(*quantity)
-        })
-        .collect();
+    let mut input_inventory = Inventory::default();
+    for (id, quantity) in recipe.input.iter() {
+        let def = item_manifest
+            .get(id)
+            .expect("Recipe refers to non-existent item");
 
-    let output_items = recipe
-        .output
-        .iter()
-        .map(|(id, quantity)| {
-            let def = item_manifest
-                .get(id)
-                .expect("Recipe refers to non-existent item");
-            Stack::from(def).with_quantity(*quantity)
-        })
-        .collect();
+        let slot = Stack::from(def).with_quantity(*quantity);
+
+        input_inventory.add_slot(slot);
+    }
+
+    let mut output_inventory = Inventory::default();
+    for (id, quantity) in recipe.output.iter() {
+        let def = item_manifest
+            .get(id)
+            .expect("Recipe refers to non-existent item");
+
+        let slot = Stack::from(def).with_quantity(*quantity);
+
+        output_inventory.add_slot(slot);
+    }
 
     commands.entity(trigger.target()).insert((
         SelectedRecipe(Some(event.0.clone())),
-        ResourceInput(input_items),
-        ResourceOutput(output_items),
+        InputInventory(input_inventory),
+        OutputInventory(output_inventory),
         Frequency(recipe.duration),
     ));
 }

@@ -2,7 +2,7 @@ use bevy::{picking::hover::PickingInteraction, prelude::*};
 
 use crate::{
     dismantle::{DismantleTimer, Selection},
-    sandbox::{Building, Sandbox},
+    world::{Building, Terrain},
 };
 
 use super::HIGHLIGHT_COLOR;
@@ -28,7 +28,7 @@ impl Default for HighlightColor {
     }
 }
 
-fn highlight_pickable(query: Query<(&mut Sprite, &PickingInteraction), Without<Sandbox>>) {
+fn highlight_pickable(query: Query<(&mut Sprite, &PickingInteraction), Without<Terrain>>) {
     for (mut sprite, picking_interaction) in query {
         if *picking_interaction != PickingInteraction::None {
             sprite.color = HIGHLIGHT_COLOR;

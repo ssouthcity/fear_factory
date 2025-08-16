@@ -1,16 +1,11 @@
-use std::time::Duration;
-
 use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    assets::manifest::Manifest,
-    item::{Item, ItemAssets, Stack},
-    logistics::ResourceOutput,
-    machine::work::Frequency,
+    item::SelectRecipe,
     prefabs,
-    sandbox::{DepositItem, Sandbox},
     ui::{HotbarItemDeselected, HotbarItemSelected, Inspect, Interact, YSort},
+    world::{DepositRecipe, Terrain},
 };
 
 pub fn plugin(app: &mut App) {
@@ -39,14 +34,14 @@ pub struct Preview;
 fn on_hotbar_selection(
     trigger: Trigger<HotbarItemSelected>,
     mut commands: Commands,
-    sandbox: Single<Entity, With<Sandbox>>,
+    terrain: Single<Entity, With<Terrain>>,
     existing_preview: Option<Single<Entity, With<Preview>>>,
 ) {
     if let Some(existing) = existing_preview {
         commands.entity(*existing).despawn();
     }
 
-    let common = (Preview::default(), ChildOf(*sandbox), YSort::default());
+    let common = (Preview, ChildOf(*terrain), YSort::default());
 
     match trigger.0 {
         Buildable::Windmill => {
@@ -100,15 +95,13 @@ pub struct QueueSpawnBuilding {
 fn spawn_buildings(
     mut events: EventReader<QueueSpawnBuilding>,
     mut commands: Commands,
-    world: Single<Entity, With<Sandbox>>,
-    deposits: Query<&DepositItem>,
-    item_manifests: Res<Assets<Manifest<Item>>>,
-    item_assets: Res<ItemAssets>,
+    terrain: Single<Entity, With<Terrain>>,
+    deposit_recipes: Query<&DepositRecipe>,
 ) {
     for event in events.read() {
         let common = (
             Transform::from_translation(event.position.extend(1.0)),
-            ChildOf(*world),
+            ChildOf(*terrain),
             Building(event.buildable),
         );
 
@@ -120,25 +113,13 @@ fn spawn_buildings(
                 commands.spawn((prefabs::power_pole(), common));
             }
             Buildable::Miner => {
-                let Ok(deposit) = deposits.get(event.placed_on) else {
+                let Ok(deposit_recipe) = deposit_recipes.get(event.placed_on) else {
                     return;
                 };
 
-                let items = item_manifests
-                    .get(&item_assets.manifest)
-                    .expect("Item manifest not loaded");
+                let id = commands.spawn((prefabs::miner(), common)).id();
 
-                let Some(item_definition) = items.get(&deposit.0) else {
-                    error!("Deposit refers to non-existent item {:?}", deposit.0);
-                    return;
-                };
-
-                commands.spawn((
-                    prefabs::miner(),
-                    common,
-                    Frequency(Duration::from_secs_f32(40.0 / 60.0)),
-                    ResourceOutput(vec![Stack::from(item_definition).with_quantity(1)]),
-                ));
+                commands.trigger_targets(SelectRecipe(deposit_recipe.0.clone()), id);
             }
             Buildable::CoalGenerator => {
                 commands.spawn((prefabs::coal_generator(), common));

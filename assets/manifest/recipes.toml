@@ -1,3 +1,13 @@
+[coal]
+name = "Coal"
+output.coal = 1
+duration = "1s"
+
+[iron_ore]
+name = "Iron Ore"
+output.iron_ore = 1
+duration = "1s"
+
 [smelt_iron]
 name = "Smelt Iron"
 input.iron_ore = 30

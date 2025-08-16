@@ -8,7 +8,7 @@ mod io;
 pub use self::{
     assets::LogisticAssets,
     conveyor_hole::{ConveyorHole, ConveyorHoleOf, ConveyorHoles},
-    io::{ResourceInput, ResourceOutput},
+    io::{InputInventory, OutputInventory},
 };
 
 pub fn plugin(app: &mut App) {

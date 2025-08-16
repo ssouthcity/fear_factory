@@ -37,7 +37,7 @@ pub fn open_recipe_menu(
         .get(&recipe_assets.manifest)
         .expect("Recipe manifest not loaded");
 
-    let Some(recipe) = manifest.get(&recipe_id) else {
+    let Some(recipe) = manifest.get(recipe_id) else {
         return;
     };
 
@@ -107,10 +107,7 @@ pub fn open_recipe_menu(
                         ),
                         (
                             TextLayout::new_with_justify(JustifyText::Center),
-                            Text::new(format!(
-                                "{} seconds",
-                                recipe.duration.as_secs_f32().to_string()
-                            )),
+                            Text::new(format!("{} seconds", recipe.duration.as_secs_f32())),
                             TextColor(Color::BLACK),
                         ),
                         (

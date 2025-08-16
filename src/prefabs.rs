@@ -1,15 +1,10 @@
-use std::time::Duration;
-
 use bevy::prelude::*;
 
 use crate::{
     animation::AnimatedMachine,
     item::SelectedRecipe,
     logistics::{ConveyorHole, ConveyorHoles},
-    machine::{
-        Machine,
-        work::{Frequency, Working},
-    },
+    machine::{Machine, work::Working},
     power::{PowerConsumer, PowerProducer, socket::PowerSockets},
     ui::Interactable,
 };
@@ -17,13 +12,13 @@ use crate::{
 pub fn windmill() -> impl Bundle {
     (
         Name::new("Windmill"),
-        Machine::default(),
+        Machine,
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("windmill.aseprite"),
         PowerProducer(30.0),
-        Working::default(),
+        Working,
         PowerSockets::single(),
-        Interactable::default(),
+        Interactable,
     )
 }
 
@@ -38,12 +33,12 @@ pub fn windmill_preview() -> impl Bundle {
 pub fn miner() -> impl Bundle {
     (
         Name::new("Miner"),
-        Machine::default(),
+        Machine,
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("miner.aseprite"),
         PowerConsumer(5.0),
         PowerSockets::single(),
-        Interactable::default(),
+        Interactable,
         related!(ConveyorHoles[
             (
                 Name::new("Conveyor Hole Outbound"),
@@ -65,18 +60,12 @@ pub fn miner_preview() -> impl Bundle {
 pub fn coal_generator() -> impl Bundle {
     (
         Name::new("Coal Generator"),
-        Machine::default(),
+        Machine,
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("coal-generator.aseprite"),
         PowerProducer(75.0),
-        Frequency(Duration::from_secs(60)),
-        // ResourceInput(Inventory::default().add_stack(&Stack {
-        //     item_id: "coal".into(),
-        //     quantity: 60,
-        //     max_quantity: 100,
-        // })),
         PowerSockets::single(),
-        Interactable::default(),
+        Interactable,
         related!(
             ConveyorHoles[(
                 Name::new("Conveyor Hole Inbound"),
@@ -98,13 +87,12 @@ pub fn coal_generator_preview() -> impl Bundle {
 pub fn constructor() -> impl Bundle {
     (
         Name::new("Constructor"),
-        Machine::default(),
+        Machine,
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("constructor.aseprite"),
         PowerConsumer(15.0),
-        Frequency(Duration::from_secs(3)),
         PowerSockets::single(),
-        Interactable::default(),
+        Interactable,
         SelectedRecipe::default(),
         related!(ConveyorHoles[
             (
@@ -135,7 +123,7 @@ pub fn power_pole() -> impl Bundle {
         Sprite::sized(Vec2::splat(64.0)),
         AnimatedMachine("power-pole.aseprite"),
         PowerSockets::multiple(4),
-        Interactable::default(),
+        Interactable,
     )
 }
 

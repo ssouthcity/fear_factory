@@ -1,5 +1,6 @@
 mod id;
 mod loader;
+#[allow(clippy::module_inception)]
 mod manifest;
 mod plugin;
 

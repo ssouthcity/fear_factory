@@ -143,17 +143,17 @@ struct PowerGridUI;
 
 #[derive(Component, Reflect, PartialEq, Eq)]
 #[reflect(Component)]
-enum PowerGridUIElements {
-    ElementOf(Entity),
-    ColorOf(Entity),
-    PowerProductionOf(Entity),
-    PowerConsumptionOf(Entity),
+enum PowerGridUIElementOf {
+    Element(Entity),
+    Color(Entity),
+    PowerProduction(Entity),
+    PowerConsumption(Entity),
 }
 
 fn spawn_power_grid_ui(mut commands: Commands) {
     commands.spawn((
         Name::new("Power Grid UI"),
-        PowerGridUI::default(),
+        PowerGridUI,
         Node {
             position_type: PositionType::Absolute,
             top: Val::ZERO,
@@ -183,10 +183,10 @@ fn add_new_grid_to_ui(
             align_items: AlignItems::Center,
             ..default()
         },
-        PowerGridUIElements::ElementOf(trigger.target()),
+        PowerGridUIElementOf::Element(trigger.target()),
         children![
             (
-                PowerGridUIElements::ColorOf(trigger.target()),
+                PowerGridUIElementOf::Color(trigger.target()),
                 Node {
                     width: Val::Px(8.0),
                     height: Val::Px(8.0),
@@ -195,11 +195,11 @@ fn add_new_grid_to_ui(
                 BackgroundColor(Color::BLACK),
             ),
             (
-                PowerGridUIElements::PowerProductionOf(trigger.target()),
+                PowerGridUIElementOf::PowerProduction(trigger.target()),
                 Text::default()
             ),
             (
-                PowerGridUIElements::PowerConsumptionOf(trigger.target()),
+                PowerGridUIElementOf::PowerConsumption(trigger.target()),
                 Text::default()
             )
         ],
@@ -209,10 +209,10 @@ fn add_new_grid_to_ui(
 fn remove_grid_from_ui(
     trigger: Trigger<OnRemove, PowerGrid>,
     mut commands: Commands,
-    power_grid_ui_elements: Query<(Entity, &PowerGridUIElements)>,
+    power_grid_ui_elements: Query<(Entity, &PowerGridUIElementOf)>,
 ) {
     for (element, power_grid_ui_of) in power_grid_ui_elements {
-        if *power_grid_ui_of == PowerGridUIElements::ElementOf(trigger.target()) {
+        if *power_grid_ui_of == PowerGridUIElementOf::Element(trigger.target()) {
             commands.entity(element).despawn();
         }
     }
@@ -220,13 +220,13 @@ fn remove_grid_from_ui(
 
 fn update_power_grid_ui(
     power_grids: Query<&PowerGrid>,
-    power_grid_ui_elements: Query<(Entity, &PowerGridUIElements)>,
+    power_grid_ui_elements: Query<(Entity, &PowerGridUIElementOf)>,
     mut background_colors: Query<&mut BackgroundColor>,
     mut texts: Query<&mut Text>,
 ) {
     for (entity, power_grid_ui_element) in power_grid_ui_elements {
         match power_grid_ui_element {
-            PowerGridUIElements::ColorOf(grid) => {
+            PowerGridUIElementOf::Color(grid) => {
                 let Ok(power_grid) = power_grids.get(*grid) else {
                     continue;
                 };
@@ -237,7 +237,7 @@ fn update_power_grid_ui(
 
                 background_color.0 = power_grid.color;
             }
-            PowerGridUIElements::PowerProductionOf(grid) => {
+            PowerGridUIElementOf::PowerProduction(grid) => {
                 let Ok(power_grid) = power_grids.get(*grid) else {
                     continue;
                 };
@@ -248,7 +248,7 @@ fn update_power_grid_ui(
 
                 text.0 = power_grid.power_production.to_string();
             }
-            PowerGridUIElements::PowerConsumptionOf(grid) => {
+            PowerGridUIElementOf::PowerConsumption(grid) => {
                 let Ok(power_grid) = power_grids.get(*grid) else {
                     continue;
                 };
@@ -259,7 +259,7 @@ fn update_power_grid_ui(
 
                 text.0 = power_grid.power_consumption.to_string();
             }
-            PowerGridUIElements::ElementOf(_) => continue,
+            PowerGridUIElementOf::Element(_) => continue,
         }
     }
 }

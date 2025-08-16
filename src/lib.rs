@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode};
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
@@ -15,10 +16,10 @@ mod logistics;
 mod machine;
 mod power;
 mod prefabs;
-mod sandbox;
 mod screens;
 mod theme;
 mod ui;
+mod world;
 
 pub struct FactoryGamePlugin;
 
@@ -51,7 +52,7 @@ impl Plugin for FactoryGamePlugin {
             logistics::plugin,
             machine::plugin,
             power::plugin,
-            sandbox::plugin,
+            world::plugin,
             screens::plugin,
             ui::plugin,
         ));

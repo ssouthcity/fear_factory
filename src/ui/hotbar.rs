@@ -3,7 +3,7 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     FactorySystems,
-    sandbox::{Buildable, QueueSpawnBuilding},
+    world::{Buildable, QueueSpawnBuilding},
 };
 
 pub fn plugin(app: &mut App) {
@@ -89,8 +89,8 @@ fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
                     },
                     Pickable::default(),
                     BorderColor(Color::WHITE),
-                    HotbarShortcut(shortcut.clone()),
-                    HotbarAction(action.clone()),
+                    HotbarShortcut(*shortcut),
+                    HotbarAction(*action),
                     children![(
                         Name::new("Icon"),
                         ImageNode::default(),

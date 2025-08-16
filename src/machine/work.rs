@@ -50,7 +50,7 @@ fn on_frequency_insert(mut world: DeferredWorld, HookContext { entity, .. }: Hoo
         unreachable!("frequency is guaranteed to be Some");
     };
 
-    let duration = frequency.0.clone();
+    let duration = frequency.0;
 
     world
         .commands()

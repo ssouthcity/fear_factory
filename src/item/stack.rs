@@ -27,7 +27,7 @@ impl Stack {
     }
 }
 
-impl<'a> From<&Definition<Item>> for Stack {
+impl From<&Definition<Item>> for Stack {
     fn from(value: &Definition<Item>) -> Self {
         Self {
             item_id: value.id.clone(),

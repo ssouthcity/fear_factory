@@ -4,7 +4,7 @@ use crate::{
     FactorySystems,
     dismantle::QueueDismantle,
     power::socket::{PowerSocketConnections, PowerSocketsLinked},
-    sandbox::Sandbox,
+    world::Terrain,
 };
 
 const POWER_LINE_COLOR: Color = Color::BLACK;
@@ -29,7 +29,7 @@ pub struct PowerLine(pub Entity, pub Entity);
 fn create_power_line(
     mut events: EventReader<PowerSocketsLinked>,
     mut commands: Commands,
-    sandbox: Single<Entity, With<Sandbox>>,
+    sandbox: Single<Entity, With<Terrain>>,
 ) {
     for event in events.read() {
         commands.spawn((

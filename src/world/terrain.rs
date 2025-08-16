@@ -2,51 +2,31 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    assets::LoadResource,
-    sandbox::{QueueSpawnBuilding, SANDBOX_MAP_SIZE, SandboxSpawnSystems, build::Preview},
     screens::Screen,
     ui::HotbarSelection,
+    world::{MAP_SIZE, QueueSpawnBuilding, WorldAssets, WorldSpawnSystems, build::Preview},
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<SandboxAssets>();
-    app.register_type::<Sandbox>();
-
-    app.load_resource::<SandboxAssets>();
+    app.register_type::<Terrain>();
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
-        spawn_sandbox.in_set(SandboxSpawnSystems::SpawnSandbox),
+        spawn_terrain.in_set(WorldSpawnSystems::SpawnTerrain),
     );
-}
-
-#[derive(Asset, Resource, Reflect, Clone)]
-#[reflect(Resource)]
-pub struct SandboxAssets {
-    aseprite: Handle<Aseprite>,
-}
-
-impl FromWorld for SandboxAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-
-        Self {
-            aseprite: assets.load("terrain.aseprite"),
-        }
-    }
 }
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct Sandbox;
+pub struct Terrain;
 
-fn spawn_sandbox(mut commands: Commands, sandbox_assets: Res<SandboxAssets>) {
+fn spawn_terrain(mut commands: Commands, world_assets: Res<WorldAssets>) {
     commands
         .spawn((
-            Name::new("Sandbox"),
-            Sandbox::default(),
+            Name::new("World"),
+            Terrain,
             Sprite {
-                custom_size: Some(Vec2::splat(SANDBOX_MAP_SIZE)),
+                custom_size: Some(Vec2::splat(MAP_SIZE)),
                 image_mode: SpriteImageMode::Tiled {
                     tile_x: true,
                     tile_y: true,
@@ -55,7 +35,7 @@ fn spawn_sandbox(mut commands: Commands, sandbox_assets: Res<SandboxAssets>) {
                 ..default()
             },
             AseSlice {
-                aseprite: sandbox_assets.aseprite.clone(),
+                aseprite: world_assets.aseprite.clone(),
                 name: "grass".to_string(),
             },
             Pickable::default(),
@@ -89,7 +69,7 @@ fn queue_spawn_building(
     };
 
     events.write(QueueSpawnBuilding {
-        buildable: buildable,
+        buildable,
         position: cursor_position.truncate(),
         placed_on: trigger.target,
     });

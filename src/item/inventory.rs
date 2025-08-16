@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     assets::manifest::Id,
-    item::{Item, Stack},
+    item::{Item, Recipe, Stack},
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -15,15 +15,9 @@ pub enum InventoryError {
     InventoryFull,
 }
 
-#[derive(Debug, Reflect)]
+#[derive(Debug, Reflect, Default)]
 pub struct Inventory {
     slots: Vec<Option<Stack>>,
-}
-
-impl Default for Inventory {
-    fn default() -> Self {
-        Self::sized(1)
-    }
 }
 
 #[allow(dead_code)]
@@ -32,6 +26,10 @@ impl Inventory {
         Self {
             slots: vec![None; max_slots],
         }
+    }
+
+    pub fn add_slot(&mut self, stack: Stack) {
+        self.slots.push(Some(stack));
     }
 
     pub fn capacity(&self) -> usize {
@@ -50,14 +48,60 @@ impl Inventory {
         &self.slots
     }
 
-    pub fn add_stack(&mut self, stack: &mut Stack) -> Result<(), InventoryError> {
-        for slot in self.slots.iter_mut() {
-            if let Some(slot) = slot {
-                if slot.item_id == stack.item_id && stack.quantity > 0 {
-                    let add = stack.quantity.min(slot.remaining_space());
-                    slot.quantity += add;
-                    stack.quantity -= add;
+    pub fn can_afford(&self, recipe: &Recipe) -> bool {
+        recipe
+            .input
+            .iter()
+            .all(|(item_id, quantity)| self.total_quantity_of(item_id) > *quantity)
+    }
+
+    pub fn consume_input(&mut self, recipe: &Recipe) -> Result<(), InventoryError> {
+        if !self.can_afford(recipe) {
+            return Err(InventoryError::InsufficientItems);
+        }
+
+        for (item_id, quantity) in recipe.input.iter() {
+            let mut remaining = *quantity;
+
+            for slot in self.slots.iter_mut() {
+                let Some(slot) = slot else {
+                    continue;
+                };
+
+                if slot.item_id == *item_id {
+                    let take = remaining.min(slot.quantity);
+                    slot.quantity -= take;
+                    remaining -= take;
                 }
+
+                if remaining == 0 {
+                    break;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    // TODO: get back to this
+    // pub fn craft(&mut self, recipe: &Recipe, output: &mut Inventory) -> Result<(), InventoryError> {
+    //     if !self.can_afford(recipe) {
+    //         return Err(InventoryError::InsufficientItems);
+    //     }
+
+    //     // check that output can fit
+
+    //     for (item_id, quantity) in recipe.input {}
+
+    //     Ok(())
+    // }
+
+    pub fn add_stack(&mut self, stack: &mut Stack) -> Result<(), InventoryError> {
+        for slot in self.slots.iter_mut().flatten() {
+            if slot.item_id == stack.item_id && stack.quantity > 0 {
+                let add = stack.quantity.min(slot.remaining_space());
+                slot.quantity += add;
+                stack.quantity -= add;
             }
         }
 
@@ -79,13 +123,11 @@ impl Inventory {
         }
 
         let mut remaining = stack.quantity;
-        for slot in self.slots.iter_mut() {
-            if let Some(slot) = slot {
-                if slot.item_id == stack.item_id && remaining > 0 {
-                    let take = remaining.min(slot.quantity);
-                    slot.quantity -= take;
-                    remaining -= take;
-                }
+        for slot in self.slots.iter_mut().flatten() {
+            if slot.item_id == stack.item_id && remaining > 0 {
+                let take = remaining.min(slot.quantity);
+                slot.quantity -= take;
+                remaining -= take;
             }
         }
 
@@ -110,10 +152,8 @@ impl Inventory {
     }
 
     pub fn add_inventory(&mut self, other: &mut Inventory) -> Result<(), InventoryError> {
-        for slot in other.slots.iter_mut() {
-            if let Some(stack) = slot {
-                self.add_stack(stack)?;
-            }
+        for stack in other.slots.iter_mut().flatten() {
+            self.add_stack(stack)?;
         }
 
         Ok(())
@@ -132,29 +172,24 @@ impl Inventory {
     }
 
     pub fn pop(&mut self) -> Result<Id<Item>, InventoryError> {
-        for slot in self.slots.iter_mut() {
-            if let Some(stack) = slot
-                && stack.quantity > 0
-            {
+        for stack in self.slots.iter_mut().flatten() {
+            if stack.quantity > 0 {
                 stack.quantity -= 1;
                 return Ok(stack.item_id.clone());
             }
         }
 
-        return Err(InventoryError::InventoryEmpty);
+        Err(InventoryError::InventoryEmpty)
     }
 
     pub fn push(&mut self, item_id: &Id<Item>) -> Result<(), InventoryError> {
-        for slot in self.slots.iter_mut() {
-            if let Some(stack) = slot
-                && stack.item_id == *item_id
-                && !stack.is_full()
-            {
+        for stack in self.slots.iter_mut().flatten() {
+            if stack.item_id == *item_id && !stack.is_full() {
                 stack.quantity += 1;
                 return Ok(());
             }
         }
 
-        return Err(InventoryError::InventoryFull);
+        Err(InventoryError::InventoryFull)
     }
 }

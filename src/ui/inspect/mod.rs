@@ -2,7 +2,7 @@ use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
 use crate::item::SelectedRecipe;
 
-mod inspect;
+mod info;
 mod select;
 
 pub fn plugin(app: &mut App) {
@@ -13,7 +13,7 @@ pub fn plugin(app: &mut App) {
     app.init_state::<InspectionMenuState>();
     app.init_resource::<InspectedEntity>();
 
-    app.add_plugins((inspect::plugin, select::plugin));
+    app.add_plugins((info::plugin, select::plugin));
 
     app.add_observer(on_inspect);
 
