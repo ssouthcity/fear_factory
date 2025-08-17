@@ -27,7 +27,7 @@ pub fn on_work_state_add(mut world: DeferredWorld, HookContext { entity, .. }: H
     world.commands().spawn((
         Name::new("Progress Bar"),
         ChildOf(entity),
-        Transform::from_xyz(0.0, 48.0, 0.0),
+        Transform::from_xyz(0.0, 48.0, 100.0),
         Sprite::from_color(Color::BLACK, Vec2::new(64.0, 16.0)),
         children![(
             Name::new("Progress Bar Fill"),
