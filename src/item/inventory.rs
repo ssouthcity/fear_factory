@@ -192,4 +192,18 @@ impl Inventory {
 
         Err(InventoryError::InventoryFull)
     }
+
+    pub fn transfer_all(&mut self, other: &mut Inventory) -> Result<(), InventoryError> {
+        let result = self
+            .slots
+            .iter_mut()
+            .flatten()
+            .all(|stack| other.add_stack(stack).is_ok());
+
+        if !result {
+            return Err(InventoryError::InventoryFull);
+        }
+
+        Ok(())
+    }
 }

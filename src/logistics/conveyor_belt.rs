@@ -143,7 +143,7 @@ fn build_conveyor_belts(
                 animation: Animation::tag("idle"),
             },
             ConveyorBelt(event.0, event.1),
-            ConveyorSpeed(60.0),
+            ConveyorSpeed(100.0),
             ConveyorCapacity(direction.length() / CONVEYOR_BELT_TRAY_SIZE),
             ConveyorLength(direction.length()),
         ));

@@ -33,3 +33,12 @@ power.production = 75
 [[coal_generator.conveyor_holes]]
 direction = "inbound"
 translation = [-28, -16, 10]
+
+[merger]
+name = "Merger"
+conveyor_holes = [
+  { direction = "inbound", translation = [-18, -12, 10] },
+  { direction = "inbound", translation = [0, -24, 10] },
+  { direction = "inbound", translation = [0, 24, 10] },
+  { direction = "outbound", translation = [18, -12, 10] },
+]

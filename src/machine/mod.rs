@@ -36,6 +36,7 @@ pub fn plugin(app: &mut App) {
             .chain()
             .in_set(FactorySystems::Work),
     );
+    app.add_systems(Update, instant_movers);
 }
 
 #[derive(Component, Reflect)]
@@ -165,5 +166,15 @@ fn produce_output(query: Query<(&mut WorkState, &mut OutputInventory), With<Powe
         if all_deposited {
             *state = WorkState::InsufficientInput;
         }
+    }
+}
+
+fn instant_movers(query: Query<(&WorkState, &mut InputInventory, &mut OutputInventory)>) {
+    for (state, mut input, mut output) in query {
+        if !matches!(state, WorkState::PerpetualWorker) {
+            continue;
+        }
+
+        let _ = input.transfer_all(&mut output);
     }
 }

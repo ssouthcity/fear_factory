@@ -27,6 +27,7 @@ pub fn plugin(app: &mut App) {
         (
             check_for_hotbar_shortcuts.in_set(FactorySystems::Input),
             highlight_selected_slot.in_set(FactorySystems::UI),
+            update_icon.in_set(FactorySystems::UI),
             deselect_slot.run_if(on_event::<QueueStructureSpawn>),
         ),
     );
@@ -53,9 +54,12 @@ struct HotbarAction(Id<StructureTemplate>);
 #[reflect(Component)]
 struct HotbarShortcut(KeyCode);
 
-fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let aseprite = asset_server.load::<Aseprite>("build-icons.aseprite");
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+#[require(AseAnimation)]
+struct HotbarIcon(Id<StructureTemplate>);
 
+fn spawn_hotbar(mut commands: Commands) {
     commands.spawn((
         Name::new("Build Hotbar"),
         Node {
@@ -77,6 +81,7 @@ fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
                 (KeyCode::Digit3, "miner"),
                 (KeyCode::Digit4, "coal_generator"),
                 (KeyCode::Digit5, "constructor"),
+                (KeyCode::Digit6, "merger"),
             ]
             .iter()
             .map(move |(shortcut, structure_id)| {
@@ -96,10 +101,7 @@ fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
                         Name::new("Icon"),
                         ImageNode::default(),
                         Pickable::IGNORE,
-                        AseSlice {
-                            aseprite: aseprite.clone(),
-                            name: structure_id.to_string(),
-                        },
+                        HotbarIcon(Id::new(*structure_id)),
                     )],
                 )
             }),
@@ -168,4 +170,14 @@ fn highlight_selected_slot(
 fn deselect_slot(mut hotbar_selection: ResMut<HotbarSelection>, mut commands: Commands) {
     hotbar_selection.0 = None;
     commands.trigger(HotbarItemDeselected);
+}
+
+fn update_icon(
+    query: Query<(&mut AseAnimation, &HotbarIcon), Changed<HotbarIcon>>,
+    asset_server: Res<AssetServer>,
+) {
+    for (mut animation, icon) in query {
+        animation.aseprite = asset_server.load(format!("structures/{}.aseprite", icon.0.value));
+        animation.animation = Animation::tag("work").with_speed(0.0);
+    }
 }

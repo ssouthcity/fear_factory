@@ -4,8 +4,8 @@ use bevy_aseprite_ultra::prelude::*;
 use crate::{
     FactorySystems,
     assets::manifest::{Id, Manifest},
-    item::{SelectRecipe, SelectedRecipe},
-    logistics::ConveyorHoleOf,
+    item::{Inventory, SelectRecipe, SelectedRecipe},
+    logistics::{ConveyorHoleOf, InputInventory, OutputInventory},
     machine::{
         Machine, Structure, WorkState,
         assets::{StructureAssets, StructureTemplate},
@@ -146,6 +146,13 @@ fn spawn_structures(
                 } else {
                     entity.despawn();
                 };
+            }
+            "merger" => {
+                entity.insert((
+                    InputInventory(Inventory::sized(10)),
+                    OutputInventory(Inventory::sized(10)),
+                    WorkState::PerpetualWorker,
+                ));
             }
             _ => {}
         };
