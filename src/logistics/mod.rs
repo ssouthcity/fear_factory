@@ -7,7 +7,7 @@ mod io;
 
 pub use self::{
     assets::LogisticAssets,
-    conveyor_hole::{ConveyorHole, ConveyorHoleOf, ConveyorHoles},
+    conveyor_hole::{ConveyorHole, ConveyorHoleOf},
     io::{InputInventory, OutputInventory},
 };
 

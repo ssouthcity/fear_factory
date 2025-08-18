@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::AseSlice;
+use serde::Deserialize;
 
 use crate::{
     FactorySystems,
@@ -19,9 +20,10 @@ pub fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Reflect, Default, PartialEq, Eq)]
+#[derive(Component, Reflect, Default, PartialEq, Eq, Debug, Clone, Deserialize)]
 #[reflect(Component)]
 #[require(Pickable)]
+#[serde(rename_all = "snake_case")]
 pub enum ConveyorHole {
     #[default]
     Outbound,

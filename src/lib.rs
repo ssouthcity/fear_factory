@@ -1,12 +1,12 @@
 #![allow(clippy::type_complexity)]
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode};
+use bevy_aseprite_ultra::AsepriteUltraPlugin;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::screens::Screen;
 
-mod animation;
 mod assets;
 mod audio;
 mod camera;
@@ -15,7 +15,6 @@ mod item;
 mod logistics;
 mod machine;
 mod power;
-mod prefabs;
 mod screens;
 mod theme;
 mod ui;
@@ -42,9 +41,10 @@ impl Plugin for FactoryGamePlugin {
         app.add_plugins(EguiPlugin::default());
         app.add_plugins(WorldInspectorPlugin::new());
 
+        app.add_plugins(AsepriteUltraPlugin);
+
         app.add_plugins((
             assets::plugin,
-            animation::plugin,
             audio::plugin,
             camera::plugin,
             item::plugin,

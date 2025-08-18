@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
-use crate::{FactorySystems, world::Building};
+use crate::{FactorySystems, machine::Structure};
 
 const DISMANTLE_BUTTON: KeyCode = KeyCode::KeyF;
 
@@ -72,7 +72,7 @@ fn dismantle_timer_held(timer: Res<DismantleTimer>) -> bool {
 fn add_buildings_to_selection(
     trigger: Trigger<Pointer<Over>>,
     mut selection: ResMut<Selection>,
-    buildings: Query<Entity, With<Building>>,
+    buildings: Query<Entity, With<Structure>>,
 ) {
     if !buildings.contains(trigger.target) {
         return;

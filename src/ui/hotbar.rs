@@ -3,7 +3,8 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     FactorySystems,
-    world::{Buildable, QueueSpawnBuilding},
+    assets::manifest::Id,
+    machine::{QueueStructureSpawn, StructureTemplate},
 };
 
 pub fn plugin(app: &mut App) {
@@ -26,27 +27,27 @@ pub fn plugin(app: &mut App) {
         (
             check_for_hotbar_shortcuts.in_set(FactorySystems::Input),
             highlight_selected_slot.in_set(FactorySystems::UI),
-            deselect_slot.run_if(on_event::<QueueSpawnBuilding>),
+            deselect_slot.run_if(on_event::<QueueStructureSpawn>),
         ),
     );
 }
 
 #[derive(Event, Reflect)]
-pub struct SelectHotbarSlot(pub Buildable);
+pub struct SelectHotbarSlot(Id<StructureTemplate>);
 
 #[derive(Event, Reflect)]
-pub struct HotbarItemSelected(pub Buildable);
+pub struct HotbarItemSelected(pub Id<StructureTemplate>);
 
 #[derive(Event, Reflect)]
 pub struct HotbarItemDeselected;
 
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
-pub struct HotbarSelection(pub Option<Buildable>);
+pub struct HotbarSelection(pub Option<Id<StructureTemplate>>);
 
-#[derive(Component, Default, Reflect)]
+#[derive(Component, Reflect)]
 #[reflect(Component)]
-struct HotbarAction(Buildable);
+struct HotbarAction(Id<StructureTemplate>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -71,16 +72,16 @@ fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
         Pickable::IGNORE,
         Children::spawn(SpawnIter(
             [
-                (KeyCode::Digit1, Buildable::Windmill, "Windmill"),
-                (KeyCode::Digit2, Buildable::PowerPole, "Power Pole"),
-                (KeyCode::Digit3, Buildable::Miner, "Miner"),
-                (KeyCode::Digit4, Buildable::CoalGenerator, "Coal Generator"),
-                (KeyCode::Digit5, Buildable::Constructor, "Constructor"),
+                (KeyCode::Digit1, "windmill"),
+                (KeyCode::Digit2, "power_pole"),
+                (KeyCode::Digit3, "miner"),
+                (KeyCode::Digit4, "coal_generator"),
+                (KeyCode::Digit5, "constructor"),
             ]
             .iter()
-            .map(move |(shortcut, action, slice_name)| {
+            .map(move |(shortcut, structure_id)| {
                 (
-                    Name::new(format!("Hotbar Slot {:?}", action.clone())),
+                    Name::new(format!("Hotbar Slot {:?}", structure_id)),
                     Node {
                         width: Val::Px(64.0),
                         height: Val::Px(64.0),
@@ -90,14 +91,14 @@ fn spawn_hotbar(mut commands: Commands, asset_server: Res<AssetServer>) {
                     Pickable::default(),
                     BorderColor(Color::WHITE),
                     HotbarShortcut(*shortcut),
-                    HotbarAction(*action),
+                    HotbarAction(Id::new(*structure_id)),
                     children![(
                         Name::new("Icon"),
                         ImageNode::default(),
                         Pickable::IGNORE,
                         AseSlice {
                             aseprite: aseprite.clone(),
-                            name: slice_name.to_string(),
+                            name: structure_id.to_string(),
                         },
                     )],
                 )
@@ -115,7 +116,7 @@ fn on_hotbar_slot_click(
         return;
     };
 
-    commands.trigger(SelectHotbarSlot(action.0));
+    commands.trigger(SelectHotbarSlot(action.0.to_owned()));
 }
 
 fn check_for_hotbar_shortcuts(
@@ -128,7 +129,7 @@ fn check_for_hotbar_shortcuts(
             continue;
         }
 
-        commands.trigger(SelectHotbarSlot(action.0));
+        commands.trigger(SelectHotbarSlot(action.0.to_owned()));
     }
 }
 
@@ -139,12 +140,12 @@ fn on_slot_selected(
 ) {
     let event = trigger.event();
 
-    if hotbar_selection.0 == Some(event.0) {
+    if hotbar_selection.0 == Some(event.0.to_owned()) {
         hotbar_selection.0 = None;
         commands.trigger(HotbarItemDeselected);
     } else {
-        hotbar_selection.0 = Some(event.0);
-        commands.trigger(HotbarItemSelected(event.0));
+        hotbar_selection.0 = Some(event.0.to_owned());
+        commands.trigger(HotbarItemSelected(event.0.to_owned()));
     }
 }
 
@@ -154,7 +155,7 @@ fn highlight_selected_slot(
     selection: Res<HotbarSelection>,
 ) {
     for (entity, slot) in hotbar_slots {
-        if selection.0.is_some_and(|b| b == slot.0) {
+        if selection.0.as_ref().is_some_and(|b| *b == slot.0) {
             commands
                 .entity(entity)
                 .insert(BackgroundColor(Color::WHITE));

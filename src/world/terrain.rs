@@ -2,9 +2,10 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
+    machine::{Preview, QueueStructureSpawn},
     screens::Screen,
     ui::HotbarSelection,
-    world::{MAP_SIZE, QueueSpawnBuilding, WorldAssets, WorldSpawnSystems, build::Preview},
+    world::{MAP_SIZE, WorldAssets, WorldSpawnSystems},
 };
 
 pub fn plugin(app: &mut App) {
@@ -53,7 +54,7 @@ fn move_preview(
 
 fn queue_spawn_building(
     trigger: Trigger<Pointer<Click>>,
-    mut events: EventWriter<QueueSpawnBuilding>,
+    mut events: EventWriter<QueueStructureSpawn>,
     selected_buildable: Res<HotbarSelection>,
 ) {
     if trigger.event().button != PointerButton::Primary {
@@ -64,12 +65,12 @@ fn queue_spawn_building(
         return;
     };
 
-    let Some(buildable) = selected_buildable.0 else {
+    let Some(ref structure_id) = selected_buildable.0 else {
         return;
     };
 
-    events.write(QueueSpawnBuilding {
-        buildable,
+    events.write(QueueStructureSpawn {
+        structure_id: structure_id.clone(),
         position: cursor_position.truncate(),
         placed_on: trigger.target,
     });

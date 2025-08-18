@@ -2,27 +2,45 @@ use bevy::prelude::*;
 
 use crate::{
     FactorySystems,
-    assets::manifest::Manifest,
+    assets::manifest::{Id, Manifest},
     item::{Item, ItemAssets, Recipe, RecipeAssets, SelectedRecipe, Stack},
     logistics::{InputInventory, OutputInventory},
     machine::power::Powered,
 };
 
+mod assets;
+mod build;
 pub mod power;
 pub mod progress;
 
+pub use self::{
+    assets::StructureTemplate,
+    build::{Preview, QueueStructureSpawn},
+};
+
 pub fn plugin(app: &mut App) {
+    app.register_type::<Structure>();
     app.register_type::<Machine>();
 
-    app.add_plugins((power::plugin, progress::plugin));
+    app.add_plugins((
+        assets::plugin,
+        build::plugin,
+        power::plugin,
+        progress::plugin,
+    ));
 
-    app.register_type::<WorkState>().add_systems(
+    app.register_type::<WorkState>();
+    app.add_systems(
         Update,
         (consume_input, progress_work, produce_output)
             .chain()
             .in_set(FactorySystems::Work),
     );
 }
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct Structure(Id<StructureTemplate>);
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]

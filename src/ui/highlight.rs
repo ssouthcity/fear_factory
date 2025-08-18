@@ -2,7 +2,8 @@ use bevy::{picking::hover::PickingInteraction, prelude::*};
 
 use crate::{
     dismantle::{DismantleTimer, Selection},
-    world::{Building, Terrain},
+    machine::Structure,
+    world::Terrain,
 };
 
 use super::HIGHLIGHT_COLOR;
@@ -39,7 +40,7 @@ fn highlight_pickable(query: Query<(&mut Sprite, &PickingInteraction), Without<T
 }
 
 fn highlight(
-    building_sprites: Query<(Entity, &mut Sprite), With<Building>>,
+    building_sprites: Query<(Entity, &mut Sprite), With<Structure>>,
     highlight_color: Res<HighlightColor>,
     selection: Res<Selection>,
 ) {
