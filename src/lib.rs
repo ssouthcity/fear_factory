@@ -15,6 +15,7 @@ mod item;
 mod logistics;
 mod machine;
 mod power;
+mod recipe;
 mod screens;
 mod theme;
 mod ui;
@@ -52,6 +53,7 @@ impl Plugin for FactoryGamePlugin {
             logistics::plugin,
             machine::plugin,
             power::plugin,
+            recipe::plugin,
             world::plugin,
             screens::plugin,
             ui::plugin,

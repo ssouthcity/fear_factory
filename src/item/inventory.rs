@@ -2,7 +2,8 @@ use bevy::prelude::*;
 
 use crate::{
     assets::manifest::Id,
-    item::{Item, Recipe, Stack},
+    item::{Item, Stack},
+    recipe::Recipe,
 };
 
 #[derive(Debug, thiserror::Error)]

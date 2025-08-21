@@ -3,9 +3,10 @@ use bevy::prelude::*;
 use crate::{
     FactorySystems,
     assets::manifest::{Id, Manifest},
-    item::{Item, ItemAssets, Recipe, RecipeAssets, SelectedRecipe, Stack},
+    item::{Item, ItemAssets, Stack},
     logistics::{InputInventory, OutputInventory},
     machine::power::Powered,
+    recipe::{Recipe, RecipeAssets, SelectedRecipe},
 };
 
 mod assets;

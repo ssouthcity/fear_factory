@@ -1,13 +1,9 @@
-use std::{collections::HashMap, time::Duration};
-
 use bevy::prelude::*;
-use serde::Deserialize;
+
+use super::{Recipe, RecipeAssets};
 
 use crate::{
-    assets::{
-        LoadResource,
-        manifest::{Id, Manifest, ManifestPlugin},
-    },
+    assets::manifest::{Id, Manifest},
     item::{Inventory, Item, ItemAssets, Stack},
     logistics::{InputInventory, OutputInventory},
 };
@@ -15,47 +11,8 @@ use crate::{
 pub fn plugin(app: &mut App) {
     app.register_type::<SelectedRecipe>();
     app.register_type::<SelectRecipe>();
-    app.register_type::<RecipeAssets>();
-
-    app.add_plugins(ManifestPlugin::<Recipe>::default())
-        .load_resource::<RecipeAssets>();
 
     app.add_observer(on_select_recipe);
-}
-
-#[derive(Asset, Resource, Reflect, Clone)]
-#[reflect(Resource)]
-pub struct RecipeAssets {
-    pub manifest: Handle<Manifest<Recipe>>,
-}
-
-impl FromWorld for RecipeAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-        Self {
-            manifest: assets.load("manifest/recipes.toml"),
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, TypePath)]
-pub struct Recipe {
-    pub name: String,
-    #[serde(default)]
-    pub input: HashMap<Id<Item>, u32>,
-    #[serde(default)]
-    pub output: HashMap<Id<Item>, u32>,
-    #[serde(with = "humantime_serde")]
-    pub duration: Duration,
-    #[serde(default)]
-    pub tags: Vec<RecipeTags>,
-}
-
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
-pub enum RecipeTags {
-    // TODO: change into Id<Structure> when implemented
-    StructureId(String),
 }
 
 #[derive(Component, Reflect, Default, Deref, DerefMut)]

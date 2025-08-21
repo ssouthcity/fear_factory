@@ -4,7 +4,7 @@ use bevy_aseprite_ultra::prelude::*;
 use crate::{
     FactorySystems,
     assets::manifest::{Id, Manifest},
-    item::{Inventory, SelectRecipe, SelectedRecipe},
+    item::Inventory,
     logistics::{ConveyorHoleOf, InputInventory, OutputInventory},
     machine::{
         Machine, Structure, WorkState,
@@ -12,6 +12,7 @@ use crate::{
         power::Powered,
     },
     power::{PowerConsumer, PowerProducer, socket::PowerSockets},
+    recipe::{SelectRecipe, SelectedRecipe},
     ui::{HotbarItemDeselected, HotbarItemSelected, Inspect, Interact, Interactable, YSort},
     world::{DepositRecipe, Terrain},
 };

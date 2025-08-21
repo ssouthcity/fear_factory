@@ -3,16 +3,14 @@ use serde::Deserialize;
 
 mod assets;
 mod inventory;
-mod recipes;
 mod stack;
 
 pub use assets::ItemAssets;
 pub use inventory::Inventory;
-pub use recipes::{Recipe, RecipeAssets, RecipeTags, SelectRecipe, SelectedRecipe};
 pub use stack::Stack;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((assets::plugin, recipes::plugin));
+    app.add_plugins((assets::plugin,));
 
     app.register_type::<PlayerInventory>()
         .add_systems(Startup, spawn_player_inventory);

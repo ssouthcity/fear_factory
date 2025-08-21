@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{
     assets::manifest::Manifest,
-    item::{Recipe, RecipeAssets, SelectedRecipe},
+    recipe::{Recipe, RecipeAssets, SelectedRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };

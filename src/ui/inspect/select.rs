@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{
     assets::manifest::{Id, Manifest},
-    item::{Recipe, RecipeAssets, RecipeTags, SelectRecipe},
+    recipe::{Recipe, RecipeAssets, RecipeTags, SelectRecipe},
     theme::widgets,
     ui::inspect::{InspectedEntity, InspectionMenuState},
 };
@@ -37,7 +37,7 @@ pub fn recipe_select_menu(
         .filter(|(_, recipe)| {
             recipe
                 .tags
-                .contains(&RecipeTags::StructureId("constructor".into()))
+                .contains(&RecipeTags::StructureId(Id::new("constructor")))
         })
         .map(|(id, recipe)| (id.to_owned(), recipe.name.to_owned()))
         .collect::<Vec<_>>();
