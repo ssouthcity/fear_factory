@@ -6,6 +6,7 @@ use crate::{
     assets::manifest::{Id, Manifest},
     item::{Inventory, Item, ItemAssets, Stack},
     logistics::{InputInventory, OutputInventory},
+    recipe::ProcessState,
 };
 
 pub fn plugin(app: &mut App) {
@@ -17,6 +18,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default, Deref, DerefMut)]
 #[reflect(Component)]
+#[require(ProcessState, InputInventory, OutputInventory)]
 pub struct SelectedRecipe(pub Option<Id<Recipe>>);
 
 #[derive(Event, Reflect)]

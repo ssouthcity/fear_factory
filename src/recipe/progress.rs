@@ -4,7 +4,8 @@ use bevy::{
     sprite::Anchor,
 };
 
-use crate::{FactorySystems, machine::WorkState};
+use super::ProcessState;
+use crate::FactorySystems;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ProgressBarFill>();
@@ -23,7 +24,7 @@ pub struct ProgressBarFill(Entity);
 #[relationship(relationship_target = ProgressBarFill)]
 pub struct ProgressBarFillOf(Entity);
 
-pub fn on_work_state_add(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
+pub fn on_progress_state_add(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
     world.commands().spawn((
         Name::new("Progress Bar"),
         ChildOf(entity),
@@ -44,7 +45,7 @@ pub fn on_work_state_add(mut world: DeferredWorld, HookContext { entity, .. }: H
 }
 
 fn update_progress_bars(
-    work_states: Query<&WorkState>,
+    work_states: Query<&ProcessState>,
     progress_bars: Query<(&mut Sprite, &ProgressBarFillOf)>,
 ) {
     for (mut sprite, progress_bar_of) in progress_bars {

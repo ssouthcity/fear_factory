@@ -7,7 +7,7 @@ use crate::{
     item::Inventory,
     logistics::{ConveyorHoleOf, InputInventory, OutputInventory},
     machine::{
-        Machine, Structure, WorkState,
+        Machine, Structure,
         assets::{StructureAssets, StructureTemplate},
         power::Powered,
     },
@@ -131,9 +131,6 @@ fn spawn_structures(
 
         // TODO: Structure specific logic that remains to be ported to manifest
         match structure.id.value.as_str() {
-            "windmill" => {
-                entity.insert(WorkState::PerpetualWorker);
-            }
             "constructor" => {
                 entity.insert(SelectedRecipe::default()).observe(
                     |trigger: Trigger<Interact>, mut commands: Commands| {
@@ -152,7 +149,6 @@ fn spawn_structures(
                 entity.insert((
                     InputInventory(Inventory::sized(10)),
                     OutputInventory(Inventory::sized(10)),
-                    WorkState::PerpetualWorker,
                 ));
             }
             _ => {}
