@@ -12,7 +12,7 @@ use crate::{
         power::Powered,
     },
     power::{PowerConsumer, PowerProducer, socket::PowerSockets},
-    recipe::{SelectRecipe, SelectedRecipe},
+    recipe::SelectRecipe,
     ui::{HotbarItemDeselected, HotbarItemSelected, Inspect, Interact, Interactable, YSort},
     world::{DepositRecipe, Terrain},
 };
@@ -105,7 +105,7 @@ fn spawn_structures(
             },
             YSort::default(),
             // power
-            PowerSockets::multiple(structure.power.sockets),
+            PowerSockets::single(),
             // labels
             Structure(structure.id.clone()),
             Machine,
@@ -113,12 +113,18 @@ fn spawn_structures(
             Interactable,
         ));
 
-        if structure.power.production > 0.0 {
-            entity.insert(PowerProducer(structure.power.production));
-        }
+        if let Some(power) = &structure.power {
+            if let Some(sockets) = power.sockets {
+                entity.insert(PowerSockets::multiple(sockets));
+            }
 
-        if structure.power.consumption > 0.0 {
-            entity.insert(PowerConsumer(structure.power.consumption));
+            if let Some(production) = power.production {
+                entity.insert(PowerProducer(production));
+            }
+
+            if let Some(consumption) = power.consumption {
+                entity.insert(PowerConsumer(consumption));
+            }
         }
 
         for hole in structure.conveyor_holes.iter() {
@@ -131,12 +137,20 @@ fn spawn_structures(
 
         // TODO: Structure specific logic that remains to be ported to manifest
         match structure.id.value.as_str() {
-            "constructor" => {
-                entity.insert(SelectedRecipe::default()).observe(
-                    |trigger: Trigger<Interact>, mut commands: Commands| {
-                        commands.trigger_targets(Inspect, trigger.target());
-                    },
-                );
+            "constructor" | "smelter" => {
+                if let Some(ref recipe) = structure
+                    .recipe
+                    .as_ref()
+                    .map(|r| r.default_recipe.to_owned())
+                {
+                    if let Some(recipe) = recipe {
+                        entity.trigger(SelectRecipe(recipe.to_owned()));
+                    }
+                }
+
+                entity.observe(|trigger: Trigger<Interact>, mut commands: Commands| {
+                    commands.trigger_targets(Inspect, trigger.target());
+                });
             }
             "miner" => {
                 if let Ok(deposit_recipe) = deposit_recipes.get(event.placed_on) {

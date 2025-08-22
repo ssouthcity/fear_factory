@@ -79,7 +79,7 @@ fn spawn_hotbar(mut commands: Commands) {
                 (KeyCode::Digit1, "windmill"),
                 (KeyCode::Digit2, "power_pole"),
                 (KeyCode::Digit3, "miner"),
-                (KeyCode::Digit4, "coal_generator"),
+                (KeyCode::Digit4, "smelter"),
                 (KeyCode::Digit5, "constructor"),
                 (KeyCode::Digit6, "merger"),
             ]

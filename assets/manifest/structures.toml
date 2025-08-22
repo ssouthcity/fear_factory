@@ -5,10 +5,9 @@ power.production = 30
 [miner]
 name = "Miner"
 power.consumption = 5
-
-[[miner.conveyor_holes]]
-direction = "outbound"
-translation = [16, 16, 10]
+conveyor_holes = [
+  { direction = "outbound", translation = [16, 16, 10] },
+]
 
 [power_pole]
 name = "Power Pole"
@@ -16,23 +15,20 @@ power.sockets = 4
 
 [constructor]
 name = "Constructor"
+recipe.default_recipe = "iron_plates"
 power.consumption = 15
+conveyor_holes = [
+  { direction = "inbound", translation = [-18, -12, 10] },
+  { direction = "outbound", translation = [18, -12, 10] },
+]
 
-[[constructor.conveyor_holes]]
-direction = "inbound"
-translation = [-18, -12, 10]
-
-[[constructor.conveyor_holes]]
-direction = "outbound"
-translation = [18, -12, 10]
-
-[coal_generator]
-name = "Coal Generator"
-power.production = 75
-
-[[coal_generator.conveyor_holes]]
-direction = "inbound"
-translation = [-28, -16, 10]
+[smelter]
+name = "Smelter"
+recipe.default_recipe = "smelt_iron"
+conveyor_holes = [
+ { direction = "inbound", translation = [-28, -16, 10] },
+ { direction = "outbound", translation = [28, -16, 10] },
+]
 
 [merger]
 name = "Merger"

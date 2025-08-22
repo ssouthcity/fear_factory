@@ -4,9 +4,10 @@ use serde::Deserialize;
 use crate::{
     assets::{
         LoadResource,
-        manifest::{Manifest, ManifestPlugin},
+        manifest::{Id, Manifest, ManifestPlugin},
     },
     logistics::ConveyorHole,
+    recipe::Recipe,
 };
 
 pub fn plugin(app: &mut App) {
@@ -37,23 +38,26 @@ impl FromWorld for StructureAssets {
 pub struct StructureTemplate {
     pub name: String,
     #[serde(default)]
-    pub power: PowerTemplate,
+    pub power: Option<PowerTemplate>,
+    #[serde(default)]
+    pub recipe: Option<RecipeTemplate>,
     #[serde(default)]
     pub conveyor_holes: Vec<ConveyorHoleTemplate>,
 }
 
 #[derive(Debug, TypePath, Deserialize, Default)]
 pub struct PowerTemplate {
-    #[serde(default = "default_power_sockets")]
-    pub sockets: u8,
     #[serde(default)]
-    pub consumption: f32,
+    pub sockets: Option<u8>,
     #[serde(default)]
-    pub production: f32,
+    pub consumption: Option<f32>,
+    #[serde(default)]
+    pub production: Option<f32>,
 }
 
-const fn default_power_sockets() -> u8 {
-    1
+#[derive(Debug, TypePath, Deserialize, Default)]
+pub struct RecipeTemplate {
+    pub default_recipe: Option<Id<Recipe>>,
 }
 
 #[derive(Debug, TypePath, Deserialize)]
