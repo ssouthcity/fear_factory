@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 mod assets;
+mod compendium;
 mod inventory;
 mod manifest;
 mod stack;
@@ -13,7 +14,7 @@ pub use self::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((assets::plugin, manifest::plugin));
+    app.add_plugins((assets::plugin, compendium::plugin, manifest::plugin));
 
     app.register_type::<PlayerInventory>()
         .add_systems(Startup, spawn_player_inventory);

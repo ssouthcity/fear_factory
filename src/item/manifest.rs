@@ -80,7 +80,7 @@ fn spawn_item(
             let entity = item_definition_tracker
                 .0
                 .entry(item_id.clone())
-                .or_insert(commands.spawn_empty().id());
+                .or_insert_with(|| commands.spawn_empty().id());
 
             commands.entity(*entity).insert((
                 item_id.clone(),
