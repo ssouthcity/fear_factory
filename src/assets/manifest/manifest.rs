@@ -38,6 +38,10 @@ where
         self.entries.get(id)
     }
 
+    pub fn contains(&self, id: &Id<T>) -> bool {
+        self.entries.contains_key(id)
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = (&Id<T>, &Definition<T>)> {
         self.entries.iter()
     }

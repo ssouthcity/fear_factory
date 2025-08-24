@@ -7,8 +7,9 @@ use std::{
 use bevy::prelude::*;
 use serde::Deserialize;
 
-#[derive(Reflect, Deserialize)]
+#[derive(Component, Reflect, Deserialize)]
 #[serde(transparent)]
+#[reflect(Component)]
 pub struct Id<T> {
     pub value: String,
     #[serde(skip)]

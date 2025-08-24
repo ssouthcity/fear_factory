@@ -13,3 +13,15 @@ stack_size = 100
 [iron_plate]
 name = "Iron Plate"
 stack_size = 50
+
+[copper_ore]
+name = "Copper Ore"
+stack_size = 200
+
+[soul_rock]
+name = "Soul Rock"
+stack_size = 80
+
+[blood]
+name = "Blood"
+stack_size = 200

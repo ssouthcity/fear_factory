@@ -32,7 +32,7 @@ impl From<&Definition<Item>> for Stack {
         Self {
             item_id: value.id.clone(),
             quantity: 0,
-            max_quantity: value.stack_size,
+            max_quantity: value.stack_size.0,
         }
     }
 }
