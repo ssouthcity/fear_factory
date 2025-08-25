@@ -3,14 +3,14 @@ use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode};
 use bevy_aseprite_ultra::AsepriteUltraPlugin;
-use bevy_inspector_egui::bevy_egui::EguiPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use crate::screens::Screen;
 
 mod assets;
 mod audio;
 mod camera;
+#[cfg(feature = "dev")]
+mod dev_tools;
 mod dismantle;
 mod item;
 mod logistics;
@@ -44,9 +44,6 @@ impl Plugin for FactoryGamePlugin {
                 .set(ImagePlugin::default_nearest()),
         );
 
-        app.add_plugins(EguiPlugin::default());
-        app.add_plugins(WorldInspectorPlugin::new());
-
         app.add_plugins(AsepriteUltraPlugin);
 
         app.add_plugins((
@@ -55,6 +52,8 @@ impl Plugin for FactoryGamePlugin {
             camera::plugin,
             item::plugin,
             dismantle::plugin,
+            #[cfg(feature = "dev")]
+            dev_tools::plugin,
             logistics::plugin,
             machine::plugin,
             power::plugin,
