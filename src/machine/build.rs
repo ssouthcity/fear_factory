@@ -141,11 +141,9 @@ fn spawn_structures(
                 if let Some(ref recipe) = structure
                     .recipe
                     .as_ref()
-                    .map(|r| r.default_recipe.to_owned())
+                    .and_then(|r| r.default_recipe.to_owned())
                 {
-                    if let Some(recipe) = recipe {
-                        entity.trigger(SelectRecipe(recipe.to_owned()));
-                    }
+                    entity.trigger(SelectRecipe(recipe.to_owned()));
                 }
 
                 entity.observe(|trigger: Trigger<Interact>, mut commands: Commands| {

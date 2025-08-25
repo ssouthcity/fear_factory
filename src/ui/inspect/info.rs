@@ -44,13 +44,13 @@ pub fn open_recipe_menu(
     let inputs: Vec<_> = recipe
         .input
         .iter()
-        .map(|(item_id, quantity)| Text::new(format!("{:?} {}", item_id, quantity)))
+        .map(|(item_id, quantity)| Text::new(format!("{item_id:?} {quantity}")))
         .collect();
 
     let outputs: Vec<_> = recipe
         .output
         .iter()
-        .map(|(item_id, quantity)| Text::new(format!("{:?} {}", item_id, quantity)))
+        .map(|(item_id, quantity)| Text::new(format!("{item_id:?} {quantity}")))
         .collect();
 
     commands.spawn((
