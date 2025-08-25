@@ -1,6 +1,8 @@
 name: Release
 
 on:
+  release:
+    types: [published]
   # Trigger this workflow on a manual workflow dispatch.
   workflow_dispatch:
     inputs:
@@ -108,7 +110,7 @@ jobs:
         run: echo "ref=${GITHUB_REF#refs/*/}" >> "${GITHUB_OUTPUT}"
     outputs:
       # Use the input from workflow dispatch, or fall back to the git ref.
-      version: ${{ inputs.version || steps.ref.outputs.ref }}
+      version: ${{ github.event.release.tag_name || inputs.version || steps.ref.outputs.ref }}
 
   # Build and package a release for each platform.
   build:
