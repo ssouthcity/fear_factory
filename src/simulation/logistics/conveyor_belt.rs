@@ -7,16 +7,18 @@ use bevy::{
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    FactorySystems,
     assets::manifest::{Id, Manifest},
-    dismantle::QueueDismantle,
-    item::{Item, ItemAssets, Stack},
-    logistics::{
-        ConveyorHoleOf, LogisticAssets,
-        io::{InputInventory, OutputInventory},
+    simulation::{
+        FactorySystems,
+        dismantle::QueueDismantle,
+        item::{Item, ItemAssets, Stack},
+        logistics::{
+            ConveyorHoleOf, LogisticAssets,
+            io::{InputInventory, OutputInventory},
+        },
+        world::Terrain,
     },
     ui::{Interact, Interactable, YSort},
-    world::Terrain,
 };
 
 /// How much space of the belt should be reserved per item

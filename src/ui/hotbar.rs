@@ -2,9 +2,11 @@ use bevy::{ecs::spawn::SpawnIter, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    FactorySystems,
     assets::manifest::Id,
-    machine::{QueueStructureSpawn, StructureTemplate},
+    simulation::{
+        FactorySystems,
+        machine::{QueueStructureSpawn, StructureTemplate},
+    },
 };
 
 pub fn plugin(app: &mut App) {

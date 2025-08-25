@@ -4,23 +4,14 @@ use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode};
 use bevy_aseprite_ultra::AsepriteUltraPlugin;
 
-use crate::screens::Screen;
-
 mod assets;
 mod audio;
 mod camera;
 #[cfg(feature = "dev")]
 mod dev_tools;
-mod dismantle;
-mod item;
-mod logistics;
-mod machine;
-mod power;
-mod recipe;
 mod screens;
-mod theme;
+mod simulation;
 mod ui;
-mod world;
 
 pub struct FactoryGamePlugin;
 
@@ -50,45 +41,13 @@ impl Plugin for FactoryGamePlugin {
             assets::plugin,
             audio::plugin,
             camera::plugin,
-            item::plugin,
-            dismantle::plugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
-            logistics::plugin,
-            machine::plugin,
-            power::plugin,
-            recipe::plugin,
-            world::plugin,
+            simulation::plugin,
             screens::plugin,
             ui::plugin,
         ));
 
         app.insert_resource(ClearColor(Color::BLACK));
-
-        app.configure_sets(
-            Update,
-            (
-                FactorySystems::Input,
-                FactorySystems::Build,
-                FactorySystems::Power,
-                FactorySystems::Logistics,
-                FactorySystems::Work,
-                FactorySystems::Dismantle,
-                FactorySystems::UI,
-            )
-                .chain()
-                .run_if(in_state(Screen::Gameplay)),
-        );
     }
-}
-
-#[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub enum FactorySystems {
-    Input,
-    Build,
-    Power,
-    Logistics,
-    Work,
-    Dismantle,
-    UI,
 }

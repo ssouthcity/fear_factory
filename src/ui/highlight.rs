@@ -1,6 +1,6 @@
 use bevy::{picking::hover::PickingInteraction, prelude::*};
 
-use crate::{
+use crate::simulation::{
     dismantle::{DismantleTimer, Selection},
     machine::Structure,
     world::Terrain,

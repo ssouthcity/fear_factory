@@ -5,9 +5,11 @@ use bevy::{
 
 use crate::{
     assets::manifest::Manifest,
-    recipe::{Recipe, RecipeAssets, SelectedRecipe},
-    theme::widgets,
-    ui::inspect::{InspectedEntity, InspectionMenuState},
+    simulation::recipe::{Recipe, RecipeAssets, SelectedRecipe},
+    ui::{
+        inspect::{InspectedEntity, InspectionMenuState},
+        widgets,
+    },
 };
 
 pub fn plugin(app: &mut App) {

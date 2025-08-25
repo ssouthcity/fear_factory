@@ -2,8 +2,10 @@ use bevy::prelude::*;
 
 use crate::{
     assets::manifest::Id,
-    item::{Item, Stack},
-    recipe::Recipe,
+    simulation::{
+        item::{Item, Stack},
+        recipe::Recipe,
+    },
 };
 
 #[derive(Debug, thiserror::Error)]

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
+use crate::simulation::{
     FactorySystems,
     dismantle::QueueDismantle,
     power::socket::{PowerSocketConnections, PowerSocketsLinked},

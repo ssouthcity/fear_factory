@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::item::Inventory;
+use crate::simulation::item::Inventory;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<InputInventory>();

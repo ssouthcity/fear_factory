@@ -2,19 +2,21 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    FactorySystems,
     assets::manifest::{Id, Manifest},
-    item::Inventory,
-    logistics::{ConveyorHoleOf, InputInventory, OutputInventory},
-    machine::{
-        Machine, Structure,
-        assets::{StructureAssets, StructureTemplate},
-        power::Powered,
+    simulation::{
+        FactorySystems,
+        item::Inventory,
+        logistics::{ConveyorHoleOf, InputInventory, OutputInventory},
+        machine::{
+            Machine, Structure,
+            assets::{StructureAssets, StructureTemplate},
+            power::Powered,
+        },
+        power::{PowerConsumer, PowerProducer, socket::PowerSockets},
+        recipe::SelectRecipe,
+        world::{DepositRecipe, Terrain},
     },
-    power::{PowerConsumer, PowerProducer, socket::PowerSockets},
-    recipe::SelectRecipe,
     ui::{HotbarItemDeselected, HotbarItemSelected, Inspect, Interact, Interactable, YSort},
-    world::{DepositRecipe, Terrain},
 };
 
 pub fn plugin(app: &mut App) {

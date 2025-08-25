@@ -6,8 +6,7 @@ use crate::{
         LoadResource,
         manifest::{Id, Manifest, ManifestPlugin},
     },
-    logistics::ConveyorHole,
-    recipe::Recipe,
+    simulation::{logistics::ConveyorHole, recipe::Recipe},
 };
 
 pub fn plugin(app: &mut App) {

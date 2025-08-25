@@ -5,7 +5,7 @@ use bevy::{
 };
 
 use super::ProcessState;
-use crate::FactorySystems;
+use crate::simulation::FactorySystems;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ProgressBarFill>();

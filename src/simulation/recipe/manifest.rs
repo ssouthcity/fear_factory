@@ -3,7 +3,10 @@ use std::{collections::HashMap, time::Duration};
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use crate::{assets::manifest::Id, item::Item, machine::StructureTemplate};
+use crate::{
+    assets::manifest::Id,
+    simulation::{item::Item, machine::StructureTemplate},
+};
 
 #[derive(Debug, Deserialize, TypePath)]
 pub struct Recipe {
