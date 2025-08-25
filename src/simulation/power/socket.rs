@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 
-use crate::{
+use crate::simulation::{
     FactorySystems,
     power::grid::{PowerGrid, PowerGridComponentOf},
 };

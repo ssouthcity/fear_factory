@@ -5,7 +5,7 @@ use crate::{
         LoadResource,
         manifest::{Manifest, ManifestPlugin},
     },
-    recipe::Recipe,
+    simulation::recipe::Recipe,
 };
 
 pub fn plugin(app: &mut App) {

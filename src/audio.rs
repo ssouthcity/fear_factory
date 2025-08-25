@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{assets::LoadResource, power::FuseBlown};
+use crate::{assets::LoadResource, simulation::power::FuseBlown};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<AudioAssets>()

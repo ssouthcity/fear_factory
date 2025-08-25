@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
+use crate::simulation::{
     machine::Machine,
     power::{FuseBlown, grid::PowerGridComponentOf, socket::PowerSocketsLinked},
 };

@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 
 use crate::{
-    FactorySystems,
     assets::manifest::Manifest,
-    item::{Item, ItemAssets, Stack},
-    logistics::{InputInventory, OutputInventory},
-    machine::power::Powered,
+    simulation::{
+        FactorySystems,
+        item::{Item, ItemAssets, Stack},
+        logistics::{InputInventory, OutputInventory},
+        machine::power::Powered,
+    },
 };
 
 use super::{Recipe, RecipeAssets, SelectedRecipe, progress::on_progress_state_add};

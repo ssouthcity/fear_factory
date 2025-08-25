@@ -2,10 +2,12 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    machine::{Preview, QueueStructureSpawn},
     screens::Screen,
+    simulation::{
+        machine::{Preview, QueueStructureSpawn},
+        world::{MAP_SIZE, WorldAssets, WorldSpawnSystems},
+    },
     ui::HotbarSelection,
-    world::{MAP_SIZE, WorldAssets, WorldSpawnSystems},
 };
 
 pub fn plugin(app: &mut App) {

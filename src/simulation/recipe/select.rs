@@ -4,9 +4,11 @@ use super::{Recipe, RecipeAssets};
 
 use crate::{
     assets::manifest::{Id, Manifest},
-    item::{Inventory, Item, ItemAssets, Stack},
-    logistics::{InputInventory, OutputInventory},
-    recipe::ProcessState,
+    simulation::{
+        item::{Inventory, Item, ItemAssets, Stack},
+        logistics::{InputInventory, OutputInventory},
+        recipe::ProcessState,
+    },
 };
 
 pub fn plugin(app: &mut App) {

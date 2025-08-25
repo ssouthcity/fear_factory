@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     assets::manifest::{Definition, Id},
-    item::Item,
+    simulation::item::Item,
 };
 
 #[derive(Debug, Reflect, Clone)]

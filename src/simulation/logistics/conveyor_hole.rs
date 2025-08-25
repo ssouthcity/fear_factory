@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::AseSlice;
 use serde::Deserialize;
 
-use crate::{
+use crate::simulation::{
     FactorySystems,
     logistics::{LogisticAssets, conveyor_belt::QueueConveyorSpawn},
 };

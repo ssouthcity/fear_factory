@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::FactorySystems;
+use crate::simulation::FactorySystems;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<YSort>();

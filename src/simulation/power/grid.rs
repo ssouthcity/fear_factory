@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
+use crate::simulation::{
     FactorySystems,
     dismantle::QueueDismantle,
     machine::power::Powered,

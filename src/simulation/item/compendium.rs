@@ -3,7 +3,7 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     assets::manifest::Id,
-    item::{Item, ItemAssets, StackSize},
+    simulation::item::{Item, ItemAssets, StackSize},
 };
 
 pub fn plugin(app: &mut App) {

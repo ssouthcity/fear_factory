@@ -8,11 +8,13 @@ use crate::{
         LoadResource,
         manifest::{Id, Manifest, ManifestPlugin},
     },
-    item::{Item, ItemAssets, PlayerInventory, Stack},
-    recipe::{Recipe, RecipeAssets},
     screens::Screen,
+    simulation::{
+        item::{Item, ItemAssets, PlayerInventory, Stack},
+        recipe::{Recipe, RecipeAssets},
+        world::{MAP_SIZE, Terrain, WorldSpawnSystems},
+    },
     ui::{Interact, Interactable, YSort},
-    world::{MAP_SIZE, Terrain, WorldSpawnSystems},
 };
 
 pub fn plugin(app: &mut App) {
