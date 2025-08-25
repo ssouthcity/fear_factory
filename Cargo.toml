@@ -33,6 +33,15 @@ dev_native = [
   "bevy/embedded_watcher",
 ]
 
+[package.metadata.bevy_cli.release]
+default-features = false
+
+[package.metadata.bevy_cli.web]
+default-features = false
+
+[package.metadata.bevy_cli.web.dev]
+features = ["dev"]
+
 [profile.dev]
 opt-level = 1
 
