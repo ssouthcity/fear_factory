@@ -1,4 +1,5 @@
 #![allow(clippy::type_complexity)]
+use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode};
 use bevy_aseprite_ultra::AsepriteUltraPlugin;
@@ -27,6 +28,10 @@ impl Plugin for FactoryGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(
             DefaultPlugins
+                .set(AssetPlugin {
+                    meta_check: AssetMetaCheck::Never,
+                    ..default()
+                })
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Bevy Factory".to_string(),

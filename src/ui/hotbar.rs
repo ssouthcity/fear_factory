@@ -86,7 +86,7 @@ fn spawn_hotbar(mut commands: Commands) {
             .iter()
             .map(move |(shortcut, structure_id)| {
                 (
-                    Name::new(format!("Hotbar Slot {:?}", structure_id)),
+                    Name::new(format!("Hotbar Slot {structure_id:?}")),
                     Node {
                         width: Val::Px(64.0),
                         height: Val::Px(64.0),
