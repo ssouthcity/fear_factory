@@ -16,6 +16,9 @@ toml = "0.9.5"
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }
 
+[patch.crates-io]
+getrandom = { git = "https://github.com/benfrankel/getrandom" }
+
 [features]
 default = ["dev_native"]
 dev = [
