@@ -17,6 +17,9 @@
     # wayland
     pkgs.libxkbcommon
     pkgs.wayland
+
+    # github actions
+    pkgs.act
   ];
 
   languages.rust = {
