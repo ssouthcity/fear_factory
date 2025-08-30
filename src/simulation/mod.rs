@@ -1,4 +1,5 @@
 pub mod dismantle;
+pub mod hud;
 pub mod item;
 pub mod logistics;
 pub mod machine;
@@ -28,6 +29,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_plugins((
         dismantle::plugin,
+        hud::plugin,
         item::plugin,
         logistics::plugin,
         machine::plugin,
