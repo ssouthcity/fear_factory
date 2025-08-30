@@ -66,7 +66,7 @@ fn spawn_hotbar(mut commands: Commands) {
         Name::new("Build Hotbar"),
         Node {
             position_type: PositionType::Absolute,
-            bottom: Val::Px(8.0),
+            top: Val::Px(8.0),
             width: Val::Percent(100.0),
             height: Val::Auto,
             justify_content: JustifyContent::Center,
