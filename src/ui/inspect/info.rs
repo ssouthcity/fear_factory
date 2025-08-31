@@ -4,6 +4,7 @@ use bevy::{
 };
 
 use crate::{
+    assets::indexing::IndexMap,
     simulation::recipe::{RecipeDef, SelectedRecipe},
     ui::{
         inspect::{InspectedEntity, InspectionMenuState},
@@ -24,6 +25,7 @@ pub fn open_recipe_menu(
     selected_recipes: Query<&SelectedRecipe>,
     // icons: Res<ItemAssets>,
     recipes: Res<Assets<RecipeDef>>,
+    recipe_index: Res<IndexMap<RecipeDef>>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
         return;
@@ -33,10 +35,9 @@ pub fn open_recipe_menu(
         return;
     };
 
-    let Some(recipe) = recipes
-        .iter()
-        .map(|(_, recipe_def)| recipe_def)
-        .find(|recipe_def| recipe_def.id == *recipe_id)
+    let Some(recipe) = recipe_index
+        .get(recipe_id)
+        .and_then(|asset_id| recipes.get(*asset_id))
     else {
         return;
     };

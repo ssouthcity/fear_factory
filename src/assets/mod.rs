@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+pub mod indexing;
 pub mod loaders;
 pub mod manifest;
 mod tracking;

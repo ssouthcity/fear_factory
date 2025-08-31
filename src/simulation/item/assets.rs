@@ -2,11 +2,18 @@ use bevy::{asset::LoadedFolder, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 use serde::Deserialize;
 
-use crate::assets::{LoadResource, loaders::toml::TomlAssetPlugin};
+use crate::assets::{
+    LoadResource,
+    indexing::{AssetIndexPlugin, Indexable},
+    loaders::toml::TomlAssetPlugin,
+};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ItemDef>();
-    app.add_plugins(TomlAssetPlugin::<ItemDef>::extensions(&["item.toml"]));
+    app.add_plugins((
+        TomlAssetPlugin::<ItemDef>::extensions(&["item.toml"]),
+        AssetIndexPlugin::<ItemDef>::default(),
+    ));
 
     app.register_type::<ItemAssets>();
     app.load_resource::<ItemAssets>();
@@ -17,6 +24,12 @@ pub struct ItemDef {
     pub id: String,
     pub name: String,
     pub stack_size: u32,
+}
+
+impl Indexable for ItemDef {
+    fn index(&self) -> &String {
+        &self.id
+    }
 }
 
 #[derive(Asset, Clone, Resource, Reflect)]

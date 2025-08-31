@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 
-use crate::simulation::{
-    item::{Inventory, ItemDef, Stack},
-    logistics::{InputInventory, OutputInventory},
-    recipe::{ProcessState, assets::RecipeDef},
+use crate::{
+    assets::indexing::IndexMap,
+    simulation::{
+        item::{Inventory, ItemDef, Stack},
+        logistics::{InputInventory, OutputInventory},
+        recipe::{ProcessState, assets::RecipeDef},
+    },
 };
 
 pub fn plugin(app: &mut App) {
@@ -24,26 +27,23 @@ pub struct SelectRecipe(pub String);
 fn on_select_recipe(
     trigger: Trigger<SelectRecipe>,
     recipes: Res<Assets<RecipeDef>>,
+    recipe_index: Res<IndexMap<RecipeDef>>,
     items: Res<Assets<ItemDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
 
-    let Some(recipe_def) = recipes
-        .iter()
-        .map(|(_, recipe)| recipe)
-        .find(|recipe| recipe.id == event.0)
-    else {
-        warn!("Attempted to select invalid recipe");
-        return;
-    };
+    let recipe_def = recipe_index
+        .get(&event.0)
+        .and_then(|asset_id| recipes.get(*asset_id))
+        .expect("Attempted to select invalid recipe");
 
     let mut input_inventory = Inventory::default();
-    for id in recipe_def.input.keys() {
-        let item_def = items
-            .iter()
-            .map(|(_, item)| item)
-            .find(|item| item.id == *id)
+    for item_id in recipe_def.input.keys() {
+        let item_def = item_index
+            .get(item_id)
+            .and_then(|asset_id| items.get(*asset_id))
             .expect("Recipe refers to non-existent item");
 
         let slot = Stack {
@@ -56,11 +56,10 @@ fn on_select_recipe(
     }
 
     let mut output_inventory = Inventory::default();
-    for id in recipe_def.output.keys() {
-        let item_def = items
-            .iter()
-            .map(|(_, item)| item)
-            .find(|item| item.id == *id)
+    for item_id in recipe_def.output.keys() {
+        let item_def = item_index
+            .get(item_id)
+            .and_then(|asset_id| items.get(*asset_id))
             .expect("Recipe refers to non-existent item");
 
         let slot = Stack {
