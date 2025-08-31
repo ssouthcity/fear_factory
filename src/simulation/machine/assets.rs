@@ -4,9 +4,9 @@ use serde::Deserialize;
 use crate::{
     assets::{
         LoadResource,
-        manifest::{Id, Manifest, ManifestPlugin},
+        manifest::{Manifest, ManifestPlugin},
     },
-    simulation::{logistics::ConveyorHole, recipe::Recipe},
+    simulation::logistics::ConveyorHole,
 };
 
 pub fn plugin(app: &mut App) {
@@ -56,7 +56,7 @@ pub struct PowerTemplate {
 
 #[derive(Debug, TypePath, Deserialize, Default)]
 pub struct RecipeTemplate {
-    pub default_recipe: Option<Id<Recipe>>,
+    pub default_recipe: Option<String>,
 }
 
 #[derive(Debug, TypePath, Deserialize)]

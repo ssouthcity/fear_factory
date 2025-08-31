@@ -10,8 +10,8 @@ use crate::{
     },
     screens::Screen,
     simulation::{
-        item::{ItemAssets, ItemDef, PlayerInventory, Stack},
-        recipe::{Recipe, RecipeAssets},
+        item::{ItemDef, PlayerInventory, Stack},
+        recipe::RecipeDef,
         world::{MAP_SIZE, Terrain, WorldSpawnSystems},
     },
     ui::{Interact, Interactable, YSort},
@@ -33,7 +33,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Debug, Deserialize, TypePath)]
 pub struct Deposit {
     name: String,
-    recipe_id: Id<Recipe>,
+    recipe_id: String,
     quantity: u32,
 }
 
@@ -69,7 +69,7 @@ impl DepositAssets {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct DepositRecipe(pub Id<Recipe>);
+pub struct DepositRecipe(pub String);
 
 fn spawn_deposits(
     mut commands: Commands,
@@ -107,31 +107,31 @@ fn on_mine_deposit(
     trigger: Trigger<Interact>,
     deposits: Query<&DepositRecipe>,
     mut inventory: Single<&mut PlayerInventory>,
-    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
-    recipe_assets: Res<RecipeAssets>,
-    item_manifests: Res<Assets<Manifest<ItemDef>>>,
-    item_assets: Res<ItemAssets>,
+    recipes: Res<Assets<RecipeDef>>,
+    items: Res<Assets<ItemDef>>,
 ) {
     let Ok(deposit_recipe) = deposits.get(trigger.target()) else {
         return;
     };
 
-    let recipe = recipe_manifests
-        .get(&recipe_assets.manifest)
-        .expect("Recipe manifest is not loaded")
-        .get(&deposit_recipe.0)
+    let recipe_def = recipes
+        .iter()
+        .map(|(_, recipe_def)| recipe_def)
+        .find(|recipe_def| recipe_def.id == deposit_recipe.0)
         .expect("Deposit refers to non-existent recipe");
 
-    let items = item_manifests
-        .get(&item_assets.manifest)
-        .expect("Item manifest is not loaded");
-
-    for (item_id, quantity) in recipe.output.iter() {
-        let item = items
-            .get(item_id)
+    for (item_id, quantity) in recipe_def.output.iter() {
+        let item_def = items
+            .iter()
+            .map(|(_, item_def)| item_def)
+            .find(|item_def| item_def.id == *item_id)
             .expect("Recipe refers to invalid item id");
 
-        let mut stack = Stack::from(item).with_quantity(*quantity);
+        let mut stack = Stack {
+            item_id: item_def.id.to_owned(),
+            quantity: *quantity,
+            max_quantity: item_def.stack_size,
+        };
 
         let _ = inventory.add_stack(&mut stack);
     }

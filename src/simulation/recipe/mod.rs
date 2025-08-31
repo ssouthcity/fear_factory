@@ -1,5 +1,4 @@
 mod assets;
-mod manifest;
 mod process;
 mod progress;
 mod select;
@@ -7,8 +6,7 @@ mod select;
 use bevy::prelude::*;
 
 pub use self::{
-    assets::RecipeAssets,
-    manifest::{Recipe, RecipeTags},
+    assets::{RecipeDef, RecipeTags},
     process::ProcessState,
     select::{SelectRecipe, SelectedRecipe},
 };

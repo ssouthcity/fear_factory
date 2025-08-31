@@ -7,7 +7,6 @@ use bevy::{
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    assets::manifest::{Id, Manifest},
     simulation::{
         FactorySystems,
         dismantle::QueueDismantle,
@@ -98,7 +97,7 @@ pub struct ConveyoredItems(Vec<Entity>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct ConveyoredItem(Id<ItemDef>);
+pub struct ConveyoredItem(String);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -255,13 +254,8 @@ fn receive_items_from_belt(
     conveyor_holes: Query<&ConveyorHoleOf>,
     mut inputs: Query<&mut InputInventory>,
     mut commands: Commands,
-    item_manifests: Res<Assets<Manifest<ItemDef>>>,
-    item_assets: Res<ItemAssets>,
+    items: Res<Assets<ItemDef>>,
 ) {
-    let items = item_manifests
-        .get(&item_assets.manifest)
-        .expect("Item manifest not loaded");
-
     for (entity, item, progress, item_of) in conveyored_items {
         if progress.0 < 1.0 {
             continue;
@@ -282,11 +276,19 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let Some(item_def) = items.get(&item.0) else {
+        let Some(item_def) = items
+            .iter()
+            .map(|(_, item)| item)
+            .find(|item_def| item_def.id == item.0)
+        else {
             continue;
         };
 
-        let mut stack = Stack::from(item_def).with_quantity(1);
+        let mut stack = Stack {
+            item_id: item_def.id.to_owned(),
+            quantity: 1,
+            max_quantity: item_def.stack_size,
+        };
 
         if input.add_stack(&mut stack).is_ok() {
             commands.entity(entity).despawn();

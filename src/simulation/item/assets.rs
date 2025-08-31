@@ -2,15 +2,10 @@ use bevy::{asset::LoadedFolder, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 use serde::Deserialize;
 
-use crate::assets::{
-    LoadResource,
-    loaders::toml::TomlAssetPlugin,
-    manifest::{Id, Manifest, ManifestPlugin},
-};
+use crate::assets::{LoadResource, loaders::toml::TomlAssetPlugin};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ItemDef>();
-    app.add_plugins(ManifestPlugin::<ItemDef>::default());
     app.add_plugins(TomlAssetPlugin::<ItemDef>::extensions(&["item.toml"]));
 
     app.register_type::<ItemAssets>();
@@ -24,10 +19,35 @@ pub struct ItemDef {
     pub stack_size: u32,
 }
 
+// #[derive(Resource, Reflect, Deref, DerefMut, Default)]
+// #[reflect(Resource)]
+// pub struct ItemIndex(HashMap<String, AssetId<ItemDef>>);
+
+// fn populate_item_index(
+//     mut events: EventReader<AssetEvent<ItemDef>>,
+//     assets: Res<Assets<ItemDef>>,
+//     mut item_index: ResMut<ItemIndex>,
+// ) {
+//     for event in events.read() {
+//         match event {
+//             AssetEvent::Added { id } => {
+//                 if let Some(asset) = assets.get(*id) {
+//                     item_index.insert(asset.id.to_owned(), *id);
+//                 }
+//             }
+//             AssetEvent::Unused { id } => {
+//                 if let Some(asset) = assets.get(*id) {
+//                     item_index.remove(id);
+//                 }
+//             }
+//             _ => {}
+//         }
+//     }
+// }
+
 #[derive(Asset, Clone, Resource, Reflect)]
 #[reflect(Resource)]
 pub struct ItemAssets {
-    pub manifest: Handle<Manifest<ItemDef>>,
     pub aseprite: Handle<Aseprite>,
     pub item_definitions: Handle<LoadedFolder>,
 }
@@ -37,7 +57,6 @@ impl FromWorld for ItemAssets {
         let asset_server = world.resource::<AssetServer>();
 
         Self {
-            manifest: asset_server.load("manifest/items.toml"),
             aseprite: asset_server.load("items.aseprite"),
             item_definitions: asset_server.load_folder("items"),
         }
@@ -45,14 +64,14 @@ impl FromWorld for ItemAssets {
 }
 
 impl ItemAssets {
-    fn ase_slice(&self, item_id: Id<ItemDef>) -> impl Bundle {
+    fn ase_slice(&self, item_id: String) -> impl Bundle {
         AseSlice {
             aseprite: self.aseprite.clone(),
-            name: item_id.value,
+            name: item_id,
         }
     }
 
-    pub fn sprite(&self, item: Id<ItemDef>) -> impl Bundle {
+    pub fn sprite(&self, item: String) -> impl Bundle {
         (Sprite::sized(Vec2::splat(16.0)), self.ase_slice(item))
     }
 }
