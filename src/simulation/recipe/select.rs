@@ -1,14 +1,9 @@
 use bevy::prelude::*;
 
-use super::{Recipe, RecipeAssets};
-
-use crate::{
-    assets::manifest::{Id, Manifest},
-    simulation::{
-        item::{Inventory, Item, ItemAssets, Stack},
-        logistics::{InputInventory, OutputInventory},
-        recipe::ProcessState,
-    },
+use crate::simulation::{
+    item::{Inventory, ItemDef, Stack},
+    logistics::{InputInventory, OutputInventory},
+    recipe::{ProcessState, assets::RecipeDef},
 };
 
 pub fn plugin(app: &mut App) {
@@ -21,52 +16,58 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Default, Deref, DerefMut)]
 #[reflect(Component)]
 #[require(ProcessState, InputInventory, OutputInventory)]
-pub struct SelectedRecipe(pub Option<Id<Recipe>>);
+pub struct SelectedRecipe(pub Option<String>);
 
 #[derive(Event, Reflect)]
-pub struct SelectRecipe(pub Id<Recipe>);
+pub struct SelectRecipe(pub String);
 
 fn on_select_recipe(
     trigger: Trigger<SelectRecipe>,
-    recipe_assets: Res<RecipeAssets>,
-    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
-    item_assets: Res<ItemAssets>,
-    item_manifests: Res<Assets<Manifest<Item>>>,
+    recipes: Res<Assets<RecipeDef>>,
+    items: Res<Assets<ItemDef>>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
 
-    let recipe_manifest = recipe_manifests
-        .get(&recipe_assets.manifest)
-        .expect("Recipe manifests not loaded");
-
-    let item_manifest = item_manifests
-        .get(&item_assets.manifest)
-        .expect("Item manifests not loaded");
-
-    let Some(recipe) = recipe_manifest.get(&event.0) else {
+    let Some(recipe_def) = recipes
+        .iter()
+        .map(|(_, recipe)| recipe)
+        .find(|recipe| recipe.id == event.0)
+    else {
         warn!("Attempted to select invalid recipe");
         return;
     };
 
     let mut input_inventory = Inventory::default();
-    for id in recipe.input.keys() {
-        let def = item_manifest
-            .get(id)
+    for id in recipe_def.input.keys() {
+        let item_def = items
+            .iter()
+            .map(|(_, item)| item)
+            .find(|item| item.id == *id)
             .expect("Recipe refers to non-existent item");
 
-        let slot = Stack::from(def);
+        let slot = Stack {
+            item_id: item_def.id.to_owned(),
+            quantity: 0,
+            max_quantity: item_def.stack_size,
+        };
 
         input_inventory.add_slot(slot);
     }
 
     let mut output_inventory = Inventory::default();
-    for id in recipe.output.keys() {
-        let def = item_manifest
-            .get(id)
+    for id in recipe_def.output.keys() {
+        let item_def = items
+            .iter()
+            .map(|(_, item)| item)
+            .find(|item| item.id == *id)
             .expect("Recipe refers to non-existent item");
 
-        let slot = Stack::from(def);
+        let slot = Stack {
+            item_id: item_def.id.to_owned(),
+            quantity: 0,
+            max_quantity: item_def.stack_size,
+        };
 
         output_inventory.add_slot(slot);
     }

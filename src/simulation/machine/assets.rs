@@ -4,9 +4,9 @@ use serde::Deserialize;
 use crate::{
     assets::{
         LoadResource,
-        manifest::{Id, Manifest, ManifestPlugin},
+        manifest::{Manifest, ManifestPlugin},
     },
-    simulation::{logistics::ConveyorHole, recipe::Recipe},
+    simulation::logistics::ConveyorHole,
 };
 
 pub fn plugin(app: &mut App) {
@@ -28,7 +28,7 @@ impl FromWorld for StructureAssets {
 
         Self {
             manifest: asset_server.load("manifest/structures.toml"),
-            animations: asset_server.load("structures/"),
+            animations: asset_server.load_folder("structures"),
         }
     }
 }
@@ -56,7 +56,7 @@ pub struct PowerTemplate {
 
 #[derive(Debug, TypePath, Deserialize, Default)]
 pub struct RecipeTemplate {
-    pub default_recipe: Option<Id<Recipe>>,
+    pub default_recipe: Option<String>,
 }
 
 #[derive(Debug, TypePath, Deserialize)]

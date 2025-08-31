@@ -1,16 +1,14 @@
 use bevy::prelude::*;
 
-use crate::{
-    assets::manifest::Manifest,
-    simulation::{
-        FactorySystems,
-        item::{Item, ItemAssets, Stack},
-        logistics::{InputInventory, OutputInventory},
-        machine::power::Powered,
-    },
+use crate::simulation::{
+    FactorySystems,
+    item::{ItemDef, Stack},
+    logistics::{InputInventory, OutputInventory},
+    machine::power::Powered,
+    recipe::RecipeDef,
 };
 
-use super::{Recipe, RecipeAssets, SelectedRecipe, progress::on_progress_state_add};
+use super::{SelectedRecipe, progress::on_progress_state_add};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<ProcessState>();
@@ -45,8 +43,7 @@ impl ProcessState {
 
 fn consume_input(
     query: Query<(&mut ProcessState, &mut InputInventory, &SelectedRecipe), With<Powered>>,
-    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
-    recipe_assets: Res<RecipeAssets>,
+    recipes: Res<Assets<RecipeDef>>,
 ) {
     for (mut state, mut inventory, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
@@ -57,10 +54,10 @@ fn consume_input(
             continue;
         };
 
-        let recipe = recipe_manifests
-            .get(&recipe_assets.manifest)
-            .expect("Recipe manifest is not loaded")
-            .get(recipe_id)
+        let recipe = recipes
+            .iter()
+            .map(|(_, recipe_def)| recipe_def)
+            .find(|recipe_def| recipe_def.id == *recipe_id)
             .expect("Selected recipe refers to non-existent recipe");
 
         if inventory.consume_input(recipe).is_err() {
@@ -75,10 +72,8 @@ fn consume_input(
 
 fn progress_work(
     query: Query<(&mut ProcessState, &SelectedRecipe), With<Powered>>,
-    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
-    recipe_assets: Res<RecipeAssets>,
-    item_manifests: Res<Assets<Manifest<Item>>>,
-    item_assets: Res<ItemAssets>,
+    recipes: Res<Assets<RecipeDef>>,
+    items: Res<Assets<ItemDef>>,
     time: Res<Time>,
 ) {
     for (mut state, selected_recipe) in query {
@@ -94,25 +89,27 @@ fn progress_work(
             continue;
         };
 
-        let recipe = recipe_manifests
-            .get(&recipe_assets.manifest)
-            .expect("Recipe manifest not loaded")
-            .get(recipe_id)
+        let recipe = recipes
+            .iter()
+            .map(|(_, recipe_def)| recipe_def)
+            .find(|recipe_def| recipe_def.id == *recipe_id)
             .expect("Selected recipe refers to non-existent id");
-
-        let items = item_manifests
-            .get(&item_assets.manifest)
-            .expect("Item manifest not loaded");
 
         let output: Vec<Stack> = recipe
             .output
             .iter()
             .map(|(item_id, quantity)| {
-                let item = items
-                    .get(item_id)
-                    .expect("Recipe refers to non-existent item");
+                let item_def = items
+                    .iter()
+                    .map(|(_, item_def)| item_def)
+                    .find(|item_def| item_def.id == *item_id)
+                    .expect("Recipe refers to non-existent output item");
 
-                Stack::from(item).with_quantity(*quantity)
+                Stack {
+                    item_id: item_def.id.to_owned(),
+                    quantity: *quantity,
+                    max_quantity: item_def.stack_size,
+                }
             })
             .collect();
 

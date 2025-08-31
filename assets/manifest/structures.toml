@@ -15,7 +15,7 @@ power.sockets = 4
 
 [constructor]
 name = "Constructor"
-recipe.default_recipe = "iron_plates"
+recipe.default_recipe = "iron_plate"
 power.consumption = 15
 conveyor_holes = [
   { direction = "inbound", translation = [-18, -12, 10] },

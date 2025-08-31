@@ -4,8 +4,7 @@ use bevy::{
 };
 
 use crate::{
-    assets::manifest::{Id, Manifest},
-    simulation::recipe::{Recipe, RecipeAssets, RecipeTags, SelectRecipe},
+    simulation::recipe::{RecipeDef, RecipeTags, SelectRecipe},
     ui::{
         inspect::{InspectedEntity, InspectionMenuState},
         widgets,
@@ -23,25 +22,17 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-struct SelectRecipeButton(Id<Recipe>);
+struct SelectRecipeButton(String);
 
-pub fn recipe_select_menu(
-    mut commands: Commands,
-    recipe_manifests: Res<Assets<Manifest<Recipe>>>,
-    recipe_assets: Res<RecipeAssets>,
-) {
-    let manifest = recipe_manifests
-        .get(&recipe_assets.manifest)
-        .expect("Recipe manifest not loaded");
-
-    let recipes = manifest
+pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>>) {
+    let recipes = recipes
         .iter()
         .filter(|(_, recipe)| {
             recipe
                 .tags
-                .contains(&RecipeTags::StructureId(Id::new("constructor")))
+                .contains(&RecipeTags::StructureId("constructor".to_string()))
         })
-        .map(|(id, recipe)| (id.to_owned(), recipe.name.to_owned()))
+        .map(|(_, recipe)| (recipe.id.to_owned(), recipe.name.to_owned()))
         .collect::<Vec<_>>();
 
     commands.spawn((
