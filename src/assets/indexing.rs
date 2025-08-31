@@ -45,15 +45,12 @@ fn populate_index<T: Asset + Indexable>(
     mut index_map: ResMut<IndexMap<T>>,
 ) {
     for event in events.read() {
-        match event {
-            AssetEvent::Added { id } => {
-                let Some(asset) = assets.get(*id) else {
-                    continue;
-                };
+        if let AssetEvent::Added { id } = event {
+            let Some(asset) = assets.get(*id) else {
+                continue;
+            };
 
-                index_map.insert(asset.index().to_owned(), *id);
-            }
-            _ => {}
+            index_map.insert(asset.index().to_owned(), *id);
         }
     }
 }
