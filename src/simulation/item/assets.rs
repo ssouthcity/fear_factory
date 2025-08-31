@@ -19,32 +19,6 @@ pub struct ItemDef {
     pub stack_size: u32,
 }
 
-// #[derive(Resource, Reflect, Deref, DerefMut, Default)]
-// #[reflect(Resource)]
-// pub struct ItemIndex(HashMap<String, AssetId<ItemDef>>);
-
-// fn populate_item_index(
-//     mut events: EventReader<AssetEvent<ItemDef>>,
-//     assets: Res<Assets<ItemDef>>,
-//     mut item_index: ResMut<ItemIndex>,
-// ) {
-//     for event in events.read() {
-//         match event {
-//             AssetEvent::Added { id } => {
-//                 if let Some(asset) = assets.get(*id) {
-//                     item_index.insert(asset.id.to_owned(), *id);
-//                 }
-//             }
-//             AssetEvent::Unused { id } => {
-//                 if let Some(asset) = assets.get(*id) {
-//                     item_index.remove(id);
-//                 }
-//             }
-//             _ => {}
-//         }
-//     }
-// }
-
 #[derive(Asset, Clone, Resource, Reflect)]
 #[reflect(Resource)]
 pub struct ItemAssets {
