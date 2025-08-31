@@ -1,10 +1,7 @@
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::{
-    assets::manifest::Id,
-    simulation::item::{Item, ItemAssets, StackSize},
-};
+use crate::simulation::item::{ItemAssets, ItemDef};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<CompendiumState>();
@@ -38,9 +35,12 @@ fn toggle_compendium_state(
 
 fn spawn_item_compendium(
     mut commands: Commands,
-    items: Query<(&Id<Item>, &Name, &StackSize)>,
+    items: Res<Assets<ItemDef>>,
     item_assets: Res<ItemAssets>,
 ) {
+    let mut items_sorted: Vec<_> = items.iter().map(|(_, a)| a).collect();
+    items_sorted.sort_by(|a, b| a.name.cmp(&b.name));
+
     let container = commands
         .spawn((
             Name::new("Item Compendium"),
@@ -70,10 +70,7 @@ fn spawn_item_compendium(
         ))
         .id();
 
-    for (item_id, name, stack_size) in items
-        .iter()
-        .sort_by::<&Id<Item>>(|a, b| a.value.cmp(&b.value))
-    {
+    for item_def in items_sorted.iter() {
         commands.spawn((
             Node {
                 display: Display::Grid,
@@ -103,11 +100,14 @@ fn spawn_item_compendium(
                     ImageNode::default(),
                     AseSlice {
                         aseprite: item_assets.aseprite.clone(),
-                        name: item_id.value.to_owned(),
+                        name: item_def.id.to_owned(),
                     }
                 ),
-                (Text::new(name.to_string()), TextColor(Color::WHITE),),
-                (Text::new(stack_size.0.to_string()), TextColor(Color::WHITE),)
+                (Text::new(item_def.name.to_owned()), TextColor(Color::WHITE),),
+                (
+                    Text::new(item_def.stack_size.to_string()),
+                    TextColor(Color::WHITE),
+                )
             ],
         ));
     }

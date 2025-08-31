@@ -11,7 +11,7 @@ use crate::{
     simulation::{
         FactorySystems,
         dismantle::QueueDismantle,
-        item::{Item, ItemAssets, Stack},
+        item::{ItemAssets, ItemDef, Stack},
         logistics::{
             ConveyorHoleOf, LogisticAssets,
             io::{InputInventory, OutputInventory},
@@ -98,7 +98,7 @@ pub struct ConveyoredItems(Vec<Entity>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct ConveyoredItem(Id<Item>);
+pub struct ConveyoredItem(Id<ItemDef>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -255,7 +255,7 @@ fn receive_items_from_belt(
     conveyor_holes: Query<&ConveyorHoleOf>,
     mut inputs: Query<&mut InputInventory>,
     mut commands: Commands,
-    item_manifests: Res<Assets<Manifest<Item>>>,
+    item_manifests: Res<Assets<Manifest<ItemDef>>>,
     item_assets: Res<ItemAssets>,
 ) {
     let items = item_manifests

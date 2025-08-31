@@ -28,7 +28,7 @@ impl FromWorld for StructureAssets {
 
         Self {
             manifest: asset_server.load("manifest/structures.toml"),
-            animations: asset_server.load("structures/"),
+            animations: asset_server.load_folder("structures"),
         }
     }
 }

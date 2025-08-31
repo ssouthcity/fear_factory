@@ -1,16 +1,20 @@
 [coal]
+id = "coal"
 name = "Coal"
 stack_size = 100
 
 [iron_ore]
+id = "iron_ore"
 name = "Iron Ore"
 stack_size = 100
 
 [iron_ingot]
+id = "iron_ingot"
 name = "Iron Ingot"
 stack_size = 100
 
 [iron_plate]
+id = "iron_plate"
 name = "Iron Plate"
 stack_size = 50
 

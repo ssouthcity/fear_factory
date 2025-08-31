@@ -10,7 +10,7 @@ use crate::{
     },
     screens::Screen,
     simulation::{
-        item::{Item, ItemAssets, PlayerInventory, Stack},
+        item::{ItemAssets, ItemDef, PlayerInventory, Stack},
         recipe::{Recipe, RecipeAssets},
         world::{MAP_SIZE, Terrain, WorldSpawnSystems},
     },
@@ -109,7 +109,7 @@ fn on_mine_deposit(
     mut inventory: Single<&mut PlayerInventory>,
     recipe_manifests: Res<Assets<Manifest<Recipe>>>,
     recipe_assets: Res<RecipeAssets>,
-    item_manifests: Res<Assets<Manifest<Item>>>,
+    item_manifests: Res<Assets<Manifest<ItemDef>>>,
     item_assets: Res<ItemAssets>,
 ) {
     let Ok(deposit_recipe) = deposits.get(trigger.target()) else {

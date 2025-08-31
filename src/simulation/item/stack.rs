@@ -2,12 +2,12 @@ use bevy::prelude::*;
 
 use crate::{
     assets::manifest::{Definition, Id},
-    simulation::item::Item,
+    simulation::item::ItemDef,
 };
 
 #[derive(Debug, Reflect, Clone)]
 pub struct Stack {
-    pub item_id: Id<Item>,
+    pub item_id: Id<ItemDef>,
     pub quantity: u32,
     pub max_quantity: u32,
 }
@@ -27,12 +27,12 @@ impl Stack {
     }
 }
 
-impl From<&Definition<Item>> for Stack {
-    fn from(value: &Definition<Item>) -> Self {
+impl From<&Definition<ItemDef>> for Stack {
+    fn from(value: &Definition<ItemDef>) -> Self {
         Self {
             item_id: value.id.clone(),
             quantity: 0,
-            max_quantity: value.stack_size.0,
+            max_quantity: value.stack_size,
         }
     }
 }

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     assets::manifest::Id,
     simulation::{
-        item::{Item, Stack},
+        item::{ItemDef, Stack},
         recipe::Recipe,
     },
 };
@@ -137,7 +137,7 @@ impl Inventory {
         Ok(())
     }
 
-    pub fn total_quantity_of(&self, item_id: &Id<Item>) -> u32 {
+    pub fn total_quantity_of(&self, item_id: &Id<ItemDef>) -> u32 {
         self.slots
             .iter()
             .filter_map(|slot| slot.as_ref())
@@ -174,7 +174,7 @@ impl Inventory {
         Ok(())
     }
 
-    pub fn pop(&mut self) -> Result<Id<Item>, InventoryError> {
+    pub fn pop(&mut self) -> Result<Id<ItemDef>, InventoryError> {
         for stack in self.slots.iter_mut().flatten() {
             if stack.quantity > 0 {
                 stack.quantity -= 1;
@@ -185,7 +185,7 @@ impl Inventory {
         Err(InventoryError::InventoryEmpty)
     }
 
-    pub fn push(&mut self, item_id: &Id<Item>) -> Result<(), InventoryError> {
+    pub fn push(&mut self, item_id: &Id<ItemDef>) -> Result<(), InventoryError> {
         for stack in self.slots.iter_mut().flatten() {
             if stack.item_id == *item_id && !stack.is_full() {
                 stack.quantity += 1;

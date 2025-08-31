@@ -4,7 +4,7 @@ use crate::{
     assets::manifest::Manifest,
     simulation::{
         FactorySystems,
-        item::{Item, ItemAssets, Stack},
+        item::{ItemAssets, ItemDef, Stack},
         logistics::{InputInventory, OutputInventory},
         machine::power::Powered,
     },
@@ -77,7 +77,7 @@ fn progress_work(
     query: Query<(&mut ProcessState, &SelectedRecipe), With<Powered>>,
     recipe_manifests: Res<Assets<Manifest<Recipe>>>,
     recipe_assets: Res<RecipeAssets>,
-    item_manifests: Res<Assets<Manifest<Item>>>,
+    item_manifests: Res<Assets<Manifest<ItemDef>>>,
     item_assets: Res<ItemAssets>,
     time: Res<Time>,
 ) {

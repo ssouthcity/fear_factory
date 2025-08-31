@@ -5,7 +5,7 @@ use super::{Recipe, RecipeAssets};
 use crate::{
     assets::manifest::{Id, Manifest},
     simulation::{
-        item::{Inventory, Item, ItemAssets, Stack},
+        item::{Inventory, ItemAssets, ItemDef, Stack},
         logistics::{InputInventory, OutputInventory},
         recipe::ProcessState,
     },
@@ -31,7 +31,7 @@ fn on_select_recipe(
     recipe_assets: Res<RecipeAssets>,
     recipe_manifests: Res<Assets<Manifest<Recipe>>>,
     item_assets: Res<ItemAssets>,
-    item_manifests: Res<Assets<Manifest<Item>>>,
+    item_manifests: Res<Assets<Manifest<ItemDef>>>,
     mut commands: Commands,
 ) {
     let event = trigger.event();

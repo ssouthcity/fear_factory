@@ -5,16 +5,16 @@ use serde::Deserialize;
 
 use crate::{
     assets::manifest::Id,
-    simulation::{item::Item, machine::StructureTemplate},
+    simulation::{item::ItemDef, machine::StructureTemplate},
 };
 
 #[derive(Debug, Deserialize, TypePath)]
 pub struct Recipe {
     pub name: String,
     #[serde(default)]
-    pub input: HashMap<Id<Item>, u32>,
+    pub input: HashMap<Id<ItemDef>, u32>,
     #[serde(default)]
-    pub output: HashMap<Id<Item>, u32>,
+    pub output: HashMap<Id<ItemDef>, u32>,
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
     #[serde(default)]
