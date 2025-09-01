@@ -22,26 +22,6 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Item(pub Handle<ItemDef>);
 
-// #[derive(Component, Reflect, Default)]
-// #[reflect(Component)]
-// pub struct Quantity(u32);
-
-// #[derive(Event, Reflect)]
-// pub struct PickupItem {
-//     pub item: Entity,
-//     pub quantity: u32,
-// }
-
-// fn pickup_items(
-//     trigger: Trigger<PickupItem>,
-//     item_defs: Res<Assets<ItemDef>>,
-//     items: Query<(&Item, &mut Quantity)>,
-// ) {
-//     let Ok((item, quantity)) = items.get(trigger.target()) else {
-//         return;
-//     };
-// }
-
 #[derive(Component, Reflect, Deref, DerefMut)]
 #[reflect(Component)]
 pub struct PlayerInventory(Inventory);
