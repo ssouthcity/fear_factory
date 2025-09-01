@@ -3,11 +3,18 @@ use std::{collections::HashMap, time::Duration};
 use bevy::{asset::LoadedFolder, prelude::*};
 use serde::Deserialize;
 
-use crate::assets::{LoadResource, loaders::toml::TomlAssetPlugin};
+use crate::assets::{
+    LoadResource,
+    indexing::{AssetIndexPlugin, Indexable},
+    loaders::toml::TomlAssetPlugin,
+};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<RecipeDef>();
-    app.add_plugins(TomlAssetPlugin::<RecipeDef>::extensions(&["recipe.toml"]));
+    app.add_plugins((
+        TomlAssetPlugin::<RecipeDef>::extensions(&["recipe.toml"]),
+        AssetIndexPlugin::<RecipeDef>::default(),
+    ));
 
     app.register_type::<RecipeAssets>();
     app.load_resource::<RecipeAssets>();
@@ -25,6 +32,12 @@ pub struct RecipeDef {
     pub duration: Duration,
     #[serde(default)]
     pub tags: Vec<RecipeTags>,
+}
+
+impl Indexable for RecipeDef {
+    fn index(&self) -> &String {
+        &self.id
+    }
 }
 
 #[derive(Debug, Reflect, Deserialize, PartialEq, Eq)]

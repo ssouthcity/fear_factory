@@ -1,11 +1,14 @@
 use bevy::prelude::*;
 
-use crate::simulation::{
-    FactorySystems,
-    item::{ItemDef, Stack},
-    logistics::{InputInventory, OutputInventory},
-    machine::power::Powered,
-    recipe::RecipeDef,
+use crate::{
+    assets::indexing::IndexMap,
+    simulation::{
+        FactorySystems,
+        item::{ItemDef, Stack},
+        logistics::{InputInventory, OutputInventory},
+        machine::power::Powered,
+        recipe::RecipeDef,
+    },
 };
 
 use super::{SelectedRecipe, progress::on_progress_state_add};
@@ -44,6 +47,7 @@ impl ProcessState {
 fn consume_input(
     query: Query<(&mut ProcessState, &mut InputInventory, &SelectedRecipe), With<Powered>>,
     recipes: Res<Assets<RecipeDef>>,
+    recipe_index: Res<IndexMap<RecipeDef>>,
 ) {
     for (mut state, mut inventory, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
@@ -54,10 +58,9 @@ fn consume_input(
             continue;
         };
 
-        let recipe = recipes
-            .iter()
-            .map(|(_, recipe_def)| recipe_def)
-            .find(|recipe_def| recipe_def.id == *recipe_id)
+        let recipe = recipe_index
+            .get(recipe_id)
+            .and_then(|asset_id| recipes.get(*asset_id))
             .expect("Selected recipe refers to non-existent recipe");
 
         if inventory.consume_input(recipe).is_err() {
@@ -73,7 +76,9 @@ fn consume_input(
 fn progress_work(
     query: Query<(&mut ProcessState, &SelectedRecipe), With<Powered>>,
     recipes: Res<Assets<RecipeDef>>,
+    recipe_index: Res<IndexMap<RecipeDef>>,
     items: Res<Assets<ItemDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
     time: Res<Time>,
 ) {
     for (mut state, selected_recipe) in query {
@@ -89,20 +94,18 @@ fn progress_work(
             continue;
         };
 
-        let recipe = recipes
-            .iter()
-            .map(|(_, recipe_def)| recipe_def)
-            .find(|recipe_def| recipe_def.id == *recipe_id)
+        let recipe = recipe_index
+            .get(recipe_id)
+            .and_then(|asset_id| recipes.get(*asset_id))
             .expect("Selected recipe refers to non-existent id");
 
         let output: Vec<Stack> = recipe
             .output
             .iter()
             .map(|(item_id, quantity)| {
-                let item_def = items
-                    .iter()
-                    .map(|(_, item_def)| item_def)
-                    .find(|item_def| item_def.id == *item_id)
+                let item_def = item_index
+                    .get(item_id)
+                    .and_then(|asset_id| items.get(*asset_id))
                     .expect("Recipe refers to non-existent output item");
 
                 Stack {

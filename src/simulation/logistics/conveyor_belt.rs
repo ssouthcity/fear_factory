@@ -7,6 +7,7 @@ use bevy::{
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
+    assets::indexing::IndexMap,
     simulation::{
         FactorySystems,
         dismantle::QueueDismantle,
@@ -255,6 +256,7 @@ fn receive_items_from_belt(
     mut inputs: Query<&mut InputInventory>,
     mut commands: Commands,
     items: Res<Assets<ItemDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
 ) {
     for (entity, item, progress, item_of) in conveyored_items {
         if progress.0 < 1.0 {
@@ -276,10 +278,9 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let Some(item_def) = items
-            .iter()
-            .map(|(_, item)| item)
-            .find(|item_def| item_def.id == item.0)
+        let Some(item_def) = item_index
+            .get(&item.0)
+            .and_then(|asset_id| items.get(*asset_id))
         else {
             continue;
         };
