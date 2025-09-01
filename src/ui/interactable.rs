@@ -26,6 +26,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(Pickable)]
 pub struct Interactable;
 
 #[derive(Event, Reflect, Default)]
