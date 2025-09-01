@@ -162,6 +162,7 @@ fn garbage_clean_conveyor_belts(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn place_items_on_belt(
     conveyor_belts: Query<(
         Entity,
