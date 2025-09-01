@@ -49,16 +49,3 @@ impl FromWorld for ItemAssets {
         }
     }
 }
-
-impl ItemAssets {
-    fn ase_slice(&self, item_id: String) -> impl Bundle {
-        AseSlice {
-            aseprite: self.aseprite.clone(),
-            name: item_id,
-        }
-    }
-
-    pub fn sprite(&self, item: String) -> impl Bundle {
-        (Sprite::sized(Vec2::splat(16.0)), self.ase_slice(item))
-    }
-}

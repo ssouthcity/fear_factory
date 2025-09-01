@@ -18,10 +18,9 @@ pub fn plugin(app: &mut App) {
         .add_systems(Startup, spawn_player_inventory);
 }
 
-#[allow(dead_code)]
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct Item(Handle<ItemDef>);
+pub struct Item(pub Handle<ItemDef>);
 
 #[derive(Component, Reflect, Deref, DerefMut)]
 #[reflect(Component)]

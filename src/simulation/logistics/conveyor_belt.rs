@@ -11,7 +11,7 @@ use crate::{
     simulation::{
         FactorySystems,
         dismantle::QueueDismantle,
-        item::{ItemAssets, ItemDef, Stack},
+        item::{Item, ItemAssets, ItemDef, Stack},
         logistics::{
             ConveyorHoleOf, LogisticAssets,
             io::{InputInventory, OutputInventory},
@@ -30,9 +30,8 @@ pub fn plugin(app: &mut App) {
     app.register_type::<ConveyorSpeed>();
     app.register_type::<ConveyorLength>();
 
-    app.register_type::<ConveyoredItems>();
-    app.register_type::<ConveyoredItem>();
-    app.register_type::<ConveyoredItemOf>();
+    app.register_type::<Transports>();
+    app.register_type::<TransportedBy>();
 
     app.add_event::<QueueConveyorSpawn>();
 
@@ -57,7 +56,7 @@ pub struct QueueConveyorSpawn(pub Entity, pub Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-#[require(ConveyorLength, ConveyorSpeed, ConveyoredItems)]
+#[require(ConveyorLength, ConveyorSpeed, Transports)]
 pub struct ConveyorBelt(Entity, Entity);
 
 #[derive(Component, Reflect, Default)]
@@ -93,21 +92,18 @@ fn insert_pickup_timer(mut world: DeferredWorld, HookContext { entity, .. }: Hoo
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[relationship_target(relationship = ConveyoredItemOf, linked_spawn)]
-pub struct ConveyoredItems(Vec<Entity>);
+#[relationship_target(relationship = TransportedBy, linked_spawn)]
+pub struct Transports(Vec<Entity>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct ConveyoredItem(String);
+#[relationship(relationship_target = Transports)]
+#[require(TransportProgress)]
+pub struct TransportedBy(pub Entity);
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[relationship(relationship_target = ConveyoredItems)]
-pub struct ConveyoredItemOf(pub Entity);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct ConveyoredItemProgress(f32);
+pub struct TransportProgress(f32);
 
 fn build_conveyor_belts(
     mut events: EventReader<QueueConveyorSpawn>,
@@ -166,22 +162,25 @@ fn garbage_clean_conveyor_belts(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn place_items_on_belt(
     conveyor_belts: Query<(
         Entity,
         &Transform,
         &ConveyorBelt,
         &ConveyorLength,
-        &ConveyoredItems,
+        &Transports,
         &mut ConveyorPickupTimer,
     )>,
     conveyor_holes: Query<&ConveyorHoleOf>,
     mut outputs: Query<&mut OutputInventory>,
     mut commands: Commands,
     item_assets: Res<ItemAssets>,
+    item_index: Res<IndexMap<ItemDef>>,
+    mut items: ResMut<Assets<ItemDef>>,
     time: Res<Time>,
 ) {
-    for (entity, transform, belt, length, items, mut pickup_timer) in conveyor_belts {
+    for (entity, transform, belt, length, conveyored_items, mut pickup_timer) in conveyor_belts {
         if !pickup_timer.0.tick(time.delta()).finished() {
             continue;
         }
@@ -197,23 +196,31 @@ fn place_items_on_belt(
             continue;
         };
 
-        if (length.0 / CONVEYOR_BELT_TRAY_SIZE).ceil() as u8 == items.len() as u8 {
+        if (length.0 / CONVEYOR_BELT_TRAY_SIZE).ceil() as u8 == conveyored_items.len() as u8 {
             continue;
         }
 
         if let Ok(item_id) = output.pop() {
+            // TODO: update inventory so that this becomes a .clone()
+            let item_handle = item_index
+                .get(&item_id)
+                .and_then(|asset_id| items.get_strong_handle(*asset_id))
+                .expect("Inventory contains invalid item id");
+
             commands
                 .spawn((
                     Name::new("Item"),
                     Transform::default()
                         .with_translation(Vec3::new(-length.0 / 2.0, 0.0, 0.0))
                         .with_rotation(transform.rotation.inverse()),
-                    item_assets.sprite(item_id.clone()),
-                    ConveyoredItemProgress(0.0),
-                    ConveyoredItem(item_id.clone()),
-                    ConveyoredItemOf(entity),
+                    Sprite::sized(Vec2::splat(16.0)),
+                    AseSlice {
+                        aseprite: item_assets.aseprite.clone(),
+                        name: item_id,
+                    },
+                    Item(item_handle),
+                    TransportedBy(entity),
                     ChildOf(entity),
-                    Pickable::default(),
                     Interactable,
                 ))
                 .observe(|trigger: Trigger<Interact>, mut commands: Commands| {
@@ -224,8 +231,8 @@ fn place_items_on_belt(
 }
 
 fn transfer_belt_contents(
-    belt_query: Query<(&ConveyorLength, &ConveyorSpeed, &ConveyoredItems)>,
-    mut item_query: Query<(&mut Transform, &mut ConveyoredItemProgress)>,
+    belt_query: Query<(&ConveyorLength, &ConveyorSpeed, &Transports)>,
+    mut item_query: Query<(&mut Transform, &mut TransportProgress)>,
     time: Res<Time>,
 ) {
     for (length, speed, conveyored_items) in belt_query {
@@ -246,17 +253,11 @@ fn transfer_belt_contents(
 
 fn receive_items_from_belt(
     conveyor_belts: Query<&ConveyorBelt>,
-    conveyored_items: Query<(
-        Entity,
-        &ConveyoredItem,
-        &ConveyoredItemProgress,
-        &ConveyoredItemOf,
-    )>,
+    conveyored_items: Query<(Entity, &Item, &TransportProgress, &TransportedBy)>,
     conveyor_holes: Query<&ConveyorHoleOf>,
     mut inputs: Query<&mut InputInventory>,
     mut commands: Commands,
     items: Res<Assets<ItemDef>>,
-    item_index: Res<IndexMap<ItemDef>>,
 ) {
     for (entity, item, progress, item_of) in conveyored_items {
         if progress.0 < 1.0 {
@@ -278,10 +279,7 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let Some(item_def) = item_index
-            .get(&item.0)
-            .and_then(|asset_id| items.get(*asset_id))
-        else {
+        let Some(item_def) = items.get(&item.0) else {
             continue;
         };
 
