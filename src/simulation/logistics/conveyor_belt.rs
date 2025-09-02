@@ -7,15 +7,12 @@ use bevy::{
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    assets::indexing::IndexMap,
     simulation::{
         FactorySystems,
         dismantle::QueueDismantle,
-        item::{Item, ItemAssets, ItemDef, Stack},
-        logistics::{
-            ConveyorHoleOf, LogisticAssets,
-            io::{InputInventory, OutputInventory},
-        },
+        item::{Full, Item, ItemAssets, ItemDef, Quantity},
+        logistics::{ConveyorHoleOf, LogisticAssets},
+        recipe::{Inputs, Outputs},
         world::Terrain,
     },
     ui::{Interact, Interactable, YSort},
@@ -173,15 +170,19 @@ fn place_items_on_belt(
         &mut ConveyorPickupTimer,
     )>,
     conveyor_holes: Query<&ConveyorHoleOf>,
-    mut outputs: Query<&mut OutputInventory>,
+    outputs_query: Query<&Outputs>,
+    output_query: Query<(&Item, &Quantity)>,
     mut commands: Commands,
     item_assets: Res<ItemAssets>,
-    item_index: Res<IndexMap<ItemDef>>,
-    mut items: ResMut<Assets<ItemDef>>,
+    items: Res<Assets<ItemDef>>,
     time: Res<Time>,
 ) {
     for (entity, transform, belt, length, conveyored_items, mut pickup_timer) in conveyor_belts {
         if !pickup_timer.0.tick(time.delta()).finished() {
+            continue;
+        }
+
+        if (length.0 / CONVEYOR_BELT_TRAY_SIZE).ceil() as u8 == conveyored_items.len() as u8 {
             continue;
         }
 
@@ -192,41 +193,43 @@ fn place_items_on_belt(
             continue;
         };
 
-        let Ok(mut output) = outputs.get_mut(pickup_point) else {
+        let Ok(outputs) = outputs_query.get(pickup_point) else {
             continue;
         };
 
-        if (length.0 / CONVEYOR_BELT_TRAY_SIZE).ceil() as u8 == conveyored_items.len() as u8 {
+        let Some(item) = outputs
+            .iter()
+            .flat_map(|e| output_query.get(e))
+            .find(|(_, q)| q.0 > 0)
+            .map(|(i, _)| i)
+        else {
             continue;
-        }
+        };
 
-        if let Ok(item_id) = output.pop() {
-            // TODO: update inventory so that this becomes a .clone()
-            let item_handle = item_index
-                .get(&item_id)
-                .and_then(|asset_id| items.get_strong_handle(*asset_id))
-                .expect("Inventory contains invalid item id");
+        let item_id = items
+            .get(&item.0)
+            .map(|def| def.id.to_owned())
+            .unwrap_or("unknown".to_string());
 
-            commands
-                .spawn((
-                    Name::new("Item"),
-                    Transform::default()
-                        .with_translation(Vec3::new(-length.0 / 2.0, 0.0, 0.0))
-                        .with_rotation(transform.rotation.inverse()),
-                    Sprite::sized(Vec2::splat(16.0)),
-                    AseSlice {
-                        aseprite: item_assets.aseprite.clone(),
-                        name: item_id,
-                    },
-                    Item(item_handle),
-                    TransportedBy(entity),
-                    ChildOf(entity),
-                    Interactable,
-                ))
-                .observe(|trigger: Trigger<Interact>, mut commands: Commands| {
-                    commands.entity(trigger.target()).despawn();
-                });
-        }
+        commands
+            .spawn((
+                Name::new("Item"),
+                Transform::default()
+                    .with_translation(Vec3::new(-length.0 / 2.0, 0.0, 0.0))
+                    .with_rotation(transform.rotation.inverse()),
+                Sprite::sized(Vec2::splat(16.0)),
+                AseSlice {
+                    aseprite: item_assets.aseprite.clone(),
+                    name: item_id,
+                },
+                Item(item.0.clone()),
+                TransportedBy(entity),
+                ChildOf(entity),
+                Interactable,
+            ))
+            .observe(|trigger: Trigger<Interact>, mut commands: Commands| {
+                commands.entity(trigger.target()).despawn();
+            });
     }
 }
 
@@ -255,9 +258,9 @@ fn receive_items_from_belt(
     conveyor_belts: Query<&ConveyorBelt>,
     conveyored_items: Query<(Entity, &Item, &TransportProgress, &TransportedBy)>,
     conveyor_holes: Query<&ConveyorHoleOf>,
-    mut inputs: Query<&mut InputInventory>,
+    recipe_inputs: Query<&Inputs>,
+    mut inputs: Query<(&Item, &mut Quantity), Without<Full>>,
     mut commands: Commands,
-    items: Res<Assets<ItemDef>>,
 ) {
     for (entity, item, progress, item_of) in conveyored_items {
         if progress.0 < 1.0 {
@@ -275,22 +278,20 @@ fn receive_items_from_belt(
             continue;
         };
 
-        let Ok(mut input) = inputs.get_mut(dropoff_point) else {
+        let Ok(input_entities) = recipe_inputs.get(dropoff_point) else {
             continue;
         };
 
-        let Some(item_def) = items.get(&item.0) else {
-            continue;
-        };
+        for input_entity in input_entities.iter() {
+            let Ok((recipe_item, mut quantity)) = inputs.get_mut(input_entity) else {
+                continue;
+            };
 
-        let mut stack = Stack {
-            item_id: item_def.id.to_owned(),
-            quantity: 1,
-            max_quantity: item_def.stack_size,
-        };
-
-        if input.add_stack(&mut stack).is_ok() {
-            commands.entity(entity).despawn();
+            if recipe_item.0 == item.0 {
+                quantity.0 += 1;
+                commands.entity(entity).despawn();
+                break;
+            }
         }
     }
 }
