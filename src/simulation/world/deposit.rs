@@ -6,16 +6,11 @@ use serde::Deserialize;
 use crate::{
     assets::{
         LoadResource,
-        indexing::IndexMap,
         manifest::{Id, Manifest, ManifestPlugin},
     },
     screens::Screen,
-    simulation::{
-        item::{ItemDef, PlayerInventory, Stack},
-        recipe::RecipeDef,
-        world::{MAP_SIZE, Terrain, WorldSpawnSystems},
-    },
-    ui::{Interact, Interactable, YSort},
+    simulation::world::{MAP_SIZE, Terrain, WorldSpawnSystems},
+    ui::{Interactable, YSort},
 };
 
 pub fn plugin(app: &mut App) {
@@ -27,8 +22,6 @@ pub fn plugin(app: &mut App) {
         OnEnter(Screen::Gameplay),
         spawn_deposits.in_set(WorldSpawnSystems::SpawnDeposits),
     );
-
-    app.add_observer(on_mine_deposit);
 }
 
 #[derive(Debug, Deserialize, TypePath)]
@@ -101,39 +94,5 @@ fn spawn_deposits(
                 DepositRecipe(deposit.recipe_id.clone()),
             ));
         }
-    }
-}
-
-fn on_mine_deposit(
-    trigger: Trigger<Interact>,
-    deposits: Query<&DepositRecipe>,
-    mut inventory: Single<&mut PlayerInventory>,
-    recipes: Res<Assets<RecipeDef>>,
-    recipe_index: Res<IndexMap<RecipeDef>>,
-    items: Res<Assets<ItemDef>>,
-    item_index: Res<IndexMap<ItemDef>>,
-) {
-    let Ok(deposit_recipe) = deposits.get(trigger.target()) else {
-        return;
-    };
-
-    let recipe_def = recipe_index
-        .get(&deposit_recipe.0)
-        .and_then(|asset_id| recipes.get(*asset_id))
-        .expect("Deposit refers to non-existent recipe");
-
-    for (item_id, quantity) in recipe_def.output.iter() {
-        let item_def = item_index
-            .get(item_id)
-            .and_then(|asset_id| items.get(*asset_id))
-            .expect("Recipe refers to invalid item id");
-
-        let mut stack = Stack {
-            item_id: item_def.id.to_owned(),
-            quantity: *quantity,
-            max_quantity: item_def.stack_size,
-        };
-
-        let _ = inventory.add_stack(&mut stack);
     }
 }
