@@ -3,9 +3,10 @@ use bevy::prelude::*;
 use crate::{
     assets::indexing::IndexMap,
     simulation::{
-        item::{Inventory, ItemDef, Stack},
-        logistics::{InputInventory, OutputInventory},
-        recipe::{ProcessState, assets::RecipeDef},
+        item::{Item, ItemDef, Quantity},
+        recipe::{
+            InputOf, Inputs, OutputOf, Outputs, ProcessState, RequiredQuantity, assets::RecipeDef,
+        },
     },
 };
 
@@ -18,7 +19,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default, Deref, DerefMut)]
 #[reflect(Component)]
-#[require(ProcessState, InputInventory, OutputInventory)]
+#[require(ProcessState, Inputs, Outputs)]
 pub struct SelectedRecipe(pub Option<String>);
 
 #[derive(Event, Reflect)]
@@ -28,7 +29,7 @@ fn on_select_recipe(
     trigger: Trigger<SelectRecipe>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
-    items: Res<Assets<ItemDef>>,
+    mut items: ResMut<Assets<ItemDef>>,
     item_index: Res<IndexMap<ItemDef>>,
     mut commands: Commands,
 ) {
@@ -39,41 +40,39 @@ fn on_select_recipe(
         .and_then(|asset_id| recipes.get(*asset_id))
         .expect("Attempted to select invalid recipe");
 
-    let mut input_inventory = Inventory::default();
-    for item_id in recipe_def.input.keys() {
-        let item_def = item_index
+    for (item_id, quantity) in recipe_def.input.iter() {
+        let item_handle = item_index
             .get(item_id)
-            .and_then(|asset_id| items.get(*asset_id))
+            .and_then(|asset_id| items.get_strong_handle(*asset_id))
             .expect("Recipe refers to non-existent item");
 
-        let slot = Stack {
-            item_id: item_def.id.to_owned(),
-            quantity: 0,
-            max_quantity: item_def.stack_size,
-        };
-
-        input_inventory.add_slot(slot);
+        commands.spawn((
+            Name::new("Input"),
+            ChildOf(trigger.target()),
+            Item(item_handle),
+            Quantity(0),
+            RequiredQuantity(*quantity),
+            InputOf(trigger.target()),
+        ));
     }
 
-    let mut output_inventory = Inventory::default();
-    for item_id in recipe_def.output.keys() {
-        let item_def = item_index
+    for (item_id, quantity) in recipe_def.output.iter() {
+        let item_handle = item_index
             .get(item_id)
-            .and_then(|asset_id| items.get(*asset_id))
+            .and_then(|asset_id| items.get_strong_handle(*asset_id))
             .expect("Recipe refers to non-existent item");
 
-        let slot = Stack {
-            item_id: item_def.id.to_owned(),
-            quantity: 0,
-            max_quantity: item_def.stack_size,
-        };
-
-        output_inventory.add_slot(slot);
+        commands.spawn((
+            Name::new("Output"),
+            ChildOf(trigger.target()),
+            Item(item_handle),
+            Quantity(0),
+            RequiredQuantity(*quantity),
+            OutputOf(trigger.target()),
+        ));
     }
 
-    commands.entity(trigger.target()).insert((
-        SelectedRecipe(Some(event.0.clone())),
-        InputInventory(input_inventory),
-        OutputInventory(output_inventory),
-    ));
+    commands
+        .entity(trigger.target())
+        .insert(SelectedRecipe(Some(event.0.clone())));
 }

@@ -5,8 +5,7 @@ use crate::{
     assets::manifest::{Id, Manifest},
     simulation::{
         FactorySystems,
-        item::Inventory,
-        logistics::{ConveyorHoleOf, InputInventory, OutputInventory},
+        logistics::ConveyorHoleOf,
         machine::{
             Machine, Structure,
             assets::{StructureAssets, StructureTemplate},
@@ -158,12 +157,6 @@ fn spawn_structures(
                 } else {
                     entity.despawn();
                 };
-            }
-            "merger" => {
-                entity.insert((
-                    InputInventory(Inventory::sized(10)),
-                    OutputInventory(Inventory::sized(10)),
-                ));
             }
             _ => {}
         };
