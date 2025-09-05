@@ -15,7 +15,7 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((assets::plugin, compendium::plugin));
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Clone)]
 #[reflect(Component)]
 pub struct Item(pub Handle<ItemDef>);
 
