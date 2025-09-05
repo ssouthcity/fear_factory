@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/ssouthcity/fear_factory/compare/v0.1.0...v0.2.0) (2025-09-05)
+
+
+### Features
+
+* add slots with drag-n-drop occupants ([#21](https://github.com/ssouthcity/fear_factory/issues/21)) ([5b7fa46](https://github.com/ssouthcity/fear_factory/commit/5b7fa46713d64905e542402a860a22630ffafe60))
+
+
+### Performance Improvements
+
+* add indexing on custom asset id ([#16](https://github.com/ssouthcity/fear_factory/issues/16)) ([4617ce1](https://github.com/ssouthcity/fear_factory/commit/4617ce1ce5d87f72ee3896f6926a50e21e81bae3))
+
 ## 0.1.0 (2025-08-25)
 
 
