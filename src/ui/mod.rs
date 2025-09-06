@@ -4,7 +4,7 @@ mod highlight;
 mod hotbar;
 mod inspect;
 mod interactable;
-mod widgets;
+pub mod widgets;
 mod y_sort;
 
 pub use self::{
