@@ -1,19 +1,36 @@
 use bevy::prelude::*;
-use rand::Rng;
+use bevy_aseprite_ultra::prelude::AseSlice;
 
-const TILE_SIZE: f32 = 64.0;
-const GAP: f32 = 8.0;
+use crate::{
+    screens::Screen,
+    simulation::item::{Item, ItemAssets, ItemDef},
+    ui::widgets,
+};
+
+const SLOTTED_OBJECT_Z_INDEX: i32 = 10;
+const HELD_OBJECT_Z_INDEX: i32 = 15;
+const HOVERED_SLOT_LIGHTEN_FACTOR: f32 = 0.05;
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<AddedToSlot>();
+    app.register_type::<RemovedFromSlot>();
+
     app.register_type::<Slot>();
     app.register_type::<SlotOccupant>();
     app.register_type::<InSlot>();
 
     app.add_observer(on_add_slot);
+    app.add_observer(on_add_slot_occupant);
 
-    app.add_systems(Startup, setup);
-    app.add_systems(Update, sync_slot_child);
+    app.add_systems(OnEnter(Screen::Gameplay), setup);
+    app.add_systems(Update, sync_slot_child.run_if(in_state(Screen::Gameplay)));
 }
+
+#[derive(Event, Reflect)]
+pub struct AddedToSlot(pub Entity);
+
+#[derive(Event, Reflect)]
+pub struct RemovedFromSlot(pub Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -28,6 +45,13 @@ pub struct SlotOccupant(Entity);
 #[derive(Component, Reflect, Deref)]
 #[reflect(Component)]
 #[relationship(relationship_target = SlotOccupant)]
+#[require(
+    Pickable {
+        should_block_lower: false,
+        is_hoverable: true,
+    },
+    GlobalZIndex(SLOTTED_OBJECT_Z_INDEX),
+)]
 pub struct InSlot(pub Entity);
 
 fn on_add_slot(trigger: Trigger<OnAdd, Slot>, mut commands: Commands) {
@@ -36,18 +60,51 @@ fn on_add_slot(trigger: Trigger<OnAdd, Slot>, mut commands: Commands) {
         .observe(
             |trigger: Trigger<Pointer<Over>>, mut query: Query<&mut BackgroundColor>| {
                 if let Ok(mut color) = query.get_mut(trigger.target) {
-                    color.0 = color.0.lighter(0.05);
+                    color.0 = color.0.lighter(HOVERED_SLOT_LIGHTEN_FACTOR);
                 }
             },
         )
         .observe(
             |trigger: Trigger<Pointer<Out>>, mut query: Query<&mut BackgroundColor>| {
                 if let Ok(mut color) = query.get_mut(trigger.target) {
-                    color.0 = color.0.darker(0.05);
+                    color.0 = color.0.darker(HOVERED_SLOT_LIGHTEN_FACTOR);
                 }
             },
         )
         .observe(on_slot_drag_and_drop);
+}
+
+fn on_add_slot_occupant(trigger: Trigger<OnAdd, InSlot>, mut commands: Commands) {
+    commands
+        .entity(trigger.target())
+        .observe(
+            |trigger: Trigger<Pointer<DragStart>>,
+             mut query: Query<(&mut Node, &mut GlobalZIndex)>| {
+                if let Ok((mut node, mut z_index)) = query.get_mut(trigger.target) {
+                    node.position_type = PositionType::Absolute;
+                    z_index.0 = HELD_OBJECT_Z_INDEX;
+                }
+            },
+        )
+        .observe(
+            |trigger: Trigger<Pointer<Drag>>, mut query: Query<&mut Node>| {
+                if let Ok(mut node) = query.get_mut(trigger.target) {
+                    node.left = Val::Px(trigger.distance.x);
+                    node.top = Val::Px(trigger.distance.y);
+                }
+            },
+        )
+        .observe(
+            |trigger: Trigger<Pointer<DragEnd>>,
+             mut query: Query<(&mut Node, &mut GlobalZIndex)>| {
+                if let Ok((mut node, mut z_index)) = query.get_mut(trigger.target) {
+                    node.position_type = PositionType::default();
+                    node.left = Val::Auto;
+                    node.top = Val::Auto;
+                    z_index.0 = SLOTTED_OBJECT_Z_INDEX;
+                }
+            },
+        );
 }
 
 fn sync_slot_child(query: Query<(Entity, &InSlot), Changed<InSlot>>, mut commands: Commands) {
@@ -57,10 +114,11 @@ fn sync_slot_child(query: Query<(Entity, &InSlot), Changed<InSlot>>, mut command
 }
 
 fn on_slot_drag_and_drop(
-    mut trigger: Trigger<Pointer<DragDrop>>,
+    trigger: Trigger<Pointer<DragDrop>>,
     mut commands: Commands,
     item_query: Query<&InSlot>,
     slot_query: Query<&SlotOccupant>,
+    // names: Query<&Name>,
 ) {
     let destination_slot = trigger.target();
     let source_item = trigger.dropped;
@@ -68,6 +126,22 @@ fn on_slot_drag_and_drop(
     let Ok(source_slot) = item_query.get(source_item).map(|slot| slot.0) else {
         return;
     };
+
+    if source_slot == destination_slot {
+        return;
+    }
+
+    // info!(
+    //     "moving {} to {}",
+    //     names
+    //         .get(source_item)
+    //         .map(|a| a.to_string())
+    //         .unwrap_or("unknown".into()),
+    //     names
+    //         .get(destination_slot)
+    //         .map(|a| a.to_string())
+    //         .unwrap_or("unknown".into()),
+    // );
 
     let destination_item = slot_query
         .get(destination_slot)
@@ -81,17 +155,40 @@ fn on_slot_drag_and_drop(
         .entity(source_item)
         .insert(InSlot(destination_slot));
 
+    commands
+        .entity(source_slot)
+        .trigger(RemovedFromSlot(source_item));
+
     if let Ok(destination_item) = destination_item {
         commands
             .entity(destination_item)
             .insert(InSlot(source_slot));
+
+        commands
+            .entity(destination_slot)
+            .trigger(RemovedFromSlot(destination_item));
+
+        commands
+            .entity(source_slot)
+            .trigger(AddedToSlot(destination_item));
     }
 
-    trigger.propagate(false);
+    commands
+        .entity(destination_slot)
+        .trigger(AddedToSlot(source_item));
 }
 
-fn setup(mut commands: Commands) {
-    let mut rng = rand::rng();
+fn setup(
+    mut commands: Commands,
+    item_assets: Res<ItemAssets>,
+    mut item_defs: ResMut<Assets<ItemDef>>,
+) {
+    let items = item_defs
+        .iter()
+        .map(|(a, b)| (a, b.clone()))
+        .collect::<Vec<_>>();
+
+    let mut items_iter = items.iter();
 
     let container_id = commands
         .spawn((
@@ -111,12 +208,7 @@ fn setup(mut commands: Commands) {
         .spawn((
             Name::new("Grid"),
             Node {
-                padding: UiRect::all(Val::Px(GAP)),
                 display: Display::Grid,
-                grid_auto_columns: GridTrack::px(TILE_SIZE),
-                grid_auto_rows: GridTrack::px(TILE_SIZE),
-                column_gap: Val::Px(GAP),
-                row_gap: Val::Px(GAP),
                 ..default()
             },
             ChildOf(container_id),
@@ -125,72 +217,37 @@ fn setup(mut commands: Commands) {
         .id();
 
     for i in 0..10 {
-        let slot_id = commands
+        let grid_cell_id = commands
             .spawn((
-                Name::new(format!("Slot {i}")),
-                Slot,
                 Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
                     grid_column: GridPlacement::start(i % 5 + 1),
                     grid_row: GridPlacement::start(i / 5 + 1),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
                     ..default()
                 },
                 ChildOf(grid_id),
-                BackgroundColor(Color::BLACK),
             ))
             .id();
 
-        if i % 3 == 0 {
-            commands
-                .spawn((
-                    Name::new(format!("Item {i}")),
-                    InSlot(slot_id),
-                    Node {
-                        width: Val::Percent(80.0),
-                        height: Val::Percent(80.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    BackgroundColor(Color::hsl(rng.random_range(0.0..360.0), 1.0, 0.5)),
-                    Pickable {
-                        should_block_lower: false,
-                        is_hoverable: true,
-                    },
-                    GlobalZIndex(10),
-                    children![(Text::new(i.to_string()), Pickable::IGNORE,)],
-                ))
-                .observe(
-                    |trigger: Trigger<Pointer<DragStart>>,
-                     mut query: Query<(&mut Node, &mut GlobalZIndex)>| {
-                        if let Ok((mut node, mut z_index)) = query.get_mut(trigger.target) {
-                            node.position_type = PositionType::Absolute;
-                            z_index.0 = 20;
-                        }
-                    },
-                )
-                .observe(
-                    |trigger: Trigger<Pointer<Drag>>, mut query: Query<&mut Node>| {
-                        if let Ok(mut node) = query.get_mut(trigger.target) {
-                            node.left = Val::Px(trigger.distance.x);
-                            node.top = Val::Px(trigger.distance.y);
-                        }
-                    },
-                )
-                .observe(
-                    |trigger: Trigger<Pointer<DragEnd>>,
-                     mut query: Query<(&mut Node, &mut GlobalZIndex)>| {
-                        if let Ok((mut node, mut z_index)) = query.get_mut(trigger.target) {
-                            node.position_type = PositionType::default();
-                            node.left = Val::Auto;
-                            node.top = Val::Auto;
-                            z_index.0 = 10;
-                        }
-                    },
-                );
+        let slot_id = commands
+            .spawn((widgets::slot(), ChildOf(grid_cell_id)))
+            .id();
+
+        if let Some((asset_id, item_def)) = items_iter.next() {
+            commands.spawn((
+                Name::new(item_def.name.clone()),
+                InSlot(slot_id),
+                Item(item_defs.get_strong_handle(*asset_id).unwrap()),
+                Node {
+                    width: Val::Percent(80.0),
+                    height: Val::Percent(80.0),
+                    ..default()
+                },
+                ImageNode::default(),
+                AseSlice {
+                    aseprite: item_assets.aseprite.clone(),
+                    name: item_def.id.clone(),
+                },
+            ));
         }
     }
 }
