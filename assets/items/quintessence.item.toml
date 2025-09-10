@@ -1,0 +1,4 @@
+id = "quintessence"
+name = "Quintessence"
+sprite = "sprites/items/quintessence.png"
+stack_size = 10

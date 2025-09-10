@@ -23,6 +23,7 @@ pub fn plugin(app: &mut App) {
 pub struct ItemDef {
     pub id: String,
     pub name: String,
+    pub sprite: Option<String>,
     pub stack_size: u32,
 }
 
@@ -37,6 +38,7 @@ impl Indexable for ItemDef {
 pub struct ItemAssets {
     pub aseprite: Handle<Aseprite>,
     pub item_definitions: Handle<LoadedFolder>,
+    pub item_sprites: Handle<LoadedFolder>,
 }
 
 impl FromWorld for ItemAssets {
@@ -46,6 +48,7 @@ impl FromWorld for ItemAssets {
         Self {
             aseprite: asset_server.load("items.aseprite"),
             item_definitions: asset_server.load_folder("items"),
+            item_sprites: asset_server.load_folder("sprites/items"),
         }
     }
 }

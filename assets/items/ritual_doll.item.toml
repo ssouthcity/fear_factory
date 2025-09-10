@@ -1,0 +1,4 @@
+id = "ritual_doll"
+name = "Ritual Doll"
+sprite = "sprites/items/ritual_doll.png"
+stack_size = 5
