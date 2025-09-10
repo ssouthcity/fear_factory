@@ -37,6 +37,7 @@ fn spawn_item_compendium(
     mut commands: Commands,
     items: Res<Assets<ItemDef>>,
     item_assets: Res<ItemAssets>,
+    asset_server: Res<AssetServer>,
 ) {
     let mut items_sorted: Vec<_> = items.iter().map(|(_, a)| a).collect();
     items_sorted.sort_by(|a, b| a.name.cmp(&b.name));
@@ -71,44 +72,65 @@ fn spawn_item_compendium(
         .id();
 
     for item_def in items_sorted.iter() {
-        commands.spawn((
-            Node {
-                display: Display::Grid,
-                grid_template_columns: vec![
-                    RepeatedGridTrack::px(1, 64.0),
-                    RepeatedGridTrack::px(1, 256.0),
-                ],
-                grid_template_rows: vec![RepeatedGridTrack::px(2, 32.0)],
-                justify_items: JustifyItems::Start,
-                align_items: AlignItems::Center,
-                column_gap: Val::Px(16.0),
-                padding: UiRect::all(Val::Px(4.0)),
+        let item_box = commands
+            .spawn((
+                Node {
+                    display: Display::Grid,
+                    grid_template_columns: vec![
+                        RepeatedGridTrack::px(1, 64.0),
+                        RepeatedGridTrack::px(1, 256.0),
+                    ],
+                    grid_template_rows: vec![RepeatedGridTrack::px(2, 32.0)],
+                    justify_items: JustifyItems::Start,
+                    align_items: AlignItems::Center,
+                    column_gap: Val::Px(16.0),
+                    padding: UiRect::all(Val::Px(4.0)),
+                    ..default()
+                },
+                ChildOf(item_list),
+                BackgroundColor(Color::BLACK),
+            ))
+            .id();
+
+        let image = commands
+            .spawn((
+                Node {
+                    justify_self: JustifySelf::Center,
+                    grid_column: GridPlacement::span(1),
+                    grid_row: GridPlacement::span(2),
+                    width: Val::Px(56.0),
+                    height: Val::Px(56.0),
+                    ..default()
+                },
+                ChildOf(item_box),
+            ))
+            .id();
+
+        if let Some(sprite) = &item_def.sprite {
+            commands.entity(image).insert(ImageNode {
+                image: asset_server.load(sprite.clone()),
                 ..default()
-            },
-            ChildOf(item_list),
-            BackgroundColor(Color::BLACK),
-            children![
-                (
-                    Node {
-                        justify_self: JustifySelf::Center,
-                        grid_column: GridPlacement::span(1),
-                        grid_row: GridPlacement::span(2),
-                        width: Val::Px(56.0),
-                        height: Val::Px(56.0),
-                        ..default()
-                    },
-                    ImageNode::default(),
-                    AseSlice {
-                        aseprite: item_assets.aseprite.clone(),
-                        name: item_def.id.to_owned(),
-                    }
-                ),
-                (Text::new(item_def.name.to_owned()), TextColor(Color::WHITE),),
-                (
-                    Text::new(item_def.stack_size.to_string()),
-                    TextColor(Color::WHITE),
-                )
-            ],
+            });
+        } else {
+            commands.entity(image).insert((
+                ImageNode::default(),
+                AseSlice {
+                    aseprite: item_assets.aseprite.clone(),
+                    name: item_def.id.to_owned(),
+                },
+            ));
+        }
+
+        commands.spawn((
+            Text::new(item_def.name.to_owned()),
+            TextColor(Color::WHITE),
+            ChildOf(item_box),
+        ));
+
+        commands.spawn((
+            Text::new(item_def.stack_size.to_string()),
+            TextColor(Color::WHITE),
+            ChildOf(item_box),
         ));
     }
 }

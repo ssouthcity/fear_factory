@@ -118,7 +118,6 @@ fn on_slot_drag_and_drop(
     mut commands: Commands,
     item_query: Query<&InSlot>,
     slot_query: Query<&SlotOccupant>,
-    // names: Query<&Name>,
 ) {
     let destination_slot = trigger.target();
     let source_item = trigger.dropped;
@@ -130,18 +129,6 @@ fn on_slot_drag_and_drop(
     if source_slot == destination_slot {
         return;
     }
-
-    // info!(
-    //     "moving {} to {}",
-    //     names
-    //         .get(source_item)
-    //         .map(|a| a.to_string())
-    //         .unwrap_or("unknown".into()),
-    //     names
-    //         .get(destination_slot)
-    //         .map(|a| a.to_string())
-    //         .unwrap_or("unknown".into()),
-    // );
 
     let destination_item = slot_query
         .get(destination_slot)
@@ -182,6 +169,7 @@ fn setup(
     mut commands: Commands,
     item_assets: Res<ItemAssets>,
     mut item_defs: ResMut<Assets<ItemDef>>,
+    asset_server: Res<AssetServer>,
 ) {
     let items = item_defs
         .iter()
@@ -233,21 +221,33 @@ fn setup(
             .id();
 
         if let Some((asset_id, item_def)) = items_iter.next() {
-            commands.spawn((
-                Name::new(item_def.name.clone()),
-                InSlot(slot_id),
-                Item(item_defs.get_strong_handle(*asset_id).unwrap()),
-                Node {
-                    width: Val::Percent(80.0),
-                    height: Val::Percent(80.0),
+            let id = commands
+                .spawn((
+                    Name::new(item_def.name.clone()),
+                    InSlot(slot_id),
+                    Item(item_defs.get_strong_handle(*asset_id).unwrap()),
+                    Node {
+                        width: Val::Percent(80.0),
+                        height: Val::Percent(80.0),
+                        ..default()
+                    },
+                ))
+                .id();
+
+            if let Some(sprite_path) = &item_def.sprite {
+                commands.entity(id).insert(ImageNode {
+                    image: asset_server.load(sprite_path.clone()),
                     ..default()
-                },
-                ImageNode::default(),
-                AseSlice {
-                    aseprite: item_assets.aseprite.clone(),
-                    name: item_def.id.clone(),
-                },
-            ));
+                });
+            } else {
+                commands.entity(id).insert((
+                    ImageNode::default(),
+                    AseSlice {
+                        aseprite: item_assets.aseprite.clone(),
+                        name: item_def.id.clone(),
+                    },
+                ));
+            }
         }
     }
 }
