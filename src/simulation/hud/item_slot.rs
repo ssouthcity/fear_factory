@@ -118,7 +118,6 @@ fn on_slot_drag_and_drop(
     mut commands: Commands,
     item_query: Query<&InSlot>,
     slot_query: Query<&SlotOccupant>,
-    // names: Query<&Name>,
 ) {
     let destination_slot = trigger.target();
     let source_item = trigger.dropped;
@@ -130,18 +129,6 @@ fn on_slot_drag_and_drop(
     if source_slot == destination_slot {
         return;
     }
-
-    // info!(
-    //     "moving {} to {}",
-    //     names
-    //         .get(source_item)
-    //         .map(|a| a.to_string())
-    //         .unwrap_or("unknown".into()),
-    //     names
-    //         .get(destination_slot)
-    //         .map(|a| a.to_string())
-    //         .unwrap_or("unknown".into()),
-    // );
 
     let destination_item = slot_query
         .get(destination_slot)

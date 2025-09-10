@@ -40,6 +40,7 @@ pub fn open_recipe_menu(
     recipe_index: Res<IndexMap<RecipeDef>>,
     held_relics: Query<&HeldRelic>,
     item_defs: Res<Assets<ItemDef>>,
+    asset_server: Res<AssetServer>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
         return;
@@ -188,22 +189,34 @@ pub fn open_recipe_menu(
             .get(&relic.0)
             .expect("Item referred to by HeldRelic component is not loaded");
 
-        commands.spawn((
-            ChildOf(relic_slot_id),
-            Name::new(item_def.name.clone()),
-            InSlot(relic_slot_id),
-            Item(relic.0.clone()),
-            Node {
-                width: Val::Percent(80.0),
-                height: Val::Percent(80.0),
+        let relic_image = commands
+            .spawn((
+                ChildOf(relic_slot_id),
+                Name::new(item_def.name.clone()),
+                InSlot(relic_slot_id),
+                Item(relic.0.clone()),
+                Node {
+                    width: Val::Percent(80.0),
+                    height: Val::Percent(80.0),
+                    ..default()
+                },
+            ))
+            .id();
+
+        if let Some(item_sprite) = &item_def.sprite {
+            commands.entity(relic_image).insert(ImageNode {
+                image: asset_server.load(item_sprite.clone()),
                 ..default()
-            },
-            ImageNode::default(),
-            AseSlice {
-                aseprite: item_assets.aseprite.clone(),
-                name: item_def.id.clone(),
-            },
-        ));
+            });
+        } else {
+            commands.entity(relic_image).insert((
+                ImageNode::default(),
+                AseSlice {
+                    aseprite: item_assets.aseprite.clone(),
+                    name: item_def.id.clone(),
+                },
+            ));
+        }
     }
 
     commands
