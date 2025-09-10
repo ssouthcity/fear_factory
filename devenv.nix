@@ -47,7 +47,7 @@
     lfs-post-merge = {
       enable = true;
       name = "git-lfs-post-merge";
-      entry = "git lfs post-merge";
+      entry = "git lfs post-merge \"$@\"";
       always_run = true;
       pass_filenames = false;
       stages = ["post-merge"];
@@ -55,7 +55,7 @@
     lfs-pre-push = {
       enable = true;
       name = "git-lfs-pre-push";
-      entry = "git lfs pre-push";
+      entry = "git lfs pre-push \"$@\"";
       always_run = true;
       pass_filenames = false;
       stages = ["pre-push"];
@@ -63,7 +63,7 @@
     lfs-post-checkout = {
       enable = true;
       name = "git-lfs-post-checkout";
-      entry = "git lfs post-checkout";
+      entry = "git lfs post-checkout \"$@\"";
       always_run = true;
       pass_filenames = false;
       stages = ["post-checkout"];
@@ -71,7 +71,7 @@
     lfs-post-commit = {
       enable = true;
       name = "git-lfs-post-commit";
-      entry = "git lfs post-commit";
+      entry = "git lfs post-commit \"$@\"";
       always_run = true;
       pass_filenames = false;
       stages = ["post-commit"];
