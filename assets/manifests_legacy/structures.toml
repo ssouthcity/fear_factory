@@ -1,0 +1,13 @@
+[miner]
+name = "Miner"
+
+[constructor]
+name = "Constructor"
+recipe.default_recipe = "iron_plate"
+
+[smelter]
+name = "Smelter"
+recipe.default_recipe = "smelt_iron"
+
+[merger]
+name = "Merger"

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::once_after_delay};
 
-use crate::{assets::is_finished_loading, screens::Screen};
+use crate::{assets::tracking::is_finished_loading, screens::Screen};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::Loading), spawn_loading_screen);
