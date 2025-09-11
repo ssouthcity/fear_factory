@@ -1,17 +1,15 @@
-#![allow(clippy::type_complexity)]
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode};
 use bevy_aseprite_ultra::AsepriteUltraPlugin;
 
 mod assets;
-mod audio;
 mod camera;
 #[cfg(feature = "dev")]
 mod dev_tools;
+mod gameplay;
 mod screens;
-mod simulation;
-mod ui;
+mod widgets;
 
 pub struct FactoryGamePlugin;
 
@@ -39,13 +37,11 @@ impl Plugin for FactoryGamePlugin {
 
         app.add_plugins((
             assets::plugin,
-            audio::plugin,
             camera::plugin,
             #[cfg(feature = "dev")]
             dev_tools::plugin,
-            simulation::plugin,
+            gameplay::plugin,
             screens::plugin,
-            ui::plugin,
         ));
 
         app.insert_resource(ClearColor(Color::BLACK));
