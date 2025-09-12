@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
-use crate::gameplay::{FactorySystems, machine::Structure};
+use crate::gameplay::{FactorySystems, structure::Structure};
 
 const DISMANTLE_BUTTON: KeyCode = KeyCode::KeyF;
 

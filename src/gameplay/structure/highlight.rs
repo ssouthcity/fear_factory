@@ -1,8 +1,10 @@
 use bevy::{picking::hover::PickingInteraction, prelude::*};
 
 use crate::gameplay::{
-    dismantle::{DismantleTimer, Selection},
-    machine::Structure,
+    structure::{
+        Structure,
+        dismantle::{DismantleTimer, Selection},
+    },
     world::terrain::Terrain,
 };
 

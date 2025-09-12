@@ -2,15 +2,19 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
+    assets::tracking::LoadResource,
     gameplay::{
         hud::hotbar::HotbarSelection,
-        machine::build::{Preview, QueueStructureSpawn},
-        world::{MAP_SIZE, WorldSpawnSystems, assets::WorldAssets},
+        structure::build::{Preview, QueueStructureSpawn},
+        world::{MAP_SIZE, WorldSpawnSystems},
     },
     screens::Screen,
 };
 
 pub fn plugin(app: &mut App) {
+    app.register_type::<TerrainAssets>();
+    app.load_resource::<TerrainAssets>();
+
     app.register_type::<Terrain>();
 
     app.add_systems(
@@ -19,11 +23,27 @@ pub fn plugin(app: &mut App) {
     );
 }
 
+#[derive(Asset, Resource, Reflect, Clone)]
+#[reflect(Resource)]
+pub struct TerrainAssets {
+    pub aseprite: Handle<Aseprite>,
+}
+
+impl FromWorld for TerrainAssets {
+    fn from_world(world: &mut World) -> Self {
+        let assets = world.resource::<AssetServer>();
+
+        Self {
+            aseprite: assets.load("terrain.aseprite"),
+        }
+    }
+}
+
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Terrain;
 
-fn spawn_terrain(mut commands: Commands, world_assets: Res<WorldAssets>) {
+fn spawn_terrain(mut commands: Commands, world_assets: Res<TerrainAssets>) {
     commands
         .spawn((
             Name::new("World"),

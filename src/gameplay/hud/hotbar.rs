@@ -2,7 +2,7 @@ use bevy::{ecs::spawn::SpawnIter, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    gameplay::{FactorySystems, machine::build::QueueStructureSpawn},
+    gameplay::{FactorySystems, structure::build::QueueStructureSpawn},
     screens::Screen,
 };
 
