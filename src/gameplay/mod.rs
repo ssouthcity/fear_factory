@@ -2,14 +2,11 @@ use bevy::prelude::*;
 
 use crate::screens::Screen;
 
-pub mod dismantle;
-pub mod highlight;
 pub mod hud;
-pub mod interactable;
 pub mod item;
 pub mod logistics;
-pub mod machine;
 pub mod recipe;
+pub mod structure;
 pub mod world;
 pub mod y_sort;
 
@@ -30,13 +27,10 @@ pub fn plugin(app: &mut App) {
     );
 
     app.add_plugins((
-        dismantle::plugin,
-        highlight::plugin,
         hud::plugin,
-        interactable::plugin,
         item::plugin,
         logistics::plugin,
-        machine::plugin,
+        structure::plugin,
         recipe::plugin,
         world::plugin,
         y_sort::plugin,

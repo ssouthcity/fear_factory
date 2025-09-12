@@ -6,7 +6,7 @@ use serde::Deserialize;
 use crate::{
     assets::{loaders::toml::TomlAssetPlugin, tracking::LoadResource},
     gameplay::{
-        interactable::Interactable,
+        structure::interactable::Interactable,
         world::{MAP_SIZE, WorldSpawnSystems, terrain::Terrain},
         y_sort::YSort,
     },

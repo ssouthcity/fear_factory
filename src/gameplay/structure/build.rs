@@ -9,9 +9,12 @@ use crate::{
             hotbar::{HotbarItemDeselected, HotbarItemSelected},
             inspect::Inspect,
         },
-        interactable::{Interact, Interactable},
-        machine::{Machine, Structure, assets::StructureDef},
         recipe::select::SelectRecipe,
+        structure::{
+            Structure,
+            assets::StructureDef,
+            interactable::{Interact, Interactable},
+        },
         world::{deposit::DepositRecipe, terrain::Terrain},
         y_sort::YSort,
     },
@@ -107,7 +110,6 @@ fn spawn_structures(
             YSort::default(),
             // labels
             Structure,
-            Machine,
             Interactable,
         ));
 
