@@ -2,21 +2,26 @@ use bevy::{asset::LoadedFolder, prelude::*};
 use serde::Deserialize;
 
 use crate::assets::{
-    manifest::{Manifest, ManifestPlugin},
+    indexing::{AssetIndexPlugin, Indexable},
+    loaders::toml::TomlAssetPlugin,
     tracking::LoadResource,
 };
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins(ManifestPlugin::<StructureTemplate>::default())
-        .register_type::<StructureAssets>()
+    app.add_plugins((
+        TomlAssetPlugin::<StructureDef>::extensions(&["structure.toml"]),
+        AssetIndexPlugin::<StructureDef>::default(),
+    ));
+
+    app.register_type::<StructureAssets>()
         .load_resource::<StructureAssets>();
 }
 
 #[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
 pub struct StructureAssets {
-    pub manifest: Handle<Manifest<StructureTemplate>>,
     pub sprites: Handle<LoadedFolder>,
+    pub manifest_folder: Handle<LoadedFolder>,
 }
 
 impl FromWorld for StructureAssets {
@@ -24,20 +29,21 @@ impl FromWorld for StructureAssets {
         let asset_server = world.resource::<AssetServer>();
 
         Self {
-            manifest: asset_server.load("manifests_legacy/structures.toml"),
             sprites: asset_server.load_folder("sprites/structures/"),
+            manifest_folder: asset_server.load_folder("manifests/structures"),
         }
     }
 }
 
-#[derive(Debug, TypePath, Deserialize)]
-pub struct StructureTemplate {
+#[derive(Asset, Deserialize, Reflect)]
+pub struct StructureDef {
+    pub id: String,
     pub name: String,
-    #[serde(default)]
-    pub recipe: Option<RecipeTemplate>,
+    pub default_recipe: Option<String>,
 }
 
-#[derive(Debug, TypePath, Deserialize, Default)]
-pub struct RecipeTemplate {
-    pub default_recipe: Option<String>,
+impl Indexable for StructureDef {
+    fn index(&self) -> &String {
+        &self.id
+    }
 }

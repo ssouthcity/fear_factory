@@ -1,0 +1,4 @@
+id = "iron_ore_deposit"
+name = "Iron Ore Deposit"
+recipe_id = "iron_ore"
+quantity = 14

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    assets::manifest::{Id, Manifest},
+    assets::indexing::IndexMap,
     gameplay::{
         FactorySystems,
         hud::{
@@ -10,10 +10,7 @@ use crate::{
             inspect::Inspect,
         },
         interactable::{Interact, Interactable},
-        machine::{
-            Machine, Structure,
-            assets::{StructureAssets, StructureTemplate},
-        },
+        machine::{Machine, Structure, assets::StructureDef},
         recipe::select::SelectRecipe,
         world::{deposit::DepositRecipe, terrain::Terrain},
         y_sort::YSort,
@@ -55,7 +52,7 @@ fn on_hotbar_selection(
         ChildOf(*terrain),
         Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
         AseAnimation {
-            aseprite: asset_server.load(format!("sprites/structures/{}.aseprite", trigger.0.value)),
+            aseprite: asset_server.load(format!("sprites/structures/{}.aseprite", trigger.0)),
             animation: Animation::tag("work"),
         },
         YSort::default(),
@@ -72,7 +69,7 @@ fn on_hotbar_deselection(
 
 #[derive(Event, Reflect)]
 pub struct QueueStructureSpawn {
-    pub structure_id: Id<StructureTemplate>,
+    pub structure_id: String,
     pub position: Vec2,
     pub placed_on: Entity,
 }
@@ -81,18 +78,18 @@ fn spawn_structures(
     mut events: EventReader<QueueStructureSpawn>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    structure_manifests: Res<Assets<Manifest<StructureTemplate>>>,
-    structure_assets: Res<StructureAssets>,
+    structure_definitions: Res<Assets<StructureDef>>,
+    structure_index: Res<IndexMap<StructureDef>>,
     terrain: Single<Entity, With<Terrain>>,
     deposit_recipes: Query<&DepositRecipe>,
 ) {
-    let structures = structure_manifests
-        .get(&structure_assets.manifest)
-        .expect("Structure manifest is not loaded");
-
     for event in events.read() {
-        let structure = structures
+        let asset_id = structure_index
             .get(&event.structure_id)
+            .expect("Attempted to spawn non-indexed structure");
+
+        let structure = structure_definitions
+            .get(*asset_id)
             .expect("Attempted to spawn non-existent structure");
 
         let mut entity = commands.spawn((
@@ -103,27 +100,21 @@ fn spawn_structures(
             // appearance
             Sprite::sized(Vec2::splat(64.0)),
             AseAnimation {
-                aseprite: asset_server.load(format!(
-                    "sprites/structures/{}.aseprite",
-                    structure.id.value
-                )),
+                aseprite: asset_server
+                    .load(format!("sprites/structures/{}.aseprite", structure.id)),
                 animation: Animation::tag("work"),
             },
             YSort::default(),
             // labels
-            Structure(structure.id.clone()),
+            Structure,
             Machine,
             Interactable,
         ));
 
         // TODO: Structure specific logic that remains to be ported to manifest
-        match structure.id.value.as_str() {
+        match structure.id.as_str() {
             "constructor" | "smelter" => {
-                if let Some(ref recipe) = structure
-                    .recipe
-                    .as_ref()
-                    .and_then(|r| r.default_recipe.to_owned())
-                {
+                if let Some(recipe) = &structure.default_recipe {
                     entity.trigger(SelectRecipe(recipe.to_owned()));
                 }
 
