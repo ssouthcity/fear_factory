@@ -2,11 +2,8 @@ use bevy::{ecs::spawn::SpawnIter, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    assets::manifest::Id,
-    gameplay::{
-        FactorySystems,
-        machine::{assets::StructureTemplate, build::QueueStructureSpawn},
-    },
+    gameplay::{FactorySystems, machine::build::QueueStructureSpawn},
+    screens::Screen,
 };
 
 pub fn plugin(app: &mut App) {
@@ -19,7 +16,7 @@ pub fn plugin(app: &mut App) {
 
     app.init_resource::<HotbarSelection>();
 
-    app.add_systems(Startup, spawn_hotbar);
+    app.add_systems(OnEnter(Screen::Gameplay), spawn_hotbar);
 
     app.add_observer(on_hotbar_slot_click);
     app.add_observer(on_slot_selected);
@@ -36,21 +33,21 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Event, Reflect)]
-pub struct SelectHotbarSlot(Id<StructureTemplate>);
+pub struct SelectHotbarSlot(String);
 
 #[derive(Event, Reflect)]
-pub struct HotbarItemSelected(pub Id<StructureTemplate>);
+pub struct HotbarItemSelected(pub String);
 
 #[derive(Event, Reflect)]
 pub struct HotbarItemDeselected;
 
 #[derive(Resource, Default, Reflect)]
 #[reflect(Resource)]
-pub struct HotbarSelection(pub Option<Id<StructureTemplate>>);
+pub struct HotbarSelection(pub Option<String>);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-struct HotbarAction(Id<StructureTemplate>);
+struct HotbarAction(String);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -59,7 +56,7 @@ struct HotbarShortcut(KeyCode);
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[require(AseAnimation)]
-struct HotbarIcon(Id<StructureTemplate>);
+struct HotbarIcon(String);
 
 fn spawn_hotbar(mut commands: Commands) {
     commands.spawn((
@@ -81,7 +78,6 @@ fn spawn_hotbar(mut commands: Commands) {
                 (KeyCode::Digit1, "miner"),
                 (KeyCode::Digit2, "smelter"),
                 (KeyCode::Digit3, "constructor"),
-                (KeyCode::Digit4, "merger"),
             ]
             .iter()
             .map(move |(shortcut, structure_id)| {
@@ -96,12 +92,12 @@ fn spawn_hotbar(mut commands: Commands) {
                     Pickable::default(),
                     BorderColor(Color::WHITE),
                     HotbarShortcut(*shortcut),
-                    HotbarAction(Id::new(*structure_id)),
+                    HotbarAction(structure_id.to_string()),
                     children![(
                         Name::new("Icon"),
                         ImageNode::default(),
                         Pickable::IGNORE,
-                        HotbarIcon(Id::new(*structure_id)),
+                        HotbarIcon(structure_id.to_string()),
                     )],
                 )
             }),
@@ -177,8 +173,7 @@ fn update_icon(
     asset_server: Res<AssetServer>,
 ) {
     for (mut animation, icon) in query {
-        animation.aseprite =
-            asset_server.load(format!("sprites/structures/{}.aseprite", icon.0.value));
+        animation.aseprite = asset_server.load(format!("sprites/structures/{}.aseprite", icon.0));
         animation.animation = Animation::tag("work").with_speed(0.0);
     }
 }

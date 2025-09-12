@@ -1,13 +1,10 @@
-use bevy::prelude::*;
+use bevy::{asset::LoadedFolder, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
 use rand::Rng;
 use serde::Deserialize;
 
 use crate::{
-    assets::{
-        manifest::{Id, Manifest, ManifestPlugin},
-        tracking::LoadResource,
-    },
+    assets::{loaders::toml::TomlAssetPlugin, tracking::LoadResource},
     gameplay::{
         interactable::Interactable,
         world::{MAP_SIZE, WorldSpawnSystems, terrain::Terrain},
@@ -17,9 +14,10 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins(ManifestPlugin::<Deposit>::default())
-        .register_type::<DepositAssets>()
+    app.register_type::<DepositAssets>()
         .load_resource::<DepositAssets>();
+
+    app.add_plugins(TomlAssetPlugin::<DepositDef>::extensions(&["deposit.toml"]));
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
@@ -27,18 +25,19 @@ pub fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Debug, Deserialize, TypePath)]
-pub struct Deposit {
-    name: String,
-    recipe_id: String,
-    quantity: u32,
+#[derive(Asset, Deserialize, Reflect)]
+pub struct DepositDef {
+    pub id: String,
+    pub name: String,
+    pub recipe_id: String,
+    pub quantity: u32,
 }
 
 #[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
 pub struct DepositAssets {
-    manifest: Handle<Manifest<Deposit>>,
     aseprite: Handle<Aseprite>,
+    manifest_folder: Handle<LoadedFolder>,
 }
 
 impl FromWorld for DepositAssets {
@@ -46,21 +45,9 @@ impl FromWorld for DepositAssets {
         let assets = world.resource::<AssetServer>();
 
         Self {
-            manifest: assets.load("manifests_legacy/deposits.toml"),
             aseprite: assets.load("deposits.aseprite"),
+            manifest_folder: assets.load_folder("manifests/deposits"),
         }
-    }
-}
-
-impl DepositAssets {
-    fn sprite(&self, id: &Id<Deposit>) -> impl Bundle {
-        (
-            Sprite::sized(Vec2::splat(64.0)),
-            AseSlice {
-                aseprite: self.aseprite.clone(),
-                name: id.value.clone(),
-            },
-        )
     }
 }
 
@@ -72,15 +59,11 @@ fn spawn_deposits(
     mut commands: Commands,
     terrain: Single<Entity, With<Terrain>>,
     deposit_assets: Res<DepositAssets>,
-    deposit_manifests: Res<Assets<Manifest<Deposit>>>,
+    deposit_definitions: Res<Assets<DepositDef>>,
 ) {
     let mut rng = rand::rng();
 
-    let deposits = deposit_manifests
-        .get(&deposit_assets.manifest)
-        .expect("Deposit manifest not loaded");
-
-    for (id, deposit) in deposits.iter() {
+    for (_, deposit) in deposit_definitions.iter() {
         for _ in 0..deposit.quantity {
             commands.spawn((
                 Name::new(deposit.name.clone()),
@@ -91,7 +74,11 @@ fn spawn_deposits(
                 ),
                 ChildOf(*terrain),
                 YSort(0.1),
-                deposit_assets.sprite(id),
+                Sprite::sized(Vec2::splat(64.0)),
+                AseSlice {
+                    aseprite: deposit_assets.aseprite.clone(),
+                    name: deposit.id.clone(),
+                },
                 Pickable::default(),
                 Interactable,
                 DepositRecipe(deposit.recipe_id.clone()),

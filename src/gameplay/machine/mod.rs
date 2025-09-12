@@ -1,7 +1,5 @@
 use bevy::prelude::*;
 
-use crate::{assets::manifest::Id, gameplay::machine::assets::StructureTemplate};
-
 pub mod assets;
 pub mod build;
 
@@ -14,7 +12,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct Structure(Id<StructureTemplate>);
+pub struct Structure;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
