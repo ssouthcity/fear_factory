@@ -1,4 +1,4 @@
-use bevy::{platform::collections::HashSet, prelude::*};
+use bevy::prelude::*;
 
 use crate::gameplay::{
     FactorySystems, structure::Structure, world::terrain::Worldly, y_sort::YSort,
@@ -14,32 +14,6 @@ pub(super) fn plugin(app: &mut App) {
             .in_set(FactorySystems::Build)
             .run_if(on_event::<Pointer<DragDrop>>),
     );
-
-    app.register_type::<PathGraph>()
-        .init_resource::<PathGraph>()
-        .add_systems(
-            Update,
-            (add_nodes_to_graph, add_edges_to_graph).in_set(FactorySystems::Logistics),
-        );
-}
-
-#[derive(Resource, Reflect, Default)]
-#[reflect(Resource)]
-pub struct PathGraph {
-    nodes: HashSet<Entity>,
-    edges: HashSet<(Entity, Entity)>,
-}
-
-fn add_nodes_to_graph(query: Query<Entity, Added<Pathable>>, mut graph: ResMut<PathGraph>) {
-    for entity in query {
-        graph.nodes.insert(entity);
-    }
-}
-
-fn add_edges_to_graph(query: Query<&Path, Added<Path>>, mut graph: ResMut<PathGraph>) {
-    for path in query {
-        graph.edges.insert((path.0, path.1));
-    }
 }
 
 #[derive(Component, Reflect)]
