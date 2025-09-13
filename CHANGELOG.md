@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.0](https://github.com/ssouthcity/fear_factory/compare/v0.1.0...v0.2.0) (2025-09-13)
+
+
+### Features
+
+* add relic slot to machine menu ([#22](https://github.com/ssouthcity/fear_factory/issues/22)) ([2457775](https://github.com/ssouthcity/fear_factory/commit/245777503e2d84b5c4986f723f75ec6d15f7fd64))
+* add road logistics ([#28](https://github.com/ssouthcity/fear_factory/issues/28)) ([44f1c3f](https://github.com/ssouthcity/fear_factory/commit/44f1c3f06ed78ff76bd70edb392359b5557fa5bb))
+* add slots with drag-n-drop occupants ([#21](https://github.com/ssouthcity/fear_factory/issues/21)) ([5b7fa46](https://github.com/ssouthcity/fear_factory/commit/5b7fa46713d64905e542402a860a22630ffafe60))
+* remove unused features & refactor file structure ([#24](https://github.com/ssouthcity/fear_factory/issues/24)) ([7bd6880](https://github.com/ssouthcity/fear_factory/commit/7bd68802649742008d7c085679e18cc0b4599a97))
+
+
+### Bug Fixes
+
+* new items n sprites ([#23](https://github.com/ssouthcity/fear_factory/issues/23)) ([4cd76b7](https://github.com/ssouthcity/fear_factory/commit/4cd76b78589448f78a16114716c89c07bfad52de))
+
+
+### Performance Improvements
+
+* add indexing on custom asset id ([#16](https://github.com/ssouthcity/fear_factory/issues/16)) ([4617ce1](https://github.com/ssouthcity/fear_factory/commit/4617ce1ce5d87f72ee3896f6926a50e21e81bae3))
+
 ## 0.1.0 (2025-08-25)
 
 
