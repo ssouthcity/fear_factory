@@ -15,7 +15,7 @@ use crate::{
             assets::StructureDef,
             interactable::{Interact, Interactable},
         },
-        world::{deposit::DepositRecipe, terrain::Terrain},
+        world::{deposit::DepositRecipe, terrain::Worldly},
         y_sort::YSort,
     },
 };
@@ -42,7 +42,6 @@ pub struct Preview;
 fn on_hotbar_selection(
     trigger: Trigger<HotbarItemSelected>,
     mut commands: Commands,
-    terrain: Single<Entity, With<Terrain>>,
     existing_preview: Option<Single<Entity, With<Preview>>>,
     asset_server: Res<AssetServer>,
 ) {
@@ -52,7 +51,7 @@ fn on_hotbar_selection(
 
     commands.spawn((
         Preview,
-        ChildOf(*terrain),
+        Worldly,
         Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
         AseAnimation {
             aseprite: asset_server.load(format!("sprites/structures/{}.aseprite", trigger.0)),
@@ -83,7 +82,6 @@ fn spawn_structures(
     asset_server: Res<AssetServer>,
     structure_definitions: Res<Assets<StructureDef>>,
     structure_index: Res<IndexMap<StructureDef>>,
-    terrain: Single<Entity, With<Terrain>>,
     deposit_recipes: Query<&DepositRecipe>,
 ) {
     for event in events.read() {
@@ -99,7 +97,7 @@ fn spawn_structures(
             Name::new(structure.name.clone()),
             // position
             Transform::from_translation(event.position.extend(1.0)),
-            ChildOf(*terrain),
+            Worldly,
             // appearance
             Sprite::sized(Vec2::splat(64.0)),
             AseAnimation {

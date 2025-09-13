@@ -7,7 +7,7 @@ use crate::{
     assets::{loaders::toml::TomlAssetPlugin, tracking::LoadResource},
     gameplay::{
         structure::interactable::Interactable,
-        world::{MAP_SIZE, WorldSpawnSystems, terrain::Terrain},
+        world::{MAP_SIZE, WorldSpawnSystems, terrain::Worldly},
         y_sort::YSort,
     },
     screens::Screen,
@@ -57,7 +57,6 @@ pub struct DepositRecipe(pub String);
 
 fn spawn_deposits(
     mut commands: Commands,
-    terrain: Single<Entity, With<Terrain>>,
     deposit_assets: Res<DepositAssets>,
     deposit_definitions: Res<Assets<DepositDef>>,
 ) {
@@ -72,7 +71,7 @@ fn spawn_deposits(
                     rng.random_range(0.0..MAP_SIZE) - MAP_SIZE / 2.0,
                     1.0,
                 ),
-                ChildOf(*terrain),
+                Worldly,
                 YSort(0.1),
                 Sprite::sized(Vec2::splat(64.0)),
                 AseSlice {

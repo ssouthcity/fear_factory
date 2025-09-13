@@ -16,11 +16,14 @@ pub fn plugin(app: &mut App) {
     app.load_resource::<TerrainAssets>();
 
     app.register_type::<Terrain>();
+    app.register_type::<Worldly>();
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
         spawn_terrain.in_set(WorldSpawnSystems::SpawnTerrain),
     );
+
+    app.add_systems(PostUpdate, add_to_world);
 }
 
 #[derive(Asset, Resource, Reflect, Clone)]
@@ -96,4 +99,19 @@ fn queue_spawn_building(
         position: cursor_position.truncate(),
         placed_on: trigger.target,
     });
+}
+
+/// Denotes that entity should be spawned in the world
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Worldly;
+
+fn add_to_world(
+    query: Query<Entity, Added<Worldly>>,
+    world: Single<Entity, With<Terrain>>,
+    mut commands: Commands,
+) {
+    for entity in query {
+        commands.entity(entity).insert(ChildOf(*world));
+    }
 }
