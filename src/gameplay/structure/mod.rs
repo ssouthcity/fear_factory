@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::gameplay::logistics::path::Pathable;
+
 pub mod assets;
 pub mod build;
 pub mod dismantle;
@@ -20,4 +22,5 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
+#[require(Pathable)]
 pub struct Structure;
