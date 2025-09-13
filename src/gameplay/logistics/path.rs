@@ -1,6 +1,8 @@
 use bevy::{platform::collections::HashSet, prelude::*};
 
-use crate::gameplay::{FactorySystems, world::terrain::Worldly, y_sort::YSort};
+use crate::gameplay::{
+    FactorySystems, structure::Structure, world::terrain::Worldly, y_sort::YSort,
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Path>();
@@ -109,6 +111,8 @@ fn build_paths(
                 ..default()
             },
             YSort(0.5),
+            Structure,
+            Pickable::default(),
         ));
     }
 }

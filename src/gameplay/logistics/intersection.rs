@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::gameplay::{
     FactorySystems,
     logistics::path::Pathable,
+    structure::Structure,
     world::terrain::{Terrain, Worldly},
     y_sort::YSort,
 };
@@ -39,6 +40,7 @@ fn spawn_intersection(
             Pathable::walkable(),
             Pickable::default(),
             YSort::default(),
+            Structure,
         ));
     }
 }
