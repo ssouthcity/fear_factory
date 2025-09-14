@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::gameplay::{
     FactorySystems, structure::Structure, world::terrain::Worldly, y_sort::YSort,
@@ -7,10 +7,14 @@ use crate::gameplay::{
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Path>();
     app.register_type::<Pathable>();
+    app.register_type::<Paths>();
+
+    app.add_observer(add_edges_to_node);
+    app.add_observer(remove_edges_from_node);
 
     app.add_systems(
         Update,
-        (build_paths,)
+        build_paths
             .in_set(FactorySystems::Build)
             .run_if(on_event::<Pointer<DragDrop>>),
     );
@@ -18,10 +22,17 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct Path(Entity, Entity);
+pub struct Path(pub Entity, pub Entity);
+
+impl Path {
+    pub fn other(&self, entity: Entity) -> Entity {
+        if self.0 == entity { self.1 } else { self.0 }
+    }
+}
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(Paths)]
 pub struct Pathable {
     pub walkable: bool,
 }
@@ -29,6 +40,46 @@ pub struct Pathable {
 impl Pathable {
     pub fn walkable() -> Self {
         Self { walkable: true }
+    }
+}
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Paths(pub HashSet<Entity>);
+
+fn add_edges_to_node(
+    trigger: Trigger<OnAdd, Path>,
+    path_query: Query<&Path>,
+    mut edges_query: Query<&mut Paths>,
+) {
+    let Ok(Path(lhs, rhs)) = path_query.get(trigger.target()) else {
+        return;
+    };
+
+    if let Ok(mut edges) = edges_query.get_mut(*lhs) {
+        edges.0.insert(trigger.target());
+    }
+
+    if let Ok(mut edges) = edges_query.get_mut(*rhs) {
+        edges.0.insert(trigger.target());
+    }
+}
+
+fn remove_edges_from_node(
+    trigger: Trigger<OnRemove, Path>,
+    path_query: Query<&Path>,
+    mut edges_query: Query<&mut Paths>,
+) {
+    let Ok(Path(lhs, rhs)) = path_query.get(trigger.target()) else {
+        return;
+    };
+
+    if let Ok(mut edges) = edges_query.get_mut(*lhs) {
+        edges.0.remove(&trigger.target());
+    }
+
+    if let Ok(mut edges) = edges_query.get_mut(*rhs) {
+        edges.0.remove(&trigger.target());
     }
 }
 

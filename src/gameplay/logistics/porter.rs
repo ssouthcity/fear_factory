@@ -1,10 +1,9 @@
 use bevy::prelude::*;
-use rand::seq::IteratorRandom;
 
 use crate::gameplay::{
     FactorySystems,
     item::{Item, Quantity},
-    recipe::{InputOf, OutputOf},
+    recipe::OutputOf,
     world::terrain::Worldly,
     y_sort::YSort,
 };
@@ -12,7 +11,6 @@ use crate::gameplay::{
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Porters>();
     app.register_type::<PorterOf>();
-    app.register_type::<PorterToStructure>();
     app.register_type::<PorterToInput>();
     app.register_type::<PorterArrival>();
 
@@ -20,16 +18,13 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (
-            spawn_porter,
-            set_porter_destination,
-            move_towards_destination,
-            drop_of_items,
-        )
-            .chain()
-            .in_set(FactorySystems::Logistics),
+        (spawn_porter, drop_of_items).in_set(FactorySystems::Logistics),
     );
 }
+
+#[derive(Component, Reflect, Deref, DerefMut)]
+#[reflect(Component)]
+pub struct PorterSpawnTimer(pub Timer);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -43,29 +38,32 @@ pub struct PorterOf(pub Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct PorterToStructure(pub Entity);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
 pub struct PorterToInput(pub Entity);
 
 #[derive(Event, Reflect)]
 pub struct PorterArrival(pub Entity);
 
 fn spawn_porter(
+    mut structure_query: Query<(&Transform, &mut PorterSpawnTimer)>,
     output_query: Query<(&Item, &mut Quantity, &OutputOf)>,
-    transform_query: Query<&Transform>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    time: Res<Time>,
 ) {
     for (item, mut quantity, OutputOf(structure)) in output_query {
         if quantity.0 == 0 {
             continue;
         }
 
-        quantity.0 -= 1;
+        let Ok((transform, mut porter_spawn_timer)) = structure_query.get_mut(*structure) else {
+            continue;
+        };
 
-        let transform = transform_query.get(*structure).unwrap();
+        if !porter_spawn_timer.tick(time.delta()).just_finished() {
+            continue;
+        }
+
+        quantity.0 -= 1;
 
         commands.spawn((
             Name::new("Porter"),
@@ -76,51 +74,6 @@ fn spawn_porter(
             item.clone(),
             PorterOf(*structure),
         ));
-    }
-}
-
-fn set_porter_destination(
-    porter_query: Query<(Entity, &Item), Added<PorterOf>>,
-    input_query: Query<(Entity, &Item, &InputOf)>,
-    mut commands: Commands,
-) {
-    let mut rng = rand::rng();
-
-    for (entity, item) in porter_query {
-        let input = input_query
-            .iter()
-            .filter(|(_, i, _)| i.0 == item.0)
-            .choose(&mut rng);
-
-        if let Some((input_entity, _, InputOf(structure))) = input {
-            commands
-                .entity(entity)
-                .insert((PorterToInput(input_entity), PorterToStructure(*structure)));
-        }
-    }
-}
-
-fn move_towards_destination(
-    porter_query: Query<(Entity, &mut Transform, &PorterToStructure)>,
-    transform_query: Query<&Transform, Without<PorterToStructure>>,
-    time: Res<Time>,
-    mut events: EventWriter<PorterArrival>,
-) {
-    const SPEED: f32 = 32.0;
-    const ARRIVAL_THRESHHOLD: f32 = 32.0;
-
-    for (porter, mut transform, porter_to) in porter_query {
-        let Ok(goal_transform) = transform_query.get(porter_to.0) else {
-            continue;
-        };
-
-        transform.translation = transform
-            .translation
-            .move_towards(goal_transform.translation, SPEED * time.delta_secs());
-
-        if transform.translation.distance(goal_transform.translation) <= ARRIVAL_THRESHHOLD {
-            events.write(PorterArrival(porter));
-        }
     }
 }
 
