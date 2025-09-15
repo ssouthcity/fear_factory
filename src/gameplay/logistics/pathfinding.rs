@@ -69,7 +69,7 @@ fn pathfind_for_porter(
 
             if let Some(goal) = input_entity {
                 let mut path = Vec::new();
-                let mut cur = neighbor.clone();
+                let mut cur = neighbor;
                 while cur != *start {
                     path.push(cur);
                     cur = *parent.get(&cur).unwrap();
@@ -115,7 +115,7 @@ fn walk_along_path(
         if transform.translation.distance(goal_transform.translation) <= ARRIVAL_THRESHHOLD {
             walk_path.0.pop();
 
-            if walk_path.0.len() == 0 {
+            if walk_path.0.is_empty() {
                 events.write(PorterArrival(entity));
             }
         }
