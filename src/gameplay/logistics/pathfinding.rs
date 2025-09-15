@@ -46,11 +46,7 @@ fn pathfind_for_porter(
     visited.insert(*start);
 
     while let Some(current) = queue.pop_front() {
-        let (_pathable, paths) = nodes.get(current).unwrap();
-
-        // if !pathable.walkable {
-        //     continue;
-        // }
+        let (_, paths) = nodes.get(current).unwrap();
 
         for path in paths.0.iter() {
             let edge = edges.get(*path).unwrap();
@@ -82,6 +78,11 @@ fn pathfind_for_porter(
                     .entity(trigger.target())
                     .insert((PorterToInput(goal), WalkPath(path)));
                 return;
+            }
+
+            let (pathable, _) = nodes.get(neighbor).unwrap();
+            if !pathable.walkable {
+                continue;
             }
 
             queue.push_back(neighbor);
