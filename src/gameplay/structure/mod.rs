@@ -1,6 +1,8 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 
-use crate::gameplay::logistics::path::Pathable;
+use crate::gameplay::logistics::{path::Pathable, porter::PorterSpawnTimer};
 
 pub mod assets;
 pub mod build;
@@ -22,5 +24,8 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-#[require(Pathable)]
+#[require(
+    Pathable,
+    PorterSpawnTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating))
+)]
 pub struct Structure;
