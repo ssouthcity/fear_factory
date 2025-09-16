@@ -9,86 +9,93 @@ use crate::gameplay::{
     FactorySystems,
     item::Item,
     logistics::{
-        path::{Path, Pathable, Paths},
-        porter::{PorterArrival, PorterOf, PorterToInput},
+        path::{Path, Pathable, Paths, PathsUpdated},
+        porter::PorterArrival,
     },
-    recipe::{InputOf, Inputs},
+    recipe::{InputOf, Inputs, OutputOf, select::RecipeChanged},
 };
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<WalkPath>();
+    app.register_type::<PorterPaths>();
 
-    app.add_observer(pathfind_for_porter);
+    app.add_systems(
+        Update,
+        pathfind
+            .in_set(FactorySystems::Logistics)
+            .run_if(on_event::<RecipeChanged>.or(on_event::<PathsUpdated>)),
+    );
 
     app.add_systems(Update, walk_along_path.in_set(FactorySystems::Logistics));
 }
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct WalkPath(Vec<Entity>);
+pub struct WalkPath(pub Vec<Entity>);
 
-fn pathfind_for_porter(
-    trigger: Trigger<OnAdd, PorterOf>,
-    porter_query: Query<(&Item, &PorterOf)>,
+fn pathfind(
+    output_query: Query<(Entity, &Item, &OutputOf)>,
     inputs_query: Query<&Inputs>,
     input_query: Query<&Item, With<InputOf>>,
     nodes: Query<(&Pathable, &Paths)>,
     edges: Query<&Path>,
     mut commands: Commands,
 ) {
-    let (held_item, PorterOf(start)) = porter_query.get(trigger.target()).unwrap();
+    for (entity, item, OutputOf(start)) in output_query {
+        let mut queue = VecDeque::new();
+        let mut visited = HashSet::new();
+        let mut parent = HashMap::new();
+        let mut solutions = VecDeque::new();
 
-    let mut queue = VecDeque::new();
-    let mut visited = HashSet::new();
-    let mut parent = HashMap::new();
+        queue.push_back(*start);
+        visited.insert(*start);
 
-    queue.push_back(*start);
-    visited.insert(*start);
+        while let Some(current) = queue.pop_front() {
+            let (_, paths) = nodes.get(current).unwrap();
 
-    while let Some(current) = queue.pop_front() {
-        let (_, paths) = nodes.get(current).unwrap();
+            for path in paths.0.iter() {
+                let edge = edges.get(*path).unwrap();
+                let neighbor = edge.other(current);
 
-        for path in paths.0.iter() {
-            let edge = edges.get(*path).unwrap();
-            let neighbor = edge.other(current);
-
-            if visited.contains(&neighbor) {
-                continue;
-            }
-
-            visited.insert(neighbor);
-            parent.insert(neighbor, current);
-
-            let input_entity = inputs_query.get(neighbor).ok().and_then(|inputs| {
-                inputs.iter().find(|input| {
-                    input_query
-                        .get(*input)
-                        .is_ok_and(|item| item.0 == held_item.0)
-                })
-            });
-
-            if let Some(goal) = input_entity {
-                let mut path = Vec::new();
-                let mut cur = neighbor;
-                while cur != *start {
-                    path.push(cur);
-                    cur = *parent.get(&cur).unwrap();
+                if visited.contains(&neighbor) {
+                    continue;
                 }
-                commands
-                    .entity(trigger.target())
-                    .insert((PorterToInput(goal), WalkPath(path)));
-                return;
-            }
 
-            let (pathable, _) = nodes.get(neighbor).unwrap();
-            if !pathable.walkable {
-                continue;
-            }
+                visited.insert(neighbor);
+                parent.insert(neighbor, current);
 
-            queue.push_back(neighbor);
+                let input_entity = inputs_query.get(neighbor).ok().and_then(|inputs| {
+                    inputs
+                        .iter()
+                        .find(|input| input_query.get(*input).is_ok_and(|i| i.0 == item.0))
+                });
+
+                if let Some(goal) = input_entity {
+                    let mut path = Vec::new();
+                    let mut cur = neighbor;
+                    while cur != *start {
+                        path.push(cur);
+                        cur = *parent.get(&cur).unwrap();
+                    }
+                    solutions.push_back((goal, path));
+                }
+
+                let (pathable, _) = nodes.get(neighbor).unwrap();
+                if !pathable.walkable {
+                    continue;
+                }
+
+                queue.push_back(neighbor);
+            }
         }
+
+        commands.entity(entity).insert(PorterPaths(solutions));
     }
 }
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+pub struct PorterPaths(pub VecDeque<(Entity, Vec<Entity>)>);
 
 fn walk_along_path(
     query: Query<(Entity, &mut Transform, &mut WalkPath)>,
