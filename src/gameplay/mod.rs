@@ -6,9 +6,9 @@ pub mod hud;
 pub mod item;
 pub mod logistics;
 pub mod recipe;
+pub mod sprite_sort;
 pub mod structure;
 pub mod world;
-pub mod y_sort;
 
 pub fn plugin(app: &mut App) {
     app.configure_sets(
@@ -30,10 +30,10 @@ pub fn plugin(app: &mut App) {
         hud::plugin,
         item::plugin,
         logistics::plugin,
-        structure::plugin,
         recipe::plugin,
+        sprite_sort::plugin,
+        structure::plugin,
         world::plugin,
-        y_sort::plugin,
     ));
 }
 

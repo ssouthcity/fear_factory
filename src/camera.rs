@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-const CAMERA_DRAG_SMOOTHING: f32 = 0.5;
+const CAMERA_DRAG_SMOOTHING: f32 = 1.0;
 
 const CAMERA_ZOOM_INTERVAL: f32 = 0.1;
 const CAMERA_ZOOM_MIN: f32 = 0.25;

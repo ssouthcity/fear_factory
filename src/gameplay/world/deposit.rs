@@ -1,14 +1,24 @@
 use bevy::{asset::LoadedFolder, prelude::*};
 use bevy_aseprite_ultra::prelude::*;
+use bevy_ecs_tilemap::{
+    anchor::TilemapAnchor,
+    map::{TilemapGridSize, TilemapSize, TilemapTileSize, TilemapType},
+    tiles::{TilePos, TileStorage},
+};
 use rand::Rng;
 use serde::Deserialize;
 
 use crate::{
     assets::{loaders::toml::TomlAssetPlugin, tracking::LoadResource},
     gameplay::{
-        structure::interactable::Interactable,
-        world::{MAP_SIZE, WorldSpawnSystems, terrain::Worldly},
-        y_sort::YSort,
+        sprite_sort::{YSortSprite, ZIndexSprite},
+        world::{
+            WorldSpawnSystems,
+            tilemap::{
+                CHUNK_SIZE,
+                chunk::{Chunk, Layers},
+            },
+        },
     },
     screens::Screen,
 };
@@ -57,29 +67,49 @@ pub struct DepositRecipe(pub String);
 
 fn spawn_deposits(
     mut commands: Commands,
-    deposit_assets: Res<DepositAssets>,
+    // deposit_assets: Res<DepositAssets>,
     deposit_definitions: Res<Assets<DepositDef>>,
+    asset_server: Res<AssetServer>,
+    chunk_query: Single<&Layers, With<Chunk>>,
+    tile_storage_query: Query<&TileStorage>,
+    tilemap_query: Query<(
+        &Transform,
+        &TilemapSize,
+        &TilemapGridSize,
+        &TilemapTileSize,
+        &TilemapType,
+        &TilemapAnchor,
+    )>,
 ) {
     let mut rng = rand::rng();
 
     for (_, deposit) in deposit_definitions.iter() {
         for _ in 0..deposit.quantity {
+            let tile_pos = TilePos::new(
+                rng.random_range(0..CHUNK_SIZE.x),
+                rng.random_range(0..CHUNK_SIZE.y),
+            );
+
+            let Some((z_index, layer)) = chunk_query.iter().enumerate().find(|(_, layer)| {
+                let storage = tile_storage_query.get(*layer).unwrap();
+                storage.get(&tile_pos).is_none()
+            }) else {
+                continue;
+            };
+
+            let (transform, map_size, grid_size, tile_size, map_type, anchor) =
+                tilemap_query.get(layer).unwrap();
+
+            let translation = tile_pos
+                .center_in_world(map_size, grid_size, tile_size, map_type, anchor)
+                .extend(0.0);
+
             commands.spawn((
                 Name::new(deposit.name.clone()),
-                Transform::from_xyz(
-                    rng.random_range(0.0..MAP_SIZE) - MAP_SIZE / 2.0,
-                    rng.random_range(0.0..MAP_SIZE) - MAP_SIZE / 2.0,
-                    1.0,
-                ),
-                Worldly,
-                YSort(0.1),
-                Sprite::sized(Vec2::splat(64.0)),
-                AseSlice {
-                    aseprite: deposit_assets.aseprite.clone(),
-                    name: deposit.id.clone(),
-                },
-                Pickable::default(),
-                Interactable,
+                Transform::from_translation(transform.translation + translation),
+                Sprite::from_image(asset_server.load("tiles/iron_deposit.png")),
+                YSortSprite,
+                ZIndexSprite(z_index as u32),
                 DepositRecipe(deposit.recipe_id.clone()),
             ));
         }
