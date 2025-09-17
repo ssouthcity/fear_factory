@@ -12,6 +12,9 @@ use crate::{
 pub fn plugin(app: &mut App) {
     app.register_type::<SelectedRecipe>();
     app.register_type::<SelectRecipe>();
+    app.register_type::<RecipeChanged>();
+
+    app.add_event::<RecipeChanged>();
 
     app.add_observer(on_select_recipe);
 }
@@ -24,6 +27,9 @@ pub struct SelectedRecipe(pub Option<String>);
 #[derive(Event, Reflect)]
 pub struct SelectRecipe(pub String);
 
+#[derive(Event, Reflect)]
+pub struct RecipeChanged(pub Entity);
+
 fn on_select_recipe(
     trigger: Trigger<SelectRecipe>,
     recipes: Res<Assets<RecipeDef>>,
@@ -31,6 +37,7 @@ fn on_select_recipe(
     mut items: ResMut<Assets<ItemDef>>,
     item_index: Res<IndexMap<ItemDef>>,
     mut commands: Commands,
+    mut events: EventWriter<RecipeChanged>,
 ) {
     let event = trigger.event();
 
@@ -74,4 +81,6 @@ fn on_select_recipe(
     commands
         .entity(trigger.target())
         .insert(SelectedRecipe(Some(event.0.clone())));
+
+    events.write(RecipeChanged(trigger.target()));
 }

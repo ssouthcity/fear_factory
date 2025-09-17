@@ -3,7 +3,8 @@ use bevy::prelude::*;
 use crate::gameplay::{
     FactorySystems,
     item::{Item, Quantity},
-    recipe::OutputOf,
+    logistics::pathfinding::{PorterPaths, WalkPath},
+    recipe::Outputs,
     world::terrain::Worldly,
     y_sort::YSort,
 };
@@ -24,7 +25,12 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Deref, DerefMut)]
 #[reflect(Component)]
+#[require(PorterSpawnOutputIndex)]
 pub struct PorterSpawnTimer(pub Timer);
+
+#[derive(Component, Reflect, Deref, DerefMut, Default)]
+#[reflect(Component)]
+struct PorterSpawnOutputIndex(usize);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -38,32 +44,48 @@ pub struct PorterOf(pub Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
+pub struct PorterFromOutput(pub Entity);
+
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct PorterToInput(pub Entity);
 
 #[derive(Event, Reflect)]
 pub struct PorterArrival(pub Entity);
 
 fn spawn_porter(
-    mut structure_query: Query<(&Transform, &mut PorterSpawnTimer)>,
-    output_query: Query<(&Item, &mut Quantity, &OutputOf)>,
+    structure_query: Query<(
+        Entity,
+        &Transform,
+        &mut PorterSpawnTimer,
+        &mut PorterSpawnOutputIndex,
+        &Outputs,
+    )>,
+    mut output_query: Query<(&Item, &mut Quantity, &mut PorterPaths)>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
-    for (item, mut quantity, OutputOf(structure)) in output_query {
+    for (structure, transform, mut timer, mut index, outputs) in structure_query {
+        if !timer.tick(time.delta()).finished() {
+            continue;
+        }
+
+        let Some(output) = outputs.iter().nth(index.0) else {
+            continue;
+        };
+
+        let Ok((item, mut quantity, mut porter_paths)) = output_query.get_mut(output) else {
+            continue;
+        };
+
         if quantity.0 == 0 {
             continue;
         }
 
-        let Ok((transform, mut porter_spawn_timer)) = structure_query.get_mut(*structure) else {
+        let Some((input, path)) = porter_paths.0.front() else {
             continue;
         };
-
-        if !porter_spawn_timer.tick(time.delta()).just_finished() {
-            continue;
-        }
-
-        quantity.0 -= 1;
 
         commands.spawn((
             Name::new("Porter"),
@@ -72,8 +94,16 @@ fn spawn_porter(
             Sprite::from_image(asset_server.load("sprites/logistics/porter.png")),
             YSort::default(),
             item.clone(),
-            PorterOf(*structure),
+            PorterOf(structure),
+            PorterFromOutput(output),
+            PorterToInput(*input),
+            WalkPath(path.clone()),
         ));
+
+        quantity.0 -= 1;
+        index.0 = (index.0 + 1) % outputs.len();
+        porter_paths.0.rotate_left(1);
+        timer.reset();
     }
 }
 

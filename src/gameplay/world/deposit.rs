@@ -14,10 +14,10 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
+    app.add_plugins(TomlAssetPlugin::<DepositDef>::extensions(&["deposit.toml"]));
+
     app.register_type::<DepositAssets>()
         .load_resource::<DepositAssets>();
-
-    app.add_plugins(TomlAssetPlugin::<DepositDef>::extensions(&["deposit.toml"]));
 
     app.add_systems(
         OnEnter(Screen::Gameplay),

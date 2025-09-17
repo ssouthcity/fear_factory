@@ -1,24 +1,38 @@
 use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::gameplay::{
-    FactorySystems, structure::Structure, world::terrain::Worldly, y_sort::YSort,
+    FactorySystems,
+    structure::Structure,
+    world::terrain::{Terrain, Worldly},
+    y_sort::YSort,
 };
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Path>();
     app.register_type::<Pathable>();
     app.register_type::<Paths>();
+    app.register_type::<PathsUpdated>();
+
+    app.add_event::<PathsUpdated>();
 
     app.add_observer(add_edges_to_node);
     app.add_observer(remove_edges_from_node);
 
     app.add_systems(
         Update,
-        build_paths
-            .in_set(FactorySystems::Build)
-            .run_if(on_event::<Pointer<DragDrop>>),
+        (
+            build_paths
+                .in_set(FactorySystems::Build)
+                .run_if(on_event::<Pointer<DragDrop>>),
+            spawn_intersection
+                .in_set(FactorySystems::Build)
+                .run_if(on_event::<Pointer<Click>>),
+        ),
     );
 }
+
+#[derive(Event, Reflect)]
+pub struct PathsUpdated;
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -89,6 +103,7 @@ fn build_paths(
     mut commands: Commands,
     pathables: Query<Entity, With<Pathable>>,
     transforms: Query<&Transform>,
+    mut paths_updated_events: EventWriter<PathsUpdated>,
 ) {
     for event in events.read() {
         let target = event.target;
@@ -139,5 +154,38 @@ fn build_paths(
             Structure,
             Pickable::default(),
         ));
+
+        paths_updated_events.write(PathsUpdated);
+    }
+}
+
+fn spawn_intersection(
+    mut events: EventReader<Pointer<Click>>,
+    terrain: Single<Entity, With<Terrain>>,
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
+    mut paths_updated_events: EventWriter<PathsUpdated>,
+) {
+    for event in events.read() {
+        if event.target != *terrain {
+            continue;
+        }
+
+        if event.button != PointerButton::Middle {
+            continue;
+        }
+
+        commands.spawn((
+            Name::new("Intersection"),
+            Transform::from_translation(event.hit.position.unwrap_or_default()),
+            Sprite::from_image(asset_server.load("sprites/logistics/intersection.png")),
+            Worldly,
+            Pathable::walkable(),
+            Pickable::default(),
+            YSort::default(),
+            Structure,
+        ));
+
+        paths_updated_events.write(PathsUpdated);
     }
 }
