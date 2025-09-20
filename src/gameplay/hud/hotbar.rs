@@ -1,71 +1,145 @@
-use bevy::{ecs::spawn::SpawnIter, prelude::*};
+use bevy::{
+    ecs::{spawn::SpawnIter, system::SystemParam},
+    input::keyboard::KeyboardInput,
+    prelude::*,
+};
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    gameplay::{FactorySystems, structure::build::QueueStructureSpawn},
+    gameplay::{
+        FactorySystems, structure::assets::StructureDef, world::construction::StructureConstructed,
+    },
     screens::Screen,
 };
 
-pub fn plugin(app: &mut App) {
-    app.register_type::<HotbarItemSelected>();
-    app.register_type::<HotbarItemDeselected>();
+const DIGIT_KEYS: [KeyCode; 9] = [
+    KeyCode::Digit1,
+    KeyCode::Digit2,
+    KeyCode::Digit3,
+    KeyCode::Digit4,
+    KeyCode::Digit5,
+    KeyCode::Digit6,
+    KeyCode::Digit7,
+    KeyCode::Digit8,
+    KeyCode::Digit9,
+];
 
-    app.register_type::<HotbarSelection>();
+pub fn plugin(app: &mut App) {
+    app.register_type::<HotbarSlot>();
     app.register_type::<HotbarAction>();
+    app.register_type::<HotbarActionOf>();
+    app.register_type::<HotbarActionKind>();
     app.register_type::<HotbarShortcut>();
 
-    app.init_resource::<HotbarSelection>();
+    app.register_type::<HotbarSelectedEntity>();
+    app.init_resource::<HotbarSelectedEntity>();
 
-    app.add_systems(OnEnter(Screen::Gameplay), spawn_hotbar);
+    app.add_event::<HotbarSelectionChanged>();
 
-    app.add_observer(on_hotbar_slot_click);
-    app.add_observer(on_slot_selected);
+    app.add_systems(
+        OnEnter(Screen::Gameplay),
+        (spawn_hotbar, assign_hotbar_items).chain(),
+    );
+
+    app.add_observer(select_on_click);
 
     app.add_systems(
         Update,
         (
-            check_for_hotbar_shortcuts.in_set(FactorySystems::Input),
+            select_on_keyboard_shortcuts
+                .in_set(FactorySystems::Input)
+                .run_if(on_event::<KeyboardInput>),
             highlight_selected_slot.in_set(FactorySystems::UI),
-            update_icon.in_set(FactorySystems::UI),
-            deselect_slot.run_if(on_event::<QueueStructureSpawn>),
+            deselect_slot.run_if(on_event::<StructureConstructed>),
         ),
     );
 }
 
-#[derive(Event, Reflect)]
-pub struct SelectHotbarSlot(String);
+#[derive(SystemParam)]
+pub struct HotbarSelection<'w, 's> {
+    hotbar_selected_entity: Res<'w, HotbarSelectedEntity>,
+    hotbar_actions: Query<'w, 's, &'static HotbarAction>,
+    hotbar_action_kind: Query<'w, 's, &'static HotbarActionKind>,
+}
 
-#[derive(Event, Reflect)]
-pub struct HotbarItemSelected(pub String);
+impl HotbarSelection<'_, '_> {
+    pub fn action(&self) -> Option<&HotbarActionKind> {
+        self.hotbar_selected_entity
+            .and_then(|selection| self.hotbar_actions.get(selection).ok())
+            .and_then(|action| self.hotbar_action_kind.get(action.0).ok())
+    }
+}
 
-#[derive(Event, Reflect)]
-pub struct HotbarItemDeselected;
+#[derive(SystemParam)]
+struct HotbarSelector<'w> {
+    selection: ResMut<'w, HotbarSelectedEntity>,
+    events: EventWriter<'w, HotbarSelectionChanged>,
+}
 
-#[derive(Resource, Default, Reflect)]
+impl HotbarSelector<'_> {
+    fn select(&mut self, entity: Option<Entity>) {
+        if self.selection.0 == entity {
+            if self.selection.is_some() {
+                self.events.write(HotbarSelectionChanged {
+                    previous: self.selection.0,
+                    current: None,
+                });
+                self.selection.0 = None;
+            }
+        } else {
+            self.events.write(HotbarSelectionChanged {
+                previous: self.selection.0,
+                current: entity,
+            });
+            self.selection.0 = entity;
+        }
+    }
+}
+
+#[derive(Event, Reflect, Debug)]
+pub struct HotbarSelectionChanged {
+    pub previous: Option<Entity>,
+    pub current: Option<Entity>,
+}
+
+#[derive(Resource, Reflect, Debug, Default, Deref, DerefMut)]
 #[reflect(Resource)]
-pub struct HotbarSelection(pub Option<String>);
+struct HotbarSelectedEntity(Option<Entity>);
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
-struct HotbarAction(String);
+struct HotbarSlot;
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+#[relationship_target(relationship = HotbarActionOf, linked_spawn)]
+struct HotbarAction(Entity);
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+#[relationship(relationship_target = HotbarAction)]
+struct HotbarActionOf(pub Entity);
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub enum HotbarActionKind {
+    PlaceStructure(Handle<StructureDef>),
+}
+
+#[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 struct HotbarShortcut(KeyCode);
 
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-#[require(AseAnimation)]
-struct HotbarIcon(String);
-
 fn spawn_hotbar(mut commands: Commands) {
     commands.spawn((
-        Name::new("Build Hotbar"),
+        Name::new("Hotbar"),
+        StateScoped(Screen::Gameplay),
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Px(8.0),
-            width: Val::Percent(100.0),
+            width: Val::Auto,
             height: Val::Auto,
+            margin: UiRect::axes(Val::Auto, Val::ZERO),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             column_gap: Val::Px(8.0),
@@ -73,107 +147,87 @@ fn spawn_hotbar(mut commands: Commands) {
             ..default()
         },
         Pickable::IGNORE,
-        Children::spawn(SpawnIter(
-            [
-                (KeyCode::Digit1, "miner"),
-                (KeyCode::Digit2, "smelter"),
-                (KeyCode::Digit3, "constructor"),
-            ]
-            .iter()
-            .map(move |(shortcut, structure_id)| {
-                (
-                    Name::new(format!("Hotbar Slot {structure_id:?}")),
-                    Node {
-                        width: Val::Px(64.0),
-                        height: Val::Px(64.0),
-                        border: UiRect::all(Val::Px(4.0)),
-                        ..default()
-                    },
-                    Pickable::default(),
-                    BorderColor(Color::WHITE),
-                    HotbarShortcut(*shortcut),
-                    HotbarAction(structure_id.to_string()),
-                    children![(
-                        Name::new("Icon"),
-                        ImageNode::default(),
-                        Pickable::IGNORE,
-                        HotbarIcon(structure_id.to_string()),
-                    )],
-                )
-            }),
-        )),
+        Children::spawn(SpawnIter((0..DIGIT_KEYS.len()).map(|i| {
+            (
+                Name::new(format!("Hotbar Slot {}", i + 1)),
+                Node {
+                    width: Val::Px(64.0),
+                    height: Val::Px(64.0),
+                    border: UiRect::all(Val::Px(4.0)),
+                    ..default()
+                },
+                Pickable::default(),
+                BorderColor(Color::WHITE),
+                HotbarSlot,
+                HotbarShortcut(DIGIT_KEYS[i]),
+            )
+        }))),
     ));
 }
 
-fn on_hotbar_slot_click(
-    trigger: Trigger<Pointer<Click>>,
-    hotbar_actions: Query<&HotbarAction>,
+fn assign_hotbar_items(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    structure_defs: Res<Assets<StructureDef>>,
+    query: Query<Entity, With<HotbarShortcut>>,
 ) {
-    let Ok(action) = hotbar_actions.get(trigger.target) else {
-        return;
-    };
-
-    commands.trigger(SelectHotbarSlot(action.0.to_owned()));
-}
-
-fn check_for_hotbar_shortcuts(
-    keys: Res<ButtonInput<KeyCode>>,
-    hotbar_slots: Query<(&HotbarAction, &HotbarShortcut)>,
-    mut commands: Commands,
-) {
-    for (action, shortcut) in hotbar_slots {
-        if !keys.just_pressed(shortcut.0) {
-            continue;
-        }
-
-        commands.trigger(SelectHotbarSlot(action.0.to_owned()));
-    }
-}
-
-fn on_slot_selected(
-    trigger: Trigger<SelectHotbarSlot>,
-    mut hotbar_selection: ResMut<HotbarSelection>,
-    mut commands: Commands,
-) {
-    let event = trigger.event();
-
-    if hotbar_selection.0 == Some(event.0.to_owned()) {
-        hotbar_selection.0 = None;
-        commands.trigger(HotbarItemDeselected);
-    } else {
-        hotbar_selection.0 = Some(event.0.to_owned());
-        commands.trigger(HotbarItemSelected(event.0.to_owned()));
+    for (hotbar_slot, (asset_id, structure_def)) in query.iter().zip(structure_defs.iter()) {
+        commands.spawn((
+            Name::new("Hotbar Action"),
+            ChildOf(hotbar_slot),
+            HotbarActionOf(hotbar_slot),
+            HotbarActionKind::PlaceStructure(Handle::Weak(asset_id)),
+            ImageNode::default(),
+            AseAnimation {
+                aseprite: asset_server
+                    .load(format!("sprites/structures/{}.aseprite", structure_def.id)),
+                animation: Animation::tag("work").with_speed(0.0),
+            },
+            Pickable::IGNORE,
+        ));
     }
 }
 
 fn highlight_selected_slot(
     mut commands: Commands,
-    hotbar_slots: Query<(Entity, &HotbarAction)>,
-    selection: Res<HotbarSelection>,
+    current_selection: Res<HotbarSelectedEntity>,
+    mut highlighted_selection: Local<Option<Entity>>,
 ) {
-    for (entity, slot) in hotbar_slots {
-        if selection.0.as_ref().is_some_and(|b| *b == slot.0) {
-            commands
-                .entity(entity)
-                .insert(BackgroundColor(Color::WHITE));
-        } else {
-            commands.entity(entity).remove::<BackgroundColor>();
+    if let Some(highlighted) = *highlighted_selection {
+        commands.entity(highlighted).remove::<BackgroundColor>();
+    }
+
+    if let Some(selection) = current_selection.0 {
+        commands
+            .entity(selection)
+            .insert(BackgroundColor(Color::WHITE));
+
+        *highlighted_selection = Some(selection);
+    }
+}
+
+fn select_on_click(
+    trigger: Trigger<Pointer<Click>>,
+    hotbar_slots: Query<Entity, With<HotbarSlot>>,
+    mut hotbar: HotbarSelector,
+) {
+    if hotbar_slots.contains(trigger.target) {
+        hotbar.select(Some(trigger.target));
+    };
+}
+
+fn select_on_keyboard_shortcuts(
+    keys: Res<ButtonInput<KeyCode>>,
+    hotbar_slots: Query<(Entity, &HotbarShortcut), With<HotbarSlot>>,
+    mut hotbar: HotbarSelector,
+) {
+    for (entity, shortcut) in hotbar_slots {
+        if keys.just_pressed(shortcut.0) {
+            hotbar.select(Some(entity));
         }
     }
 }
 
-fn deselect_slot(mut hotbar_selection: ResMut<HotbarSelection>, mut commands: Commands) {
-    hotbar_selection.0 = None;
-    commands.trigger(HotbarItemDeselected);
-}
-
-fn update_icon(
-    query: Query<(&mut AseAnimation, &HotbarIcon), Changed<HotbarIcon>>,
-    asset_server: Res<AssetServer>,
-) {
-    for (mut animation, icon) in query {
-        animation.aseprite = asset_server.load(format!("sprites/structures/{}.aseprite", icon.0));
-        animation.animation = Animation::tag("work").with_speed(0.0);
-    }
+fn deselect_slot(mut hotbar: HotbarSelector) {
+    hotbar.select(None);
 }
