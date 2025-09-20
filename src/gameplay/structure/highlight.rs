@@ -1,11 +1,8 @@
 use bevy::{picking::hover::PickingInteraction, prelude::*};
 
-use crate::gameplay::{
-    structure::{
-        Structure,
-        dismantle::{DismantleTimer, Selection},
-    },
-    world::terrain::Terrain,
+use crate::gameplay::world::{
+    demolition::{DemolishSelection, DemolishTimer, Demolishable},
+    terrain::Terrain,
 };
 
 const HIGHLIGHT_COLOR: Color = Color::hsl(60.0, 1.0, 0.5);
@@ -42,9 +39,9 @@ fn highlight_pickable(query: Query<(&mut Sprite, &PickingInteraction), Without<T
 }
 
 fn highlight(
-    building_sprites: Query<(Entity, &mut Sprite), With<Structure>>,
+    building_sprites: Query<(Entity, &mut Sprite), With<Demolishable>>,
     highlight_color: Res<HighlightColor>,
-    selection: Res<Selection>,
+    selection: Res<DemolishSelection>,
 ) {
     for (building, mut sprite) in building_sprites {
         let color = if selection.contains(&building) {
@@ -58,7 +55,7 @@ fn highlight(
 }
 
 fn calculate_dismantle_color(
-    timer: Res<DismantleTimer>,
+    timer: Res<DemolishTimer>,
     mut highlight_color: ResMut<HighlightColor>,
 ) {
     let inverse_fraction = 1.0 - timer.fraction();

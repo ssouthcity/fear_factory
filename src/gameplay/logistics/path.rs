@@ -2,8 +2,10 @@ use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::gameplay::{
     FactorySystems,
-    structure::Structure,
-    world::terrain::{Terrain, Worldly},
+    world::{
+        demolition::Demolishable,
+        terrain::{Terrain, Worldly},
+    },
     y_sort::YSort,
 };
 
@@ -151,7 +153,7 @@ fn build_paths(
                 ..default()
             },
             YSort(0.5),
-            Structure,
+            Demolishable,
             Pickable::default(),
         ));
 
@@ -183,7 +185,7 @@ fn spawn_intersection(
             Pathable::walkable(),
             Pickable::default(),
             YSort::default(),
-            Structure,
+            Demolishable,
         ));
 
         paths_updated_events.write(PathsUpdated);

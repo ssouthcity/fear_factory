@@ -2,11 +2,13 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 
-use crate::gameplay::logistics::{path::Pathable, porter::PorterSpawnTimer};
+use crate::gameplay::{
+    logistics::{path::Pathable, porter::PorterSpawnTimer},
+    world::demolition::Demolishable,
+};
 
 pub mod assets;
 pub mod build;
-pub mod dismantle;
 pub mod highlight;
 pub mod interactable;
 
@@ -16,7 +18,6 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         assets::plugin,
         build::plugin,
-        dismantle::plugin,
         highlight::plugin,
         interactable::plugin,
     ));
@@ -26,6 +27,7 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 #[require(
     Pathable,
-    PorterSpawnTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating))
+    PorterSpawnTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
+    Demolishable
 )]
 pub struct Structure;
