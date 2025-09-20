@@ -31,10 +31,10 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             tick_demolish_timer,
-            demolish_selection
-                .after(tick_demolish_timer)
-                .run_if(demolish_timer_finished),
+            highlight_demolition,
+            demolish_selection.run_if(demolish_timer_finished),
         )
+            .chain()
             .in_set(FactorySystems::Demolish),
     );
 }
@@ -105,6 +105,22 @@ fn remove_from_selection(
 
 fn clear_selection(mut selection: ResMut<DemolishSelection>) {
     selection.clear();
+}
+
+fn highlight_demolition(
+    timer: Res<DemolishTimer>,
+    selection: Res<DemolishSelection>,
+    mut sprites: Query<&mut Sprite, With<Demolishable>>,
+) {
+    let inverse_fraction = 1.0 - timer.fraction();
+
+    let hue = 60.0 * inverse_fraction;
+
+    for entity in selection.iter() {
+        if let Ok(mut sprite) = sprites.get_mut(*entity) {
+            sprite.color = Color::hsl(hue, 1.0, 0.5);
+        }
+    }
 }
 
 fn demolish_selection(mut selection: ResMut<DemolishSelection>, mut commands: Commands) {
