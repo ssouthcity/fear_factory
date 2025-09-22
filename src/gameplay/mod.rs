@@ -15,7 +15,7 @@ pub fn plugin(app: &mut App) {
         Update,
         (
             FactorySystems::Input,
-            FactorySystems::Build,
+            FactorySystems::Construction,
             FactorySystems::Power,
             FactorySystems::Logistics,
             FactorySystems::Work,
@@ -40,7 +40,7 @@ pub fn plugin(app: &mut App) {
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum FactorySystems {
     Input,
-    Build,
+    Construction,
     Power,
     Logistics,
     Work,

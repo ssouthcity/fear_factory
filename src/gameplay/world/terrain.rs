@@ -3,11 +3,7 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     assets::tracking::LoadResource,
-    gameplay::{
-        hud::hotbar::HotbarSelection,
-        structure::build::{Preview, QueueStructureSpawn},
-        world::{MAP_SIZE, WorldSpawnSystems},
-    },
+    gameplay::world::{MAP_SIZE, WorldSpawnSystems},
     screens::Screen,
 };
 
@@ -17,6 +13,9 @@ pub fn plugin(app: &mut App) {
 
     app.register_type::<Terrain>();
     app.register_type::<Worldly>();
+
+    app.register_type::<TerrainClick>();
+    app.add_event::<TerrainClick>();
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
@@ -46,6 +45,12 @@ impl FromWorld for TerrainAssets {
 #[reflect(Component)]
 pub struct Terrain;
 
+#[derive(Event, Reflect, Debug)]
+pub struct TerrainClick {
+    pub entity: Entity,
+    pub position: Vec2,
+}
+
 fn spawn_terrain(mut commands: Commands, world_assets: Res<TerrainAssets>) {
     commands
         .spawn((
@@ -66,39 +71,14 @@ fn spawn_terrain(mut commands: Commands, world_assets: Res<TerrainAssets>) {
             },
             Pickable::default(),
         ))
-        .observe(queue_spawn_building)
-        .observe(move_preview);
-}
-
-fn move_preview(
-    trigger: Trigger<Pointer<Move>>,
-    mut preview: Single<&mut Transform, With<Preview>>,
-) {
-    preview.translation = trigger.hit.position.unwrap();
-}
-
-fn queue_spawn_building(
-    trigger: Trigger<Pointer<Click>>,
-    mut events: EventWriter<QueueStructureSpawn>,
-    selected_buildable: Res<HotbarSelection>,
-) {
-    if trigger.event().button != PointerButton::Primary {
-        return;
-    }
-
-    let Some(cursor_position) = trigger.event().hit.position else {
-        return;
-    };
-
-    let Some(ref structure_id) = selected_buildable.0 else {
-        return;
-    };
-
-    events.write(QueueStructureSpawn {
-        structure_id: structure_id.clone(),
-        position: cursor_position.truncate(),
-        placed_on: trigger.target,
-    });
+        .observe(
+            |trigger: Trigger<Pointer<Click>>, mut events: EventWriter<TerrainClick>| {
+                events.write(TerrainClick {
+                    entity: trigger.target,
+                    position: trigger.hit.position.unwrap_or_default().xy(),
+                });
+            },
+        );
 }
 
 /// Denotes that entity should be spawned in the world
