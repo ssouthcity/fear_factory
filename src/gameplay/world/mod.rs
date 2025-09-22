@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::screens::Screen;
 
+pub mod construction;
 pub mod demolition;
 pub mod deposit;
 pub mod terrain;
@@ -18,7 +19,12 @@ pub fn plugin(app: &mut App) {
             .chain(),
     );
 
-    app.add_plugins((demolition::plugin, terrain::plugin, deposit::plugin));
+    app.add_plugins((
+        construction::plugin,
+        demolition::plugin,
+        terrain::plugin,
+        deposit::plugin,
+    ));
 }
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
