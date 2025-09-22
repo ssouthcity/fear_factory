@@ -4,11 +4,12 @@ use bevy::prelude::*;
 
 use crate::gameplay::{
     logistics::{path::Pathable, porter::PorterSpawnTimer},
+    structure::assets::StructureDef,
     world::demolition::Demolishable,
 };
 
 pub mod assets;
-pub mod build;
+pub mod default_recipe;
 pub mod highlight;
 pub mod interactable;
 
@@ -17,7 +18,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_plugins((
         assets::plugin,
-        build::plugin,
+        default_recipe::plugin,
         highlight::plugin,
         interactable::plugin,
     ));
@@ -30,4 +31,4 @@ pub fn plugin(app: &mut App) {
     PorterSpawnTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
     Demolishable
 )]
-pub struct Structure;
+pub struct Structure(pub Handle<StructureDef>);

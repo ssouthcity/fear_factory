@@ -24,10 +24,10 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             build_paths
-                .in_set(FactorySystems::Build)
+                .in_set(FactorySystems::Construction)
                 .run_if(on_event::<Pointer<DragDrop>>),
             spawn_intersection
-                .in_set(FactorySystems::Build)
+                .in_set(FactorySystems::Construction)
                 .run_if(on_event::<Pointer<Click>>),
         ),
     );

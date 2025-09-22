@@ -8,6 +8,7 @@ mod camera;
 #[cfg(feature = "dev")]
 mod dev_tools;
 mod gameplay;
+mod input;
 mod screens;
 mod widgets;
 
@@ -41,6 +42,7 @@ impl Plugin for FactoryGamePlugin {
             #[cfg(feature = "dev")]
             dev_tools::plugin,
             gameplay::plugin,
+            input::plugin,
             screens::plugin,
         ));
 
