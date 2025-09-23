@@ -2,11 +2,8 @@ use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::gameplay::{
     FactorySystems,
-    world::{
-        demolition::Demolishable,
-        terrain::{Terrain, Worldly},
-    },
-    y_sort::YSort,
+    sprite_sort::{YSortSprite, ZIndexSprite},
+    world::demolition::Demolishable,
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -129,7 +126,6 @@ fn build_paths(
         commands.spawn((
             Name::new("Path"),
             Path(target, dropped),
-            Worldly,
             Transform::default()
                 .with_translation(from.translation.midpoint(to.translation))
                 .with_rotation(rotation),
@@ -152,7 +148,8 @@ fn build_paths(
                 }),
                 ..default()
             },
-            YSort(0.5),
+            ZIndexSprite(1),
+            YSortSprite,
             Demolishable,
             Pickable::default(),
         ));
@@ -163,16 +160,11 @@ fn build_paths(
 
 fn spawn_intersection(
     mut events: EventReader<Pointer<Click>>,
-    terrain: Single<Entity, With<Terrain>>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
     mut paths_updated_events: EventWriter<PathsUpdated>,
 ) {
     for event in events.read() {
-        if event.target != *terrain {
-            continue;
-        }
-
         if event.button != PointerButton::Middle {
             continue;
         }
@@ -181,10 +173,9 @@ fn spawn_intersection(
             Name::new("Intersection"),
             Transform::from_translation(event.hit.position.unwrap_or_default()),
             Sprite::from_image(asset_server.load("sprites/logistics/intersection.png")),
-            Worldly,
             Pathable::walkable(),
             Pickable::default(),
-            YSort::default(),
+            YSortSprite,
             Demolishable,
         ));
 

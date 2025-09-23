@@ -5,8 +5,7 @@ use crate::gameplay::{
     item::{Item, Quantity},
     logistics::pathfinding::{PorterPaths, WalkPath},
     recipe::Outputs,
-    world::terrain::Worldly,
-    y_sort::YSort,
+    sprite_sort::YSortSprite,
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -90,9 +89,8 @@ fn spawn_porter(
         commands.spawn((
             Name::new("Porter"),
             *transform,
-            Worldly,
             Sprite::from_image(asset_server.load("sprites/logistics/porter.png")),
-            YSort::default(),
+            YSortSprite,
             item.clone(),
             PorterOf(structure),
             PorterFromOutput(output),

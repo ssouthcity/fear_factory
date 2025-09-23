@@ -41,6 +41,7 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
+#[require(Pickable)]
 pub struct Demolishable;
 
 #[derive(Resource, Reflect, Debug, Default, Deref, DerefMut)]

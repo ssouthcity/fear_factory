@@ -1,7 +1,8 @@
 use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode};
-use bevy_aseprite_ultra::AsepriteUltraPlugin;
+use bevy_aseprite_ultra::prelude::*;
+use bevy_ecs_tilemap::prelude::*;
 
 mod assets;
 mod camera;
@@ -35,6 +36,7 @@ impl Plugin for FactoryGamePlugin {
         );
 
         app.add_plugins(AsepriteUltraPlugin);
+        app.add_plugins(TilemapPlugin);
 
         app.add_plugins((
             assets::plugin,

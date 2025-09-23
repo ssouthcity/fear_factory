@@ -6,12 +6,12 @@ use crate::{
         FactorySystems,
         hud::hotbar::{HotbarActionKind, HotbarSelection, HotbarSelectionChanged},
         recipe::select::SelectRecipe,
+        sprite_sort::{YSortSprite, ZIndexSprite},
         structure::{Structure, assets::StructureDef, interactable::Interactable},
         world::{
             deposit::DepositRecipe,
-            terrain::{TerrainClick, Worldly},
+            tilemap::{TILE_OFFSET, TILE_SIZE, map::TerrainClick},
         },
-        y_sort::YSort,
     },
     input::cursor::CursorPosition,
 };
@@ -68,13 +68,13 @@ fn spawn_preview(
     commands.spawn((
         Name::new("Construction Preview"),
         ConstructionPreview,
-        Worldly,
-        Sprite::from_color(Color::WHITE.with_alpha(0.5), Vec2::splat(64.0)),
+        Sprite::from_color(Color::WHITE.with_alpha(0.5), TILE_SIZE),
         AseAnimation {
             aseprite: asset_server.load(sprite_location),
             animation: Animation::tag("work"),
         },
-        YSort::default(),
+        YSortSprite,
+        ZIndexSprite(10),
     ));
 }
 
@@ -89,7 +89,7 @@ fn move_preview(
     mut preview_query: Query<&mut Transform, With<ConstructionPreview>>,
 ) {
     for mut transform in preview_query.iter_mut() {
-        transform.translation = cursor_position.extend(0.0);
+        transform.translation = (cursor_position.0 + Vec2::Y * TILE_OFFSET.y).extend(0.0);
     }
 }
 
@@ -114,14 +114,14 @@ fn construct(
         let mut entity = commands.spawn((
             Name::new(structure.name.clone()),
             Transform::from_translation(event.position.extend(0.0)),
-            Worldly,
-            Sprite::sized(Vec2::splat(64.0)),
+            Sprite::sized(TILE_SIZE),
             AseAnimation {
                 aseprite: asset_server
                     .load(format!("sprites/structures/{}.aseprite", structure.id)),
                 animation: Animation::tag("work"),
             },
-            YSort::default(),
+            YSortSprite,
+            ZIndexSprite(10),
             Structure(handle.clone()),
             Interactable,
         ));

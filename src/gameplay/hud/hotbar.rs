@@ -154,6 +154,9 @@ fn spawn_hotbar(mut commands: Commands) {
                     width: Val::Px(64.0),
                     height: Val::Px(64.0),
                     border: UiRect::all(Val::Px(4.0)),
+                    display: Display::Flex,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
                     ..default()
                 },
                 Pickable::default(),
@@ -177,13 +180,16 @@ fn assign_hotbar_items(
             ChildOf(hotbar_slot),
             HotbarActionOf(hotbar_slot),
             HotbarActionKind::PlaceStructure(Handle::Weak(asset_id)),
-            ImageNode::default(),
-            AseAnimation {
-                aseprite: asset_server
-                    .load(format!("sprites/structures/{}.aseprite", structure_def.id)),
-                animation: Animation::tag("work").with_speed(0.0),
-            },
             Pickable::IGNORE,
+            Node::default(),
+            children![(
+                ImageNode::default(),
+                AseAnimation {
+                    aseprite: asset_server
+                        .load(format!("sprites/structures/{}.aseprite", structure_def.id)),
+                    animation: Animation::tag("work").with_speed(0.0),
+                },
+            )],
         ));
     }
 }
