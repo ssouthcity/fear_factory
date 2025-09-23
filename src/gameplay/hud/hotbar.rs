@@ -38,7 +38,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
-        (spawn_hotbar, assign_hotbar_items).chain(),
+        (spawn_hotbar, assign_hotbar_items, assign_path_action).chain(),
     );
 
     app.add_observer(select_on_click);
@@ -124,6 +124,7 @@ struct HotbarActionOf(pub Entity);
 #[reflect(Component)]
 pub enum HotbarActionKind {
     PlaceStructure(Handle<StructureDef>),
+    PlacePath,
 }
 
 #[derive(Component, Reflect, Debug)]
@@ -172,7 +173,7 @@ fn assign_hotbar_items(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     structure_defs: Res<Assets<StructureDef>>,
-    query: Query<Entity, With<HotbarShortcut>>,
+    query: Query<Entity, (With<HotbarShortcut>, Without<Children>)>,
 ) {
     for (hotbar_slot, (asset_id, structure_def)) in query.iter().zip(structure_defs.iter()) {
         commands.spawn((
@@ -189,9 +190,33 @@ fn assign_hotbar_items(
                         .load(format!("sprites/structures/{}.aseprite", structure_def.id)),
                     animation: Animation::tag("work").with_speed(0.0),
                 },
+                Pickable::IGNORE,
             )],
         ));
     }
+}
+
+fn assign_path_action(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    query: Query<Entity, (With<HotbarShortcut>, Without<Children>)>,
+) {
+    let Some(hotbar_slot) = query.iter().next() else {
+        return;
+    };
+
+    commands.spawn((
+        Name::new("Hotbar Action"),
+        ChildOf(hotbar_slot),
+        HotbarActionOf(hotbar_slot),
+        HotbarActionKind::PlacePath,
+        Pickable::IGNORE,
+        Node::default(),
+        children![(
+            ImageNode::new(asset_server.load("sprites/logistics/path.png")),
+            Pickable::IGNORE,
+        )],
+    ));
 }
 
 fn highlight_selected_slot(

@@ -16,10 +16,11 @@ pub fn plugin(app: &mut App) {
         (
             FactorySystems::Input,
             FactorySystems::Construction,
-            FactorySystems::Power,
+            FactorySystems::PostConstruction,
             FactorySystems::Logistics,
             FactorySystems::Work,
             FactorySystems::Demolish,
+            FactorySystems::PostDemolition,
             FactorySystems::UI,
         )
             .chain()
@@ -41,9 +42,10 @@ pub fn plugin(app: &mut App) {
 pub enum FactorySystems {
     Input,
     Construction,
-    Power,
+    PostConstruction,
     Logistics,
     Work,
     Demolish,
+    PostDemolition,
     UI,
 }

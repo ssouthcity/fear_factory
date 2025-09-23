@@ -4,9 +4,12 @@ use bevy_ecs_tilemap::prelude::*;
 use crate::{
     gameplay::{
         FactorySystems,
-        world::tilemap::{
-            TILE_OFFSET,
-            chunk::{Chunk, Layers},
+        world::{
+            construction::ValidPlacement,
+            tilemap::{
+                chunk::{Chunk, Layers},
+                coord::Coord,
+            },
         },
     },
     input::cursor::CursorPosition,
@@ -16,29 +19,23 @@ pub(super) fn plugin(app: &mut App) {
     app.register_type::<HoveredTile>();
     app.init_resource::<HoveredTile>();
 
-    app.register_type::<TerrainClick>();
-    app.add_event::<TerrainClick>();
+    app.register_type::<TileClicked>();
+    app.add_event::<TileClicked>();
 
     app.add_systems(
         Update,
-        propogate_world_click
-            .run_if(on_event::<Pointer<Click>>)
+        (
+            mark_highlighted_tile,
+            propogate_world_click.run_if(on_event::<Pointer<Click>>),
+        )
             .in_set(FactorySystems::Input),
     );
 
-    app.add_systems(
-        Update,
-        (mark_highlighted_tile, highlight_hovered_tile)
-            .chain()
-            .in_set(FactorySystems::UI),
-    );
+    app.add_systems(Update, highlight_hovered_tile.in_set(FactorySystems::UI));
 }
 
 #[derive(Event, Reflect, Debug)]
-pub struct TerrainClick {
-    pub entity: Entity,
-    pub position: Vec2,
-}
+pub struct TileClicked(pub Coord);
 
 #[derive(Resource, Reflect, Debug)]
 #[reflect(Resource)]
@@ -119,33 +116,17 @@ fn highlight_hovered_tile(
 
 fn propogate_world_click(
     hovered_tile: Res<HoveredTile>,
-    tile_query: Query<(&TilePos, &TilemapId)>,
-    tilemap_query: Query<(
-        &Transform,
-        &TilemapSize,
-        &TilemapGridSize,
-        &TilemapTileSize,
-        &TilemapType,
-        &TilemapAnchor,
-    )>,
-    mut events: EventWriter<TerrainClick>,
+    valid_placement: Res<ValidPlacement>,
+    tile_query: Query<&TilePos>,
+    mut events: EventWriter<TileClicked>,
 ) {
-    let Ok((tile_pos, tilemap_id)) = tile_query.get(hovered_tile.0) else {
+    if !valid_placement.0 {
+        return;
+    }
+
+    let Ok(tile_pos) = tile_query.get(hovered_tile.0) else {
         return;
     };
 
-    let Ok((transform, map_size, grid_size, tile_size, map_type, anchor)) =
-        tilemap_query.get(tilemap_id.0)
-    else {
-        return;
-    };
-
-    let translation = tile_pos
-        .center_in_world(map_size, grid_size, tile_size, map_type, anchor)
-        .extend(0.0);
-
-    events.write(TerrainClick {
-        entity: Entity::PLACEHOLDER,
-        position: (translation + transform.translation + Vec3::Y * TILE_OFFSET.y).xy(),
-    });
+    events.write(TileClicked(Coord::new(tile_pos.x, tile_pos.y)));
 }
