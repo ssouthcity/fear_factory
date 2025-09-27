@@ -2,7 +2,6 @@ use bevy::{
     ecs::{relationship::RelatedSpawner, spawn::SpawnWith},
     prelude::*,
 };
-use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     assets::indexing::IndexMap,
@@ -11,10 +10,7 @@ use crate::{
             inspect::{InspectedEntity, InspectionMenuState},
             item_slot::{AddedToSlot, InSlot, RemovedFromSlot},
         },
-        item::{
-            Item,
-            assets::{ItemAssets, ItemDef},
-        },
+        item::{Item, assets::ItemDef},
         recipe::{assets::RecipeDef, select::SelectedRecipe},
     },
     widgets,
@@ -38,11 +34,11 @@ pub fn open_recipe_menu(
     mut commands: Commands,
     inspected_entity: Res<InspectedEntity>,
     selected_recipes: Query<&SelectedRecipe>,
-    item_assets: Res<ItemAssets>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
     held_relics: Query<&HeldRelic>,
     item_defs: Res<Assets<ItemDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
     asset_server: Res<AssetServer>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
@@ -131,6 +127,13 @@ pub fn open_recipe_menu(
         .id();
 
     for (input_id, quantity) in recipe.input.iter() {
+        let Some(item_def) = item_index
+            .get(input_id)
+            .and_then(|handle| item_defs.get(*handle))
+        else {
+            continue;
+        };
+
         commands.spawn((
             ChildOf(input_list_id),
             widgets::slot(),
@@ -142,11 +145,7 @@ pub fn open_recipe_menu(
                         ..default()
                     },
                     Pickable::IGNORE,
-                    ImageNode::default(),
-                    AseSlice {
-                        aseprite: item_assets.aseprite.clone(),
-                        name: input_id.clone(),
-                    }
+                    ImageNode::new(asset_server.load(&item_def.sprite)),
                 ),
                 (
                     Node {
@@ -192,34 +191,18 @@ pub fn open_recipe_menu(
             .get(&relic.0)
             .expect("Item referred to by HeldRelic component is not loaded");
 
-        let relic_image = commands
-            .spawn((
-                ChildOf(relic_slot_id),
-                Name::new(item_def.name.clone()),
-                InSlot(relic_slot_id),
-                Item(relic.0.clone()),
-                Node {
-                    width: Val::Percent(80.0),
-                    height: Val::Percent(80.0),
-                    ..default()
-                },
-            ))
-            .id();
-
-        if let Some(item_sprite) = &item_def.sprite {
-            commands.entity(relic_image).insert(ImageNode {
-                image: asset_server.load(item_sprite.clone()),
+        commands.spawn((
+            ChildOf(relic_slot_id),
+            Name::new(item_def.name.clone()),
+            InSlot(relic_slot_id),
+            Item(relic.0.clone()),
+            Node {
+                width: Val::Percent(80.0),
+                height: Val::Percent(80.0),
                 ..default()
-            });
-        } else {
-            commands.entity(relic_image).insert((
-                ImageNode::default(),
-                AseSlice {
-                    aseprite: item_assets.aseprite.clone(),
-                    name: item_def.id.clone(),
-                },
-            ));
-        }
+            },
+            ImageNode::new(asset_server.load(item_def.sprite.clone())),
+        ));
     }
 
     commands
@@ -255,6 +238,13 @@ pub fn open_recipe_menu(
         .id();
 
     for (output_id, quantity) in recipe.output.iter() {
+        let Some(item_def) = item_index
+            .get(output_id)
+            .and_then(|handle| item_defs.get(*handle))
+        else {
+            continue;
+        };
+
         commands.spawn((
             ChildOf(output_list_id),
             widgets::slot(),
@@ -266,11 +256,7 @@ pub fn open_recipe_menu(
                         ..default()
                     },
                     Pickable::IGNORE,
-                    ImageNode::default(),
-                    AseSlice {
-                        aseprite: item_assets.aseprite.clone(),
-                        name: output_id.clone(),
-                    }
+                    ImageNode::new(asset_server.load(&item_def.sprite)),
                 ),
                 (
                     Node {
