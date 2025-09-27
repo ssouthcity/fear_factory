@@ -3,8 +3,7 @@ use std::time::Duration;
 use bevy::prelude::*;
 
 use crate::gameplay::{
-    logistics::{path::Pathable, porter::PorterSpawnTimer},
-    structure::assets::StructureDef,
+    logistics::porter::PorterSpawnTimer, structure::assets::StructureDef,
     world::demolition::Demolishable,
 };
 
@@ -27,8 +26,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[require(
-    Pathable,
-    PorterSpawnTimer(Timer::new(Duration::from_secs(1), TimerMode::Repeating)),
+    PorterSpawnTimer(Timer::new(Duration::from_secs(5), TimerMode::Repeating)),
     Demolishable
 )]
 pub struct Structure(pub Handle<StructureDef>);

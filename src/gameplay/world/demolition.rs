@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
-use crate::gameplay::FactorySystems;
+use crate::gameplay::{FactorySystems, world::tilemap::coord::Coord};
 
 pub const DEMOLISH_BUTTON: KeyCode = KeyCode::KeyF;
 pub const DEMOLISH_CANCEL_BUTTON: KeyCode = KeyCode::Escape;
@@ -16,6 +16,8 @@ pub(super) fn plugin(app: &mut App) {
 
     app.register_type::<DemolishTimer>();
     app.init_resource::<DemolishTimer>();
+
+    app.add_event::<Demolished>();
 
     app.add_systems(
         Update,
@@ -37,6 +39,12 @@ pub(super) fn plugin(app: &mut App) {
             .chain()
             .in_set(FactorySystems::Demolish),
     );
+}
+
+#[derive(Event, Reflect, Debug)]
+pub struct Demolished {
+    pub entity: Entity,
+    pub coord: Coord,
 }
 
 #[derive(Component, Reflect, Debug, Default)]
@@ -124,8 +132,20 @@ fn highlight_demolition(
     }
 }
 
-fn demolish_selection(mut selection: ResMut<DemolishSelection>, mut commands: Commands) {
+fn demolish_selection(
+    mut selection: ResMut<DemolishSelection>,
+    mut commands: Commands,
+    mut events: EventWriter<Demolished>,
+    coords: Query<&Coord>,
+) {
     for demolishable in selection.drain() {
         commands.entity(demolishable).despawn();
+
+        if let Ok(coord) = coords.get(demolishable) {
+            events.write(Demolished {
+                entity: demolishable,
+                coord: Coord(coord.0),
+            });
+        }
     }
 }

@@ -1,10 +1,5 @@
 use bevy::{asset::LoadedFolder, prelude::*};
-use bevy_aseprite_ultra::prelude::*;
-use bevy_ecs_tilemap::{
-    anchor::TilemapAnchor,
-    map::{TilemapGridSize, TilemapSize, TilemapTileSize, TilemapType},
-    tiles::{TilePos, TileStorage},
-};
+use bevy_ecs_tilemap::tiles::TilePos;
 use rand::Rng;
 use serde::Deserialize;
 
@@ -14,10 +9,8 @@ use crate::{
         sprite_sort::{YSortSprite, ZIndexSprite},
         world::{
             WorldSpawnSystems,
-            tilemap::{
-                CHUNK_SIZE,
-                chunk::{Chunk, Layers},
-            },
+            construction::Constructions,
+            tilemap::{CHUNK_SIZE, coord::Coord},
         },
     },
     screens::Screen,
@@ -46,7 +39,7 @@ pub struct DepositDef {
 #[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
 pub struct DepositAssets {
-    aseprite: Handle<Aseprite>,
+    sprites: Handle<LoadedFolder>,
     manifest_folder: Handle<LoadedFolder>,
 }
 
@@ -55,7 +48,7 @@ impl FromWorld for DepositAssets {
         let assets = world.resource::<AssetServer>();
 
         Self {
-            aseprite: assets.load("deposits.aseprite"),
+            sprites: assets.load_folder("sprites/deposits"),
             manifest_folder: assets.load_folder("manifests/deposits"),
         }
     }
@@ -67,19 +60,9 @@ pub struct DepositRecipe(pub String);
 
 fn spawn_deposits(
     mut commands: Commands,
-    // deposit_assets: Res<DepositAssets>,
     deposit_definitions: Res<Assets<DepositDef>>,
     asset_server: Res<AssetServer>,
-    chunk_query: Single<&Layers, With<Chunk>>,
-    tile_storage_query: Query<&TileStorage>,
-    tilemap_query: Query<(
-        &Transform,
-        &TilemapSize,
-        &TilemapGridSize,
-        &TilemapTileSize,
-        &TilemapType,
-        &TilemapAnchor,
-    )>,
+    mut constructions: ResMut<Constructions>,
 ) {
     let mut rng = rand::rng();
 
@@ -90,28 +73,18 @@ fn spawn_deposits(
                 rng.random_range(0..CHUNK_SIZE.y),
             );
 
-            let Some((z_index, layer)) = chunk_query.iter().enumerate().find(|(_, layer)| {
-                let storage = tile_storage_query.get(*layer).unwrap();
-                storage.get(&tile_pos).is_none()
-            }) else {
-                continue;
-            };
+            let entity = commands
+                .spawn((
+                    Name::new(deposit.name.clone()),
+                    Coord::new(tile_pos.x, tile_pos.y),
+                    YSortSprite,
+                    ZIndexSprite(10),
+                    Sprite::from_image(asset_server.load("sprites/deposits/iron_deposit.png")),
+                    DepositRecipe(deposit.recipe_id.clone()),
+                ))
+                .id();
 
-            let (transform, map_size, grid_size, tile_size, map_type, anchor) =
-                tilemap_query.get(layer).unwrap();
-
-            let translation = tile_pos
-                .center_in_world(map_size, grid_size, tile_size, map_type, anchor)
-                .extend(0.0);
-
-            commands.spawn((
-                Name::new(deposit.name.clone()),
-                Transform::from_translation(transform.translation + translation),
-                Sprite::from_image(asset_server.load("tiles/iron_deposit.png")),
-                YSortSprite,
-                ZIndexSprite(z_index as u32),
-                DepositRecipe(deposit.recipe_id.clone()),
-            ));
+            constructions.insert(tile_pos.into(), entity);
         }
     }
 }

@@ -1,24 +1,25 @@
 use bevy::prelude::*;
+use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
 use crate::gameplay::{
     FactorySystems,
     item::{Item, Quantity},
     logistics::pathfinding::{PorterPaths, WalkPath},
     recipe::Outputs,
-    sprite_sort::YSortSprite,
+    sprite_sort::{YSortSprite, ZIndexSprite},
 };
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Porters>();
     app.register_type::<PorterOf>();
     app.register_type::<PorterToInput>();
-    app.register_type::<PorterArrival>();
 
     app.add_event::<PorterArrival>();
+    app.add_event::<PorterLost>();
 
     app.add_systems(
         Update,
-        (spawn_porter, drop_of_items).in_set(FactorySystems::Logistics),
+        (spawn_porter, despawn_lost_porters, drop_of_items).in_set(FactorySystems::Logistics),
     );
 }
 
@@ -49,8 +50,11 @@ pub struct PorterFromOutput(pub Entity);
 #[reflect(Component)]
 pub struct PorterToInput(pub Entity);
 
-#[derive(Event, Reflect)]
+#[derive(Event, Reflect, Debug)]
 pub struct PorterArrival(pub Entity);
+
+#[derive(Event, Reflect, Debug)]
+pub struct PorterLost(pub Entity);
 
 fn spawn_porter(
     structure_query: Query<(
@@ -89,8 +93,13 @@ fn spawn_porter(
         commands.spawn((
             Name::new("Porter"),
             *transform,
-            Sprite::from_image(asset_server.load("sprites/logistics/porter.png")),
+            Sprite::default(),
+            AseAnimation {
+                aseprite: asset_server.load("sprites/logistics/porter.aseprite"),
+                animation: Animation::tag("idle"),
+            },
             YSortSprite,
+            ZIndexSprite(10),
             item.clone(),
             PorterOf(structure),
             PorterFromOutput(output),
@@ -102,6 +111,12 @@ fn spawn_porter(
         index.0 = (index.0 + 1) % outputs.len();
         porter_paths.0.rotate_left(1);
         timer.reset();
+    }
+}
+
+fn despawn_lost_porters(mut events: EventReader<PorterLost>, mut commands: Commands) {
+    for PorterLost(entity) in events.read() {
+        commands.entity(*entity).despawn();
     }
 }
 

@@ -49,7 +49,7 @@ fn spawn_chunk(mut commands: Commands, asset_server: Res<AssetServer>) {
         ))
         .id();
 
-    for i in 0..4 {
+    for i in 0..5 {
         let map_size = TilemapSize::from(CHUNK_SIZE);
         let tile_size = TilemapTileSize::from(TILE_SIZE);
         let grid_size = TilemapGridSize::from(TILE_OFFSET);
@@ -65,10 +65,7 @@ fn spawn_chunk(mut commands: Commands, asset_server: Res<AssetServer>) {
                 grid_size,
                 size: map_size,
                 storage,
-                texture: TilemapTexture::Vector(vec![
-                    asset_server.load("tiles/grass.png"),
-                    asset_server.load("tiles/path.png"),
-                ]),
+                texture: TilemapTexture::Single(asset_server.load("tiles/grass.png")),
                 tile_size,
                 map_type: TilemapType::Isometric(IsoCoordSystem::Diamond),
                 anchor: TilemapAnchor::Center,
@@ -93,7 +90,7 @@ fn spawn_flat_ground(
         };
 
         fill_tilemap_rect(
-            TileTextureIndex(i as u32 % 2),
+            TileTextureIndex(0),
             TilePos::new(0, 0),
             TilemapSize::from(CHUNK_SIZE / (i + 1) as u32),
             TilemapId(layer),
