@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
 use crate::{
-    gameplay::item::{Item, assets::ItemDef},
+    gameplay::item::assets::ItemDef,
     screens::Screen,
-    widgets,
+    widgets::{self, item::item_icon},
 };
 
 const SLOTTED_OBJECT_Z_INDEX: i32 = 10;
@@ -164,17 +164,8 @@ fn on_slot_drag_and_drop(
         .trigger(AddedToSlot(source_item));
 }
 
-fn setup(
-    mut commands: Commands,
-    mut item_defs: ResMut<Assets<ItemDef>>,
-    asset_server: Res<AssetServer>,
-) {
-    let items = item_defs
-        .iter()
-        .map(|(a, b)| (a, b.clone()))
-        .collect::<Vec<_>>();
-
-    let mut items_iter = items.iter();
+fn setup(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, asset_server: Res<AssetServer>) {
+    let mut items_iter = item_defs.iter();
 
     let container_id = commands
         .spawn((
@@ -218,17 +209,11 @@ fn setup(
             .spawn((widgets::slot(), ChildOf(grid_cell_id)))
             .id();
 
-        if let Some((asset_id, item_def)) = items_iter.next() {
+        if let Some((asset_id, _)) = items_iter.next() {
             commands.spawn((
-                Name::new(item_def.name.clone()),
                 InSlot(slot_id),
-                Item(item_defs.get_strong_handle(*asset_id).unwrap()),
-                Node {
-                    width: Val::Percent(80.0),
-                    height: Val::Percent(80.0),
-                    ..default()
-                },
-                ImageNode::new(asset_server.load(item_def.sprite.clone())),
+                ChildOf(slot_id),
+                item_icon(asset_server.get_id_handle(asset_id).unwrap()),
             ));
         }
     }

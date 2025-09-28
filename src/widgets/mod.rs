@@ -2,6 +2,13 @@ use bevy::prelude::*;
 
 use crate::gameplay::hud::item_slot::Slot;
 
+pub mod item;
+pub mod tooltip;
+
+pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((item::plugin, tooltip::plugin));
+}
+
 pub fn container() -> impl Bundle {
     Node {
         width: Val::Percent(100.0),

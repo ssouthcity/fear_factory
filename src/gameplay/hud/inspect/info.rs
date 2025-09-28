@@ -13,7 +13,7 @@ use crate::{
         item::{Item, assets::ItemDef},
         recipe::{assets::RecipeDef, select::SelectedRecipe},
     },
-    widgets,
+    widgets::{self, item::item_icon},
 };
 
 pub fn plugin(app: &mut App) {
@@ -37,8 +37,6 @@ pub fn open_recipe_menu(
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
     held_relics: Query<&HeldRelic>,
-    item_defs: Res<Assets<ItemDef>>,
-    item_index: Res<IndexMap<ItemDef>>,
     asset_server: Res<AssetServer>,
 ) {
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
@@ -127,26 +125,11 @@ pub fn open_recipe_menu(
         .id();
 
     for (input_id, quantity) in recipe.input.iter() {
-        let Some(item_def) = item_index
-            .get(input_id)
-            .and_then(|handle| item_defs.get(*handle))
-        else {
-            continue;
-        };
-
         commands.spawn((
             ChildOf(input_list_id),
             widgets::slot(),
             children![
-                (
-                    Node {
-                        width: Val::Percent(80.0),
-                        height: Val::Percent(80.0),
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                    ImageNode::new(asset_server.load(&item_def.sprite)),
-                ),
+                item_icon(asset_server.load(format!("manifests/items/{input_id}.item.toml"))),
                 (
                     Node {
                         position_type: PositionType::Absolute,
@@ -187,21 +170,10 @@ pub fn open_recipe_menu(
         .id();
 
     if let Ok(relic) = held_relics.get(inspected_entity.0) {
-        let item_def = item_defs
-            .get(&relic.0)
-            .expect("Item referred to by HeldRelic component is not loaded");
-
         commands.spawn((
-            ChildOf(relic_slot_id),
-            Name::new(item_def.name.clone()),
             InSlot(relic_slot_id),
-            Item(relic.0.clone()),
-            Node {
-                width: Val::Percent(80.0),
-                height: Val::Percent(80.0),
-                ..default()
-            },
-            ImageNode::new(asset_server.load(item_def.sprite.clone())),
+            ChildOf(relic_slot_id),
+            item_icon(relic.0.clone()),
         ));
     }
 
@@ -238,26 +210,11 @@ pub fn open_recipe_menu(
         .id();
 
     for (output_id, quantity) in recipe.output.iter() {
-        let Some(item_def) = item_index
-            .get(output_id)
-            .and_then(|handle| item_defs.get(*handle))
-        else {
-            continue;
-        };
-
         commands.spawn((
             ChildOf(output_list_id),
             widgets::slot(),
             children![
-                (
-                    Node {
-                        width: Val::Percent(80.0),
-                        height: Val::Percent(80.0),
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                    ImageNode::new(asset_server.load(&item_def.sprite)),
-                ),
+                item_icon(asset_server.load(format!("manifests/items/{output_id}.item.toml"))),
                 (
                     Node {
                         position_type: PositionType::Absolute,

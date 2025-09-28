@@ -46,6 +46,7 @@ impl Plugin for FactoryGamePlugin {
             gameplay::plugin,
             input::plugin,
             screens::plugin,
+            widgets::plugin,
         ));
 
         app.insert_resource(ClearColor(Color::BLACK));
