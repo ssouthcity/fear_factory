@@ -1,0 +1,9 @@
+id = "doll"
+name = "Doll"
+input.flora_a = 6
+input.sack = 2
+output.doll = 1
+duration = "30s"
+tags = [
+  { kind = "structure_id", value = "constructor" },
+]

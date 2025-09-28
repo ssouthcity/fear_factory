@@ -1,0 +1,4 @@
+id = "fauna_a"
+name = "Fauna A"
+output.fauna_a = 1
+duration = "1s"

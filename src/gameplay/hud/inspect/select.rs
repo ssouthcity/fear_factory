@@ -6,10 +6,7 @@ use bevy::{
 use crate::{
     gameplay::{
         hud::inspect::{InspectedEntity, InspectionMenuState},
-        recipe::{
-            assets::{RecipeDef, RecipeTags},
-            select::SelectRecipe,
-        },
+        recipe::{assets::RecipeDef, select::SelectRecipe},
     },
     widgets,
 };
@@ -30,11 +27,11 @@ struct SelectRecipeButton(String);
 pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>>) {
     let recipes = recipes
         .iter()
-        .filter(|(_, recipe)| {
-            recipe
-                .tags
-                .contains(&RecipeTags::StructureId("constructor".to_string()))
-        })
+        // .filter(|(_, recipe)| {
+        //     recipe
+        //         .tags
+        //         .contains(&RecipeTags::StructureId("constructor".to_string()))
+        // })
         .map(|(_, recipe)| (recipe.id.to_owned(), recipe.name.to_owned()))
         .collect::<Vec<_>>();
 

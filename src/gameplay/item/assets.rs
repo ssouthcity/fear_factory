@@ -1,5 +1,4 @@
 use bevy::{asset::LoadedFolder, prelude::*};
-use bevy_aseprite_ultra::prelude::*;
 use serde::Deserialize;
 
 use crate::assets::{
@@ -23,8 +22,13 @@ pub fn plugin(app: &mut App) {
 pub struct ItemDef {
     pub id: String,
     pub name: String,
-    pub sprite: Option<String>,
+    #[serde(default = "placeholder_sprite")]
+    pub sprite: String,
     pub stack_size: u32,
+}
+
+fn placeholder_sprite() -> String {
+    String::from("sprites/items/placeholder.png")
 }
 
 impl Indexable for ItemDef {
@@ -36,7 +40,6 @@ impl Indexable for ItemDef {
 #[derive(Asset, Clone, Resource, Reflect)]
 #[reflect(Resource)]
 pub struct ItemAssets {
-    pub aseprite: Handle<Aseprite>,
     pub item_definitions: Handle<LoadedFolder>,
     pub item_sprites: Handle<LoadedFolder>,
 }
@@ -46,7 +49,6 @@ impl FromWorld for ItemAssets {
         let asset_server = world.resource::<AssetServer>();
 
         Self {
-            aseprite: asset_server.load("items.aseprite"),
             item_definitions: asset_server.load_folder("manifests/items"),
             item_sprites: asset_server.load_folder("sprites/items"),
         }

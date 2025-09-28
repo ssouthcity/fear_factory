@@ -46,6 +46,14 @@ fn on_select_recipe(
         .and_then(|asset_id| recipes.get(*asset_id))
         .expect("Attempted to select invalid recipe");
 
+    commands
+        .entity(trigger.target())
+        .despawn_related::<Inputs>();
+
+    commands
+        .entity(trigger.target())
+        .despawn_related::<Outputs>();
+
     for (item_id, quantity) in recipe_def.input.iter() {
         let item_handle = item_index
             .get(item_id)

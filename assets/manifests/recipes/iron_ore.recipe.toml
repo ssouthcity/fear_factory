@@ -1,4 +1,0 @@
-id = "iron_ore"
-name = "Iron Ore"
-output.iron_ore = 1
-duration = "1s"

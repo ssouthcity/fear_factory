@@ -1,8 +1,0 @@
-id = "iron_plate"
-name = "Iron Plate"
-input.iron_ingot = 30
-output.iron_plate = 15
-duration = "30s"
-tags = [
-  { kind = "structure_id", value = "constructor" },
-]

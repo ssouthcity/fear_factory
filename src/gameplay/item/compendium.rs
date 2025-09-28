@@ -1,7 +1,6 @@
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
-use bevy_aseprite_ultra::prelude::*;
 
-use crate::gameplay::item::assets::{ItemAssets, ItemDef};
+use crate::gameplay::item::assets::ItemDef;
 
 pub fn plugin(app: &mut App) {
     app.register_type::<CompendiumState>();
@@ -36,7 +35,6 @@ fn toggle_compendium_state(
 fn spawn_item_compendium(
     mut commands: Commands,
     items: Res<Assets<ItemDef>>,
-    item_assets: Res<ItemAssets>,
     asset_server: Res<AssetServer>,
 ) {
     let mut items_sorted: Vec<_> = items.iter().map(|(_, a)| a).collect();
@@ -92,34 +90,18 @@ fn spawn_item_compendium(
             ))
             .id();
 
-        let image = commands
-            .spawn((
-                Node {
-                    justify_self: JustifySelf::Center,
-                    grid_column: GridPlacement::span(1),
-                    grid_row: GridPlacement::span(2),
-                    width: Val::Px(56.0),
-                    height: Val::Px(56.0),
-                    ..default()
-                },
-                ChildOf(item_box),
-            ))
-            .id();
-
-        if let Some(sprite) = &item_def.sprite {
-            commands.entity(image).insert(ImageNode {
-                image: asset_server.load(sprite.clone()),
+        commands.spawn((
+            Node {
+                justify_self: JustifySelf::Center,
+                grid_column: GridPlacement::span(1),
+                grid_row: GridPlacement::span(2),
+                width: Val::Px(56.0),
+                height: Val::Px(56.0),
                 ..default()
-            });
-        } else {
-            commands.entity(image).insert((
-                ImageNode::default(),
-                AseSlice {
-                    aseprite: item_assets.aseprite.clone(),
-                    name: item_def.id.to_owned(),
-                },
-            ));
-        }
+            },
+            ImageNode::new(asset_server.load(item_def.sprite.clone())),
+            ChildOf(item_box),
+        ));
 
         commands.spawn((
             Text::new(item_def.name.to_owned()),
