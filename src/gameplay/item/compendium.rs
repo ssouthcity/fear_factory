@@ -1,6 +1,6 @@
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
-use crate::gameplay::item::assets::ItemDef;
+use crate::{gameplay::item::assets::ItemDef, widgets::item::item_icon};
 
 pub fn plugin(app: &mut App) {
     app.register_type::<CompendiumState>();
@@ -37,8 +37,8 @@ fn spawn_item_compendium(
     items: Res<Assets<ItemDef>>,
     asset_server: Res<AssetServer>,
 ) {
-    let mut items_sorted: Vec<_> = items.iter().map(|(_, a)| a).collect();
-    items_sorted.sort_by(|a, b| a.name.cmp(&b.name));
+    let mut items_sorted: Vec<_> = items.iter().collect();
+    items_sorted.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 
     let container = commands
         .spawn((
@@ -69,7 +69,7 @@ fn spawn_item_compendium(
         ))
         .id();
 
-    for item_def in items_sorted.iter() {
+    for (item_asset_id, item_def) in items_sorted.iter() {
         let item_box = commands
             .spawn((
                 Node {
@@ -99,7 +99,9 @@ fn spawn_item_compendium(
                 height: Val::Px(56.0),
                 ..default()
             },
-            ImageNode::new(asset_server.load(item_def.sprite.clone())),
+            children![item_icon(
+                asset_server.get_id_handle(*item_asset_id).unwrap()
+            )],
             ChildOf(item_box),
         ));
 
