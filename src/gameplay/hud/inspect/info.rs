@@ -10,10 +10,12 @@ use crate::{
             inspect::{InspectedEntity, InspectionMenuState},
             item_slot::{AddedToSlot, InSlot, RemovedFromSlot},
         },
-        item::{Item, assets::ItemDef},
-        recipe::{assets::RecipeDef, select::SelectedRecipe},
+        recipe::{Inputs, Outputs, assets::RecipeDef, select::SelectedRecipe},
     },
-    widgets::{self, item::item_icon},
+    widgets::{
+        self,
+        item::{StackIconOf, stack_icon},
+    },
 };
 
 pub fn plugin(app: &mut App) {
@@ -27,7 +29,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct HeldRelic(Handle<ItemDef>);
+pub struct HeldRelic(pub Entity);
 
 #[allow(clippy::too_many_arguments)]
 pub fn open_recipe_menu(
@@ -37,8 +39,12 @@ pub fn open_recipe_menu(
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
     held_relics: Query<&HeldRelic>,
-    asset_server: Res<AssetServer>,
+    inspected_structure_query: Query<(&Inputs, &Outputs)>,
 ) {
+    let Ok((inputs, outputs)) = inspected_structure_query.get(inspected_entity.0) else {
+        return;
+    };
+
     let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
         return;
     };
@@ -124,25 +130,11 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for (input_id, quantity) in recipe.input.iter() {
+    for input in inputs.iter() {
         commands.spawn((
             ChildOf(input_list_id),
             widgets::slot(),
-            children![
-                item_icon(asset_server.load(format!("manifests/items/{input_id}.item.toml"))),
-                (
-                    Node {
-                        position_type: PositionType::Absolute,
-                        right: Val::ZERO,
-                        bottom: Val::ZERO,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                    BackgroundColor(Color::WHITE),
-                    TextColor(Color::BLACK),
-                    Text::new(quantity.to_string()),
-                )
-            ],
+            children![stack_icon(input)],
         ));
     }
 
@@ -169,11 +161,11 @@ pub fn open_recipe_menu(
         .spawn((ChildOf(middle_column_id), widgets::slot()))
         .id();
 
-    if let Ok(relic) = held_relics.get(inspected_entity.0) {
+    if let Ok(HeldRelic(entity)) = held_relics.get(inspected_entity.0) {
         commands.spawn((
             InSlot(relic_slot_id),
             ChildOf(relic_slot_id),
-            item_icon(relic.0.clone()),
+            stack_icon(*entity),
         ));
     }
 
@@ -183,11 +175,11 @@ pub fn open_recipe_menu(
             |trigger: Trigger<AddedToSlot>,
              inspected_entity: Res<InspectedEntity>,
              mut commands: Commands,
-             items: Query<&Item>| {
-                if let Ok(item) = items.get(trigger.0) {
+             stack_query: Query<&StackIconOf>| {
+                if let Ok(StackIconOf(entity)) = stack_query.get(trigger.0) {
                     commands
                         .entity(inspected_entity.0)
-                        .insert(HeldRelic(item.0.clone()));
+                        .insert(HeldRelic(*entity));
                 }
             },
         )
@@ -209,25 +201,11 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for (output_id, quantity) in recipe.output.iter() {
+    for output in outputs.iter() {
         commands.spawn((
             ChildOf(output_list_id),
             widgets::slot(),
-            children![
-                item_icon(asset_server.load(format!("manifests/items/{output_id}.item.toml"))),
-                (
-                    Node {
-                        position_type: PositionType::Absolute,
-                        right: Val::ZERO,
-                        bottom: Val::ZERO,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                    BackgroundColor(Color::WHITE),
-                    TextColor(Color::BLACK),
-                    Text::new(quantity.to_string()),
-                )
-            ],
+            children![stack_icon(output)],
         ));
     }
 }

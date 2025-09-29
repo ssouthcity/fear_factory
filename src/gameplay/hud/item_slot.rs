@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
 use crate::{
-    gameplay::item::assets::ItemDef,
+    gameplay::item::{Item, Quantity, assets::ItemDef},
     screens::Screen,
-    widgets::{self, item::item_icon},
+    widgets::{self, item::stack_icon},
 };
 
 const SLOTTED_OBJECT_Z_INDEX: i32 = 10;
@@ -210,11 +210,15 @@ fn setup(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, asset_server: 
             .id();
 
         if let Some((asset_id, _)) = items_iter.next() {
-            commands.spawn((
-                InSlot(slot_id),
-                ChildOf(slot_id),
-                item_icon(asset_server.get_id_handle(asset_id).unwrap()),
-            ));
+            let entity = commands
+                .spawn((
+                    Name::new("Player Inventory"),
+                    Item(asset_server.get_id_handle(asset_id).unwrap()),
+                    Quantity(1),
+                ))
+                .id();
+
+            commands.spawn((InSlot(slot_id), ChildOf(slot_id), stack_icon(entity)));
         }
     }
 }
