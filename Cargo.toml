@@ -12,7 +12,7 @@ humantime-serde = "1.1.1"
 rand = "0.9.2"
 serde = { version = "1.0.226", features = ["derive"] }
 thiserror = "2.0.14"
-toml = "0.9.6"
+toml = "0.9.7"
 
 [target.wasm32-unknown-unknown.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }
