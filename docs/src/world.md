@@ -23,4 +23,4 @@ Examples/ideas:
 
 ## Constructs
 
-Something that occupies a tile in the world. Placed on the top of the uppermost layer of the map (x, y). Includes both player constructs like [structures](./02_structure.md) and [paths](./03_logistics.md), as well as obstacles in the world like rocks and trees. As well as [resource nodes](./01_resource_node.md).
+Something that occupies a tile in the world. Placed on the top of the uppermost layer of the map (x, y). Includes both player constructs like [structures](/structure.md) and [paths](/logistics.md), as well as obstacles in the world like rocks and trees. As well as [resource nodes](/resource_node.md).
