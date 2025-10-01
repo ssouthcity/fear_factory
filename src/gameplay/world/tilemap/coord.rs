@@ -3,7 +3,10 @@ use bevy_ecs_tilemap::prelude::*;
 
 use crate::gameplay::{
     FactorySystems,
-    world::tilemap::chunk::{Chunk, Layers},
+    world::tilemap::{
+        TILE_OFFSET,
+        chunk::{Chunk, Layers},
+    },
 };
 
 pub fn plugin(app: &mut App) {

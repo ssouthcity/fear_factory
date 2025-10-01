@@ -1,3 +1,4 @@
 id = "ectoplasm"
 name = "Ectoplasm"
+sprite = "sprites/items/ectoplasm.png"
 stack_size = 50

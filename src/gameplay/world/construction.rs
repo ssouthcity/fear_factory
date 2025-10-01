@@ -183,7 +183,7 @@ fn construct(
             .spawn((
                 Name::new(structure.name.clone()),
                 Coord::new(event.0.x, event.0.y),
-                Sprite::sized(TILE_SIZE),
+                Sprite::default(),
                 AseAnimation {
                     aseprite: asset_server
                         .load(format!("sprites/structures/{}.aseprite", structure.id)),

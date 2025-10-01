@@ -10,7 +10,7 @@ use crate::{
         world::{
             WorldSpawnSystems,
             construction::Constructions,
-            tilemap::{CHUNK_SIZE, coord::Coord},
+            tilemap::{CHUNK_SIZE, TILE_SIZE, coord::Coord},
         },
     },
     screens::Screen,
@@ -79,7 +79,11 @@ fn spawn_deposits(
                     Coord::new(tile_pos.x, tile_pos.y),
                     YSortSprite,
                     ZIndexSprite(10),
-                    Sprite::from_image(asset_server.load("sprites/deposits/iron_deposit.png")),
+                    Sprite {
+                        image: asset_server.load(format!("sprites/deposits/{}.png", deposit.id)),
+                        custom_size: Vec2::new(TILE_SIZE.x, TILE_SIZE.y).into(),
+                        ..default()
+                    },
                     DepositRecipe(deposit.recipe_id.clone()),
                 ))
                 .id();
