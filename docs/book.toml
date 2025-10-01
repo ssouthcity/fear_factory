@@ -1,5 +1,5 @@
 [book]
-authors = ["Stian Sørby"]
+authors = []
 language = "en"
 src = "src"
 title = "Design Doc for Fear Factory"
