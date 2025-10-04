@@ -75,8 +75,8 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>
                                     ..default()
                                 },
                                 BackgroundColor(Color::BLACK.with_alpha(0.5)),
-                                SelectRecipeButton(recipe_id.to_owned()),
-                                children![Text::new(recipe_name.to_owned()),],
+                                SelectRecipeButton(recipe_id),
+                                children![Text::new(recipe_name),],
                                 observe(on_recipe_hover),
                                 observe(on_recipe_click),
                                 observe(on_recipe_out),
@@ -111,6 +111,7 @@ fn on_recipe_click(
     let Ok(button) = buttons.get(pointer_clicks.entity) else {
         return;
     };
+
     commands.trigger(SelectRecipe {
         entity: inspected_entity.0,
         recipe_id: button.0.clone(),
