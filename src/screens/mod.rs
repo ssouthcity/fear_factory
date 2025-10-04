@@ -10,7 +10,6 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(States, Hash, Debug, PartialEq, Eq, Clone, Copy, Default)]
-#[states(scoped_entities)]
 pub enum Screen {
     #[default]
     Loading,
