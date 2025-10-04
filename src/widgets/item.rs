@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
     gameplay::{
@@ -9,8 +9,6 @@ use crate::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_observer(on_item_icon_added);
-
     app.add_systems(Update, update_item_icons.in_set(FactorySystems::UI));
 }
 
@@ -33,6 +31,25 @@ pub fn item_icon(handle: Handle<ItemDef>) -> impl Bundle {
             is_hoverable: true,
             should_block_lower: false,
         },
+        observe(
+            |pointer_over: On<Pointer<Over>>,
+             item_icon_query: Query<&Item>,
+             items: Res<Assets<ItemDef>>,
+             mut commands: Commands| {
+                let Ok(item_handle) = item_icon_query.get(pointer_over.entity) else {
+                    return;
+                };
+
+                let Some(item_def) = items.get(&item_handle.0) else {
+                    return;
+                };
+
+                commands.trigger(ShowTooltip(item_def.name.clone()));
+            },
+        ),
+        observe(|_pointer_out: On<Pointer<Out>>, mut commands: Commands| {
+            commands.trigger(HideTooltip);
+        }),
     )
 }
 
@@ -49,28 +66,4 @@ fn update_item_icons(
 
         image_node.image = asset_server.load(&item_def.sprite);
     }
-}
-
-fn on_item_icon_added(add: On<Add, ItemIcon>, mut commands: Commands) {
-    commands
-        .entity(add.entity)
-        .observe(
-            |pointer_over: On<Pointer<Over>>,
-             item_icon_query: Query<&Item>,
-             items: Res<Assets<ItemDef>>,
-             mut commands: Commands| {
-                let Ok(item_handle) = item_icon_query.get(pointer_over.entity) else {
-                    return;
-                };
-
-                let Some(item_def) = items.get(&item_handle.0) else {
-                    return;
-                };
-
-                commands.trigger(ShowTooltip(item_def.name.clone()));
-            },
-        )
-        .observe(|_pointer_out: On<Pointer<Out>>, mut commands: Commands| {
-            commands.trigger(HideTooltip);
-        });
 }

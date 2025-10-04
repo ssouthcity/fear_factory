@@ -1,7 +1,4 @@
-use bevy::{
-    ecs::{relationship::RelatedSpawner, spawn::SpawnWith},
-    prelude::*,
-};
+use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
     gameplay::{
@@ -25,11 +22,6 @@ struct SelectRecipeButton(String);
 pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>>) {
     let recipes = recipes
         .iter()
-        // .filter(|(_, recipe)| {
-        //     recipe
-        //         .tags
-        //         .contains(&RecipeTags::StructureId("constructor".to_string()))
-        // })
         .map(|(_, recipe)| (recipe.id.to_owned(), recipe.name.to_owned()))
         .collect::<Vec<_>>();
 
@@ -57,18 +49,15 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    Children::spawn((SpawnWith(|parent: &mut RelatedSpawner<ChildOf>| {
-                        parent
-                            .spawn((
-                                Text::new("Close"),
-                                TextColor(Color::BLACK),
-                                Node {
-                                    align_self: AlignSelf::End,
-                                    ..default()
-                                },
-                            ))
-                            .observe(on_close_menu);
-                    }),)),
+                    children![(
+                        Text::new("Close"),
+                        TextColor(Color::BLACK),
+                        Node {
+                            align_self: AlignSelf::End,
+                            ..default()
+                        },
+                        observe(on_close_menu),
+                    )],
                 )),
                 Spawn((
                     Node {
@@ -78,23 +67,22 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>
                         align_items: AlignItems::Start,
                         ..default()
                     },
-                    Children::spawn(SpawnWith(move |parent: &mut RelatedSpawner<ChildOf>| {
-                        for (recipe_id, recipe_name) in recipes {
-                            parent
-                                .spawn((
-                                    Node {
-                                        padding: UiRect::all(Val::Px(32.0)),
-                                        ..default()
-                                    },
-                                    BackgroundColor(Color::BLACK.with_alpha(0.5)),
-                                    SelectRecipeButton(recipe_id.to_owned()),
-                                    children![Text::new(recipe_name.to_string()),],
-                                ))
-                                .observe(on_recipe_hover)
-                                .observe(on_recipe_click)
-                                .observe(on_recipe_out);
-                        }
-                    })),
+                    Children::spawn(SpawnIter(recipes.into_iter().map(
+                        |(recipe_id, recipe_name)| {
+                            (
+                                Node {
+                                    padding: UiRect::all(Val::Px(32.0)),
+                                    ..default()
+                                },
+                                BackgroundColor(Color::BLACK.with_alpha(0.5)),
+                                SelectRecipeButton(recipe_id.to_owned()),
+                                children![Text::new(recipe_name.to_owned()),],
+                                observe(on_recipe_hover),
+                                observe(on_recipe_click),
+                                observe(on_recipe_out),
+                            )
+                        },
+                    ))),
                 )),
             )),
         )),
@@ -123,7 +111,6 @@ fn on_recipe_click(
     let Ok(button) = buttons.get(pointer_clicks.entity) else {
         return;
     };
-
     commands.trigger(SelectRecipe {
         entity: inspected_entity.0,
         recipe_id: button.0.clone(),

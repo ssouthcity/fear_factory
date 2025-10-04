@@ -14,7 +14,6 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(States, Reflect, Hash, Debug, Clone, PartialEq, Eq, Default)]
-#[states(scoped_entities)]
 enum CompendiumState {
     #[default]
     Closed,

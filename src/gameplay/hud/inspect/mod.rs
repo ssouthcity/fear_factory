@@ -20,7 +20,6 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(States, Reflect, Default, Debug, Hash, PartialEq, Eq, Clone, Copy)]
-#[states(scoped_entities)]
 pub enum InspectionMenuState {
     #[default]
     Closed,

@@ -1,7 +1,4 @@
-use bevy::{
-    ecs::{relationship::RelatedSpawner, spawn::SpawnWith},
-    prelude::*,
-};
+use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
     assets::indexing::IndexMap,
@@ -86,15 +83,18 @@ pub fn open_recipe_menu(
             align_items: AlignItems::Center,
             ..default()
         },
-        Children::spawn(SpawnWith(|parent: &mut RelatedSpawner<ChildOf>| {
-            parent
-                .spawn((Text::new("Deselect"), TextColor(Color::BLACK)))
-                .observe(on_deselect_recipe);
-
-            parent
-                .spawn((Text::new("Close"), TextColor(Color::BLACK)))
-                .observe(on_close_menu);
-        })),
+        children![
+            (
+                Text::new("Deselect"),
+                TextColor(Color::BLACK),
+                observe(on_deselect_recipe),
+            ),
+            (
+                Text::new("Close"),
+                TextColor(Color::BLACK),
+                observe(on_close_menu),
+            )
+        ],
     ));
 
     let recipe_view_id = commands
