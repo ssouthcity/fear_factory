@@ -61,7 +61,7 @@ fn spawn_chunk(mut commands: Commands, asset_server: Res<AssetServer>) {
             ChildOf(chunk_id),
             ZIndexSprite(i),
             TilemapBundle {
-                transform: Transform::from_xyz(0.0, grid_size.y * i as f32, 0.0),
+                transform: Transform::from_xyz(0.0, grid_size.y / 2.0 * i as f32, 0.0),
                 grid_size,
                 size: map_size,
                 storage,
