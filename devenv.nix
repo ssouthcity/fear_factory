@@ -20,6 +20,9 @@
 
     # github actions
     pkgs.act
+
+    # docs
+    pkgs.mdbook
   ];
 
   languages.rust = {
