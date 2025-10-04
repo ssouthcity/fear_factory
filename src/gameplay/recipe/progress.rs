@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::{component::HookContext, world::DeferredWorld},
+    ecs::{lifecycle::HookContext, world::DeferredWorld},
     prelude::*,
     sprite::Anchor,
 };
@@ -8,9 +8,6 @@ use super::process::ProcessState;
 use crate::gameplay::FactorySystems;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<ProgressBarFill>();
-    app.register_type::<ProgressBarFillOf>();
-
     app.add_systems(Update, update_progress_bars.in_set(FactorySystems::UI));
 }
 
@@ -33,13 +30,13 @@ pub fn on_progress_state_add(mut world: DeferredWorld, HookContext { entity, .. 
         children![(
             Name::new("Progress Bar Fill"),
             ProgressBarFillOf(entity),
-            Transform::from_xyz(-32.0, 0.0, 0.0),
+            Transform::from_xyz(-32.0, 0.0, 1.0),
             Sprite {
                 color: Color::linear_rgb(0.0, 0.8, 0.1),
                 rect: Some(Rect::new(0.0, 0.0, 64.0, 16.0)),
-                anchor: Anchor::CenterLeft,
                 ..default()
             },
+            Anchor::CENTER_LEFT,
         )],
     ));
 }

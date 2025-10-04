@@ -7,8 +7,6 @@ use crate::gameplay::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Coord>();
-
     app.add_systems(
         Update,
         translate_coord_to_transform.in_set(FactorySystems::UI),

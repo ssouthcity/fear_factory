@@ -17,14 +17,11 @@ use crate::gameplay::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<WalkPath>();
-    app.register_type::<PorterPaths>();
-
     app.add_systems(
         Update,
         pathfind
             .in_set(FactorySystems::Logistics)
-            .run_if(on_event::<RecipeChanged>.or(on_event::<PathsUpdated>)),
+            .run_if(on_message::<RecipeChanged>.or(on_message::<PathsUpdated>)),
     );
 
     app.add_systems(Update, walk_along_path.in_set(FactorySystems::Logistics));
@@ -110,8 +107,8 @@ fn walk_along_path(
     query: Query<(Entity, &mut Transform, &mut WalkPath)>,
     transforms: Query<&Transform, Without<WalkPath>>,
     time: Res<Time>,
-    mut events: EventWriter<PorterArrival>,
-    mut lost_events: EventWriter<PorterLost>,
+    mut porter_arrivals: MessageWriter<PorterArrival>,
+    mut porter_losses: MessageWriter<PorterLost>,
 ) {
     const SPEED: f32 = 64.0;
     const ARRIVAL_THRESHHOLD: f32 = 8.0;
@@ -122,7 +119,7 @@ fn walk_along_path(
         };
 
         let Ok(goal_transform) = transforms.get(*goal) else {
-            lost_events.write(PorterLost(entity));
+            porter_losses.write(PorterLost(entity));
             continue;
         };
 
@@ -134,7 +131,7 @@ fn walk_along_path(
             walk_path.0.pop();
 
             if walk_path.0.is_empty() {
-                events.write(PorterArrival(entity));
+                porter_arrivals.write(PorterArrival(entity));
             }
         }
     }

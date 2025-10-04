@@ -4,10 +4,6 @@ pub mod assets;
 pub mod compendium;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Item>();
-    app.register_type::<Quantity>();
-    app.register_type::<Full>();
-
     app.add_systems(Update, mark_full);
 
     app.add_plugins((assets::plugin, compendium::plugin));

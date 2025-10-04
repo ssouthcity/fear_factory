@@ -3,8 +3,6 @@ use bevy::prelude::*;
 pub const TOOLTIP_POINTER_OFFSET: Vec2 = Vec2 { x: 0.0, y: -32.0 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<Tooltip>();
-
     app.add_systems(Startup, spawn_tooltip)
         .add_observer(on_show_tooltip)
         .add_observer(on_hide_tooltip)
@@ -37,17 +35,17 @@ fn spawn_tooltip(mut commands: Commands) {
 }
 
 fn on_show_tooltip(
-    trigger: Trigger<ShowTooltip>,
+    show_tooltip: On<ShowTooltip>,
     tooltip_query: Query<(&mut Text, &mut Visibility), With<Tooltip>>,
 ) {
     for (mut text, mut visibility) in tooltip_query {
-        text.0 = trigger.0.to_owned();
+        text.0 = show_tooltip.0.to_owned();
         *visibility = Visibility::Inherited;
     }
 }
 
 fn on_hide_tooltip(
-    _trigger: Trigger<HideTooltip>,
+    _hide_tooltip: On<HideTooltip>,
     tooltip_query: Query<(&mut Text, &mut Visibility), With<Tooltip>>,
 ) {
     for (mut text, mut visibility) in tooltip_query {
@@ -56,9 +54,9 @@ fn on_hide_tooltip(
     }
 }
 
-fn follow_mouse(trigger: Trigger<Pointer<Move>>, tooltip_query: Query<&mut Node, With<Tooltip>>) {
+fn follow_mouse(pointer_move: On<Pointer<Move>>, tooltip_query: Query<&mut Node, With<Tooltip>>) {
     for mut node in tooltip_query {
-        let tooltip_origin = trigger.pointer_location.position + TOOLTIP_POINTER_OFFSET;
+        let tooltip_origin = pointer_move.pointer_location.position + TOOLTIP_POINTER_OFFSET;
 
         node.left = Val::Px(tooltip_origin.x);
         node.top = Val::Px(tooltip_origin.y);

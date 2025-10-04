@@ -9,8 +9,6 @@ use crate::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<ItemIcon>();
-
     app.add_observer(on_item_icon_added);
 
     app.add_systems(Update, update_item_icons.in_set(FactorySystems::UI));
@@ -53,15 +51,15 @@ fn update_item_icons(
     }
 }
 
-fn on_item_icon_added(trigger: Trigger<OnAdd, ItemIcon>, mut commands: Commands) {
+fn on_item_icon_added(add: On<Add, ItemIcon>, mut commands: Commands) {
     commands
-        .entity(trigger.target())
+        .entity(add.entity)
         .observe(
-            |trigger: Trigger<Pointer<Over>>,
+            |pointer_over: On<Pointer<Over>>,
              item_icon_query: Query<&Item>,
              items: Res<Assets<ItemDef>>,
              mut commands: Commands| {
-                let Ok(item_handle) = item_icon_query.get(trigger.target) else {
+                let Ok(item_handle) = item_icon_query.get(pointer_over.entity) else {
                     return;
                 };
 
@@ -72,7 +70,7 @@ fn on_item_icon_added(trigger: Trigger<OnAdd, ItemIcon>, mut commands: Commands)
                 commands.trigger(ShowTooltip(item_def.name.clone()));
             },
         )
-        .observe(|_trigger: Trigger<Pointer<Out>>, mut commands: Commands| {
+        .observe(|_pointer_out: On<Pointer<Out>>, mut commands: Commands| {
             commands.trigger(HideTooltip);
         });
 }

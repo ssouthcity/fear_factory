@@ -12,8 +12,6 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<SelectRecipeButton>();
-
     app.add_systems(
         OnEnter(InspectionMenuState::RecipeSelect),
         recipe_select_menu,
@@ -37,7 +35,7 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>
 
     commands.spawn((
         Name::new("Recipe Selection Menu Container"),
-        StateScoped(InspectionMenuState::RecipeSelect),
+        DespawnOnExit(InspectionMenuState::RecipeSelect),
         widgets::container(),
         Children::spawn_one((
             Node {
@@ -103,36 +101,39 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>
     ));
 }
 
-fn on_recipe_hover(trigger: Trigger<Pointer<Over>>, mut commands: Commands) {
+fn on_recipe_hover(pointer_over: On<Pointer<Over>>, mut commands: Commands) {
     commands
-        .entity(trigger.target())
+        .entity(pointer_over.entity)
         .insert(BackgroundColor(Color::hsl(120.0, 1.0, 0.5)));
 }
 
-fn on_recipe_out(trigger: Trigger<Pointer<Out>>, mut commands: Commands) {
+fn on_recipe_out(pointer_out: On<Pointer<Out>>, mut commands: Commands) {
     commands
-        .entity(trigger.target())
+        .entity(pointer_out.entity)
         .insert(BackgroundColor(Color::BLACK.with_alpha(0.5)));
 }
 
 fn on_recipe_click(
-    trigger: Trigger<Pointer<Click>>,
+    pointer_clicks: On<Pointer<Click>>,
     buttons: Query<&SelectRecipeButton>,
     inspected_entity: Res<InspectedEntity>,
     mut next_state: ResMut<NextState<InspectionMenuState>>,
     mut commands: Commands,
 ) {
-    let Ok(button) = buttons.get(trigger.target()) else {
+    let Ok(button) = buttons.get(pointer_clicks.entity) else {
         return;
     };
 
-    commands.trigger_targets(SelectRecipe(button.0.clone()), inspected_entity.0);
+    commands.trigger(SelectRecipe {
+        entity: inspected_entity.0,
+        recipe_id: button.0.clone(),
+    });
 
     next_state.set(InspectionMenuState::RecipeInspect);
 }
 
 fn on_close_menu(
-    _trigger: Trigger<Pointer<Click>>,
+    _pointer_click: On<Pointer<Click>>,
     mut next_state: ResMut<NextState<InspectionMenuState>>,
 ) {
     next_state.set(InspectionMenuState::Closed);

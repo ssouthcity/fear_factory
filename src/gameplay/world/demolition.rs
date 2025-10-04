@@ -9,21 +9,16 @@ pub const DEMOLISH_CANCEL_BUTTON: KeyCode = KeyCode::Escape;
 pub const DEMOLISH_DURATION_SECS: f32 = 1.0;
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<Demolishable>();
-
-    app.register_type::<DemolishSelection>();
     app.init_resource::<DemolishSelection>();
-
-    app.register_type::<DemolishTimer>();
     app.init_resource::<DemolishTimer>();
 
-    app.add_event::<Demolished>();
+    app.add_message::<Demolished>();
 
     app.add_systems(
         Update,
         (
-            add_to_selection.run_if(on_event::<Pointer<Over>>),
-            remove_from_selection.run_if(on_event::<Pointer<Out>>),
+            add_to_selection.run_if(on_message::<Pointer<Over>>),
+            remove_from_selection.run_if(on_message::<Pointer<Out>>),
             clear_selection.run_if(input_just_pressed(DEMOLISH_CANCEL_BUTTON)),
         )
             .in_set(FactorySystems::Demolish),
@@ -41,7 +36,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Event, Reflect, Debug)]
+#[derive(Message, Reflect, Debug)]
 pub struct Demolished {
     pub entity: Entity,
     pub coord: Coord,
@@ -85,30 +80,30 @@ fn demolish_timer_finished(timer: Res<DemolishTimer>) -> bool {
 }
 
 fn add_to_selection(
-    mut events: EventReader<Pointer<Over>>,
+    mut pointer_overs: MessageReader<Pointer<Over>>,
     mut selection: ResMut<DemolishSelection>,
     demolishables: Query<Entity, With<Demolishable>>,
 ) {
-    for event in events.read() {
-        if !demolishables.contains(event.target) {
+    for pointer_over in pointer_overs.read() {
+        if !demolishables.contains(pointer_over.entity) {
             continue;
         }
 
-        selection.insert(event.target);
+        selection.insert(pointer_over.entity);
     }
 }
 
 fn remove_from_selection(
-    mut events: EventReader<Pointer<Out>>,
+    mut pointer_outs: MessageReader<Pointer<Out>>,
     mut selection: ResMut<DemolishSelection>,
     keys: Res<ButtonInput<KeyCode>>,
 ) {
-    for event in events.read() {
+    for pointer_out in pointer_outs.read() {
         if keys.pressed(KeyCode::ShiftLeft) {
             continue;
         }
 
-        selection.remove(&event.target);
+        selection.remove(&pointer_out.entity);
     }
 }
 
@@ -135,14 +130,14 @@ fn highlight_demolition(
 fn demolish_selection(
     mut selection: ResMut<DemolishSelection>,
     mut commands: Commands,
-    mut events: EventWriter<Demolished>,
+    mut demolitions: MessageWriter<Demolished>,
     coords: Query<&Coord>,
 ) {
     for demolishable in selection.drain() {
         commands.entity(demolishable).despawn();
 
         if let Ok(coord) = coords.get(demolishable) {
-            events.write(Demolished {
+            demolitions.write(Demolished {
                 entity: demolishable,
                 coord: Coord(coord.0),
             });

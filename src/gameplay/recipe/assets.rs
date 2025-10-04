@@ -10,13 +10,11 @@ use crate::assets::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<RecipeDef>();
     app.add_plugins((
         TomlAssetPlugin::<RecipeDef>::extensions(&["recipe.toml"]),
         AssetIndexPlugin::<RecipeDef>::default(),
     ));
 
-    app.register_type::<RecipeAssets>();
     app.load_resource::<RecipeAssets>();
 }
 

@@ -13,8 +13,6 @@ pub mod highlight;
 pub mod interactable;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Structure>();
-
     app.add_plugins((
         assets::plugin,
         default_recipe::plugin,

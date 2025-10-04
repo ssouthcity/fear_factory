@@ -3,9 +3,6 @@ use bevy::prelude::*;
 use crate::gameplay::FactorySystems;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<YSortSprite>();
-    app.register_type::<ZIndexSprite>();
-
     app.add_systems(Update, sort_sprites.in_set(FactorySystems::UI));
 }
 

@@ -10,17 +10,17 @@ use crate::gameplay::{
 pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        apply_default_recipe.run_if(on_event::<StructureConstructed>),
+        apply_default_recipe.run_if(on_message::<StructureConstructed>),
     );
 }
 
 fn apply_default_recipe(
-    mut events: EventReader<StructureConstructed>,
+    mut structures_constructed: MessageReader<StructureConstructed>,
     mut commands: Commands,
     structure_query: Query<&Structure>,
     structure_defs: Res<Assets<StructureDef>>,
 ) {
-    for StructureConstructed(entity) in events.read() {
+    for StructureConstructed(entity) in structures_constructed.read() {
         let Ok(Structure(handle)) = structure_query.get(*entity) else {
             continue;
         };
@@ -30,15 +30,18 @@ fn apply_default_recipe(
         };
 
         if let Some(recipe) = &structure_def.default_recipe {
-            commands
-                .entity(*entity)
-                .trigger(SelectRecipe(recipe.to_owned()));
+            commands.trigger(SelectRecipe {
+                entity: *entity,
+                recipe_id: recipe.to_owned(),
+            });
         }
 
         commands
             .entity(*entity)
-            .observe(|trigger: Trigger<Interact>, mut commands: Commands| {
-                commands.trigger_targets(Inspect, trigger.target());
+            .observe(|interact: On<Interact>, mut commands: Commands| {
+                commands.trigger(Inspect {
+                    entity: interact.entity,
+                });
             });
     }
 }

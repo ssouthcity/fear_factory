@@ -13,10 +13,6 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Chunk>();
-    app.register_type::<Layers>();
-    app.register_type::<LayerOf>();
-
     app.add_systems(
         OnEnter(Screen::Gameplay),
         (spawn_chunk, spawn_flat_ground)

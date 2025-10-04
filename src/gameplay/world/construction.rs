@@ -23,23 +23,17 @@ use crate::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<ConstructionPreview>();
-
-    app.register_type::<StructureConstructed>();
-    app.add_event::<StructureConstructed>();
-
-    app.register_type::<Constructions>();
     app.init_resource::<Constructions>();
-
-    app.register_type::<ValidPlacement>();
     app.init_resource::<ValidPlacement>();
+
+    app.add_message::<StructureConstructed>();
 
     app.add_systems(
         Update,
         (
             (despawn_preview, spawn_preview)
                 .chain()
-                .run_if(on_event::<HotbarSelectionChanged>),
+                .run_if(on_message::<HotbarSelectionChanged>),
             calculate_valid_placement.run_if(resource_changed::<HoveredTile>),
             (move_preview, color_preview),
         )
@@ -50,7 +44,7 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         construct
             .in_set(FactorySystems::Construction)
-            .run_if(on_event::<TileClicked>),
+            .run_if(on_message::<TileClicked>),
     );
 
     app.add_systems(
@@ -59,7 +53,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Event, Reflect, Debug)]
+#[derive(Message, Reflect, Debug)]
 pub struct StructureConstructed(pub Entity);
 
 #[derive(Component, Reflect, Debug, Default)]
@@ -162,13 +156,13 @@ fn color_preview(
 }
 
 fn construct(
-    mut events: EventReader<TileClicked>,
+    mut tile_clicks: MessageReader<TileClicked>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     hotbar_selection: HotbarSelection,
     structure_definitions: ResMut<Assets<StructureDef>>,
     mut constructions: ResMut<Constructions>,
-    mut construct_events: EventWriter<StructureConstructed>,
+    mut structures_constructed: MessageWriter<StructureConstructed>,
 ) {
     let Some(HotbarActionKind::PlaceStructure(handle)) = hotbar_selection.action() else {
         return;
@@ -178,11 +172,11 @@ fn construct(
         .get(handle)
         .expect("Attempted to spawn non-existent structure");
 
-    for event in events.read() {
+    for tile_click in tile_clicks.read() {
         let entity = commands
             .spawn((
                 Name::new(structure.name.clone()),
-                Coord::new(event.0.x, event.0.y),
+                Coord::new(tile_click.0.x, tile_click.0.y),
                 Sprite::default(),
                 AseAnimation {
                     aseprite: asset_server
@@ -196,17 +190,17 @@ fn construct(
             ))
             .id();
 
-        constructions.insert(event.0.xy(), entity);
+        constructions.insert(tile_click.0.xy(), entity);
 
-        construct_events.write(StructureConstructed(entity));
+        structures_constructed.write(StructureConstructed(entity));
     }
 }
 
 fn remove_demolished_constructions(
-    mut events: EventReader<Demolished>,
+    mut demolitions: MessageReader<Demolished>,
     mut constructions: ResMut<Constructions>,
 ) {
-    for Demolished { coord, .. } in events.read() {
+    for Demolished { coord, .. } in demolitions.read() {
         constructions.remove(&coord.xy());
     }
 }

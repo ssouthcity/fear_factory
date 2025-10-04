@@ -12,8 +12,6 @@ use crate::{
 use super::progress::on_progress_state_add;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<ProcessState>();
-
     app.add_systems(
         Update,
         (consume_input, progress_work, produce_output)
@@ -87,7 +85,7 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
             continue;
         };
 
-        if !timer.tick(time.delta()).finished() {
+        if !timer.tick(time.delta()).is_finished() {
             continue;
         }
 
