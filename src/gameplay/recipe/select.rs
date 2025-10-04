@@ -10,11 +10,7 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<SelectedRecipe>();
-    app.register_type::<SelectRecipe>();
-    app.register_type::<RecipeChanged>();
-
-    app.add_event::<RecipeChanged>();
+    app.add_message::<RecipeChanged>();
 
     app.add_observer(on_select_recipe);
 }
@@ -24,34 +20,35 @@ pub fn plugin(app: &mut App) {
 #[require(ProcessState, Inputs, Outputs)]
 pub struct SelectedRecipe(pub Option<String>);
 
-#[derive(Event, Reflect)]
-pub struct SelectRecipe(pub String);
+#[derive(EntityEvent, Reflect)]
+pub struct SelectRecipe {
+    pub entity: Entity,
+    pub recipe_id: String,
+}
 
-#[derive(Event, Reflect)]
+#[derive(Message, Reflect)]
 pub struct RecipeChanged(pub Entity);
 
 fn on_select_recipe(
-    trigger: Trigger<SelectRecipe>,
+    select_recipe: On<SelectRecipe>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
     mut items: ResMut<Assets<ItemDef>>,
     item_index: Res<IndexMap<ItemDef>>,
     mut commands: Commands,
-    mut events: EventWriter<RecipeChanged>,
+    mut recipe_changes: MessageWriter<RecipeChanged>,
 ) {
-    let event = trigger.event();
-
     let recipe_def = recipe_index
-        .get(&event.0)
+        .get(&select_recipe.recipe_id)
         .and_then(|asset_id| recipes.get(*asset_id))
         .expect("Attempted to select invalid recipe");
 
     commands
-        .entity(trigger.target())
+        .entity(select_recipe.entity)
         .despawn_related::<Inputs>();
 
     commands
-        .entity(trigger.target())
+        .entity(select_recipe.entity)
         .despawn_related::<Outputs>();
 
     for (item_id, quantity) in recipe_def.input.iter() {
@@ -62,11 +59,11 @@ fn on_select_recipe(
 
         commands.spawn((
             Name::new("Input"),
-            ChildOf(trigger.target()),
+            ChildOf(select_recipe.entity),
             Item(item_handle),
             Quantity(0),
             RequiredQuantity(*quantity),
-            InputOf(trigger.target()),
+            InputOf(select_recipe.entity),
         ));
     }
 
@@ -78,17 +75,17 @@ fn on_select_recipe(
 
         commands.spawn((
             Name::new("Output"),
-            ChildOf(trigger.target()),
+            ChildOf(select_recipe.entity),
             Item(item_handle),
             Quantity(0),
             RequiredQuantity(*quantity),
-            OutputOf(trigger.target()),
+            OutputOf(select_recipe.entity),
         ));
     }
 
     commands
-        .entity(trigger.target())
-        .insert(SelectedRecipe(Some(event.0.clone())));
+        .entity(select_recipe.entity)
+        .insert(SelectedRecipe(Some(select_recipe.recipe_id.to_owned())));
 
-    events.write(RecipeChanged(trigger.target()));
+    recipe_changes.write(RecipeChanged(select_recipe.entity));
 }

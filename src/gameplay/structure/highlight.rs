@@ -5,8 +5,6 @@ use crate::gameplay::FactorySystems;
 const HIGHLIGHT_COLOR: Color = Color::hsl(60.0, 1.0, 0.5);
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<HighlightColor>();
-
     app.init_resource::<HighlightColor>();
 
     app.add_systems(Update, highlight_pickable.before(FactorySystems::Demolish));

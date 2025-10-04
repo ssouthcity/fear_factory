@@ -17,8 +17,6 @@ use crate::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<HeldRelic>();
-
     app.add_systems(
         OnEnter(InspectionMenuState::RecipeInspect),
         open_recipe_menu,
@@ -57,7 +55,7 @@ pub fn open_recipe_menu(
     let container_id = commands
         .spawn((
             Name::new("Recipe Menu"),
-            StateScoped(InspectionMenuState::RecipeInspect),
+            DespawnOnExit(InspectionMenuState::RecipeInspect),
             Pickable::IGNORE,
             widgets::container(),
         ))
@@ -160,7 +158,7 @@ pub fn open_recipe_menu(
 
     commands.spawn((
         ChildOf(middle_column_id),
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::new_with_justify(Justify::Center),
         Text::new(format!("{} seconds", recipe.duration.as_secs_f32())),
         TextColor(Color::BLACK),
     ));
@@ -180,11 +178,11 @@ pub fn open_recipe_menu(
     commands
         .entity(relic_slot_id)
         .observe(
-            |trigger: Trigger<AddedToSlot>,
+            |added_to_slot: On<AddedToSlot>,
              inspected_entity: Res<InspectedEntity>,
              mut commands: Commands,
              items: Query<&Item>| {
-                if let Ok(item) = items.get(trigger.0) {
+                if let Ok(item) = items.get(added_to_slot.entity) {
                     commands
                         .entity(inspected_entity.0)
                         .insert(HeldRelic(item.0.clone()));
@@ -192,7 +190,7 @@ pub fn open_recipe_menu(
             },
         )
         .observe(
-            |_trigger: Trigger<RemovedFromSlot>,
+            |_removed_from_slot: On<RemovedFromSlot>,
              inspected_entity: Res<InspectedEntity>,
              mut commands: Commands| {
                 commands.entity(inspected_entity.0).remove::<HeldRelic>();
@@ -233,7 +231,7 @@ pub fn open_recipe_menu(
 }
 
 fn on_deselect_recipe(
-    _trigger: Trigger<Pointer<Click>>,
+    _pointer_click: On<Pointer<Click>>,
     mut next_state: ResMut<NextState<InspectionMenuState>>,
     mut selected_recipes: Query<&mut SelectedRecipe>,
     inspected_entity: Res<InspectedEntity>,
@@ -246,7 +244,7 @@ fn on_deselect_recipe(
 }
 
 fn on_close_menu(
-    _trigger: Trigger<Pointer<Click>>,
+    _pointer_click: On<Pointer<Click>>,
     mut next_state: ResMut<NextState<InspectionMenuState>>,
 ) {
     next_state.set(InspectionMenuState::Closed);

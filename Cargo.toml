@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.16.1", features = ["wayland"] }
-bevy-inspector-egui = "0.33.1"
-bevy_aseprite_ultra = "0.6.1"
-bevy_ecs_tilemap = { version = "0.16.0" }
+bevy = { version = "0.17.2", features = ["wayland"] }
+bevy-inspector-egui = "0.34.0"
+bevy_aseprite_ultra = "0.7.0"
+bevy_ecs_tilemap = { version = "0.17.0-rc.1" }
 humantime-serde = "1.1.1"
 rand = "0.9.2"
 serde = { version = "1.0.228", features = ["derive"] }

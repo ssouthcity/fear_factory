@@ -3,7 +3,6 @@ use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 use crate::{gameplay::item::assets::ItemDef, widgets::item::item_icon};
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<CompendiumState>();
     app.init_state::<CompendiumState>();
 
     app.add_systems(
@@ -43,7 +42,7 @@ fn spawn_item_compendium(
     let container = commands
         .spawn((
             Name::new("Item Compendium"),
-            StateScoped(CompendiumState::Item),
+            DespawnOnExit(CompendiumState::Item),
             Node {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),

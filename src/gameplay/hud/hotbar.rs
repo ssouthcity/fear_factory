@@ -25,16 +25,9 @@ const DIGIT_KEYS: [KeyCode; 9] = [
 ];
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<HotbarSlot>();
-    app.register_type::<HotbarAction>();
-    app.register_type::<HotbarActionOf>();
-    app.register_type::<HotbarActionKind>();
-    app.register_type::<HotbarShortcut>();
-
-    app.register_type::<HotbarSelectedEntity>();
     app.init_resource::<HotbarSelectedEntity>();
 
-    app.add_event::<HotbarSelectionChanged>();
+    app.add_message::<HotbarSelectionChanged>();
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
@@ -48,9 +41,9 @@ pub fn plugin(app: &mut App) {
         (
             select_on_keyboard_shortcuts
                 .in_set(FactorySystems::Input)
-                .run_if(on_event::<KeyboardInput>),
+                .run_if(on_message::<KeyboardInput>),
             highlight_selected_slot.in_set(FactorySystems::UI),
-            deselect_slot.run_if(on_event::<StructureConstructed>),
+            deselect_slot.run_if(on_message::<StructureConstructed>),
         ),
     );
 }
@@ -73,21 +66,21 @@ impl HotbarSelection<'_, '_> {
 #[derive(SystemParam)]
 struct HotbarSelector<'w> {
     selection: ResMut<'w, HotbarSelectedEntity>,
-    events: EventWriter<'w, HotbarSelectionChanged>,
+    hotbar_selection_changes: MessageWriter<'w, HotbarSelectionChanged>,
 }
 
 impl HotbarSelector<'_> {
     fn select(&mut self, entity: Option<Entity>) {
         if self.selection.0 == entity {
             if self.selection.is_some() {
-                self.events.write(HotbarSelectionChanged {
+                self.hotbar_selection_changes.write(HotbarSelectionChanged {
                     previous: self.selection.0,
                     current: None,
                 });
                 self.selection.0 = None;
             }
         } else {
-            self.events.write(HotbarSelectionChanged {
+            self.hotbar_selection_changes.write(HotbarSelectionChanged {
                 previous: self.selection.0,
                 current: entity,
             });
@@ -96,7 +89,7 @@ impl HotbarSelector<'_> {
     }
 }
 
-#[derive(Event, Reflect, Debug)]
+#[derive(Message, Reflect, Debug)]
 pub struct HotbarSelectionChanged {
     pub previous: Option<Entity>,
     pub current: Option<Entity>,
@@ -134,7 +127,7 @@ struct HotbarShortcut(KeyCode);
 fn spawn_hotbar(mut commands: Commands) {
     commands.spawn((
         Name::new("Hotbar"),
-        StateScoped(Screen::Gameplay),
+        DespawnOnExit(Screen::Gameplay),
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Px(8.0),
@@ -161,7 +154,7 @@ fn spawn_hotbar(mut commands: Commands) {
                     ..default()
                 },
                 Pickable::default(),
-                BorderColor(Color::WHITE),
+                BorderColor::all(Color::WHITE),
                 HotbarSlot,
                 HotbarShortcut(DIGIT_KEYS[i]),
             )
@@ -180,7 +173,7 @@ fn assign_hotbar_items(
             Name::new("Hotbar Action"),
             ChildOf(hotbar_slot),
             HotbarActionOf(hotbar_slot),
-            HotbarActionKind::PlaceStructure(Handle::Weak(asset_id)),
+            HotbarActionKind::PlaceStructure(asset_server.get_id_handle(asset_id).unwrap()),
             Pickable::IGNORE,
             Node::default(),
             children![(
@@ -238,12 +231,12 @@ fn highlight_selected_slot(
 }
 
 fn select_on_click(
-    trigger: Trigger<Pointer<Click>>,
+    pointer_click: On<Pointer<Click>>,
     hotbar_slots: Query<Entity, With<HotbarSlot>>,
     mut hotbar: HotbarSelector,
 ) {
-    if hotbar_slots.contains(trigger.target) {
-        hotbar.select(Some(trigger.target));
+    if hotbar_slots.contains(pointer_click.entity) {
+        hotbar.select(Some(pointer_click.entity));
     };
 }
 

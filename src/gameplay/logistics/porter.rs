@@ -10,12 +10,8 @@ use crate::gameplay::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<Porters>();
-    app.register_type::<PorterOf>();
-    app.register_type::<PorterToInput>();
-
-    app.add_event::<PorterArrival>();
-    app.add_event::<PorterLost>();
+    app.add_message::<PorterArrival>();
+    app.add_message::<PorterLost>();
 
     app.add_systems(
         Update,
@@ -50,10 +46,10 @@ pub struct PorterFromOutput(pub Entity);
 #[reflect(Component)]
 pub struct PorterToInput(pub Entity);
 
-#[derive(Event, Reflect, Debug)]
+#[derive(Message, Reflect, Debug)]
 pub struct PorterArrival(pub Entity);
 
-#[derive(Event, Reflect, Debug)]
+#[derive(Message, Reflect, Debug)]
 pub struct PorterLost(pub Entity);
 
 fn spawn_porter(
@@ -70,7 +66,7 @@ fn spawn_porter(
     time: Res<Time>,
 ) {
     for (structure, transform, mut timer, mut index, outputs) in structure_query {
-        if !timer.tick(time.delta()).finished() {
+        if !timer.tick(time.delta()).is_finished() {
             continue;
         }
 
@@ -114,19 +110,19 @@ fn spawn_porter(
     }
 }
 
-fn despawn_lost_porters(mut events: EventReader<PorterLost>, mut commands: Commands) {
-    for PorterLost(entity) in events.read() {
+fn despawn_lost_porters(mut porter_losses: MessageReader<PorterLost>, mut commands: Commands) {
+    for PorterLost(entity) in porter_losses.read() {
         commands.entity(*entity).despawn();
     }
 }
 
 fn drop_of_items(
-    mut events: EventReader<PorterArrival>,
+    mut poter_arrivals: MessageReader<PorterArrival>,
     porter_query: Query<&PorterToInput>,
     mut input_query: Query<&mut Quantity>,
     mut commands: Commands,
 ) {
-    for PorterArrival(porter) in events.read() {
+    for PorterArrival(porter) in poter_arrivals.read() {
         commands.entity(*porter).despawn();
 
         let PorterToInput(input) = porter_query.get(*porter).unwrap();

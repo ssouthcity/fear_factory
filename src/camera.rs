@@ -16,29 +16,29 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn move_camera(
-    mut events: EventReader<Pointer<Drag>>,
+    mut pointer_drags: MessageReader<Pointer<Drag>>,
     mut camera_position: Single<&mut Transform, With<Camera>>,
 ) {
-    for event in events.read() {
-        if event.button != PointerButton::Secondary {
+    for pointer_drag in pointer_drags.read() {
+        if pointer_drag.button != PointerButton::Secondary {
             return;
         }
 
         camera_position.translation +=
-            event.delta.extend(0.0) * Vec3::new(-1.0, 1.0, 1.0) * CAMERA_DRAG_SMOOTHING;
+            pointer_drag.delta.extend(0.0) * Vec3::new(-1.0, 1.0, 1.0) * CAMERA_DRAG_SMOOTHING;
     }
 }
 
 fn zoom_camera(
-    mut events: EventReader<Pointer<Scroll>>,
+    mut pointer_scrolls: MessageReader<Pointer<Scroll>>,
     projection: Single<&mut Projection, With<Camera>>,
 ) {
     let Projection::Orthographic(ref mut ortho) = *projection.into_inner() else {
         return;
     };
 
-    for event in events.read() {
-        ortho.scale *= 1.0 - (event.y * CAMERA_ZOOM_INTERVAL);
+    for pointer_scroll in pointer_scrolls.read() {
+        ortho.scale *= 1.0 - (pointer_scroll.y * CAMERA_ZOOM_INTERVAL);
         ortho.scale = ortho.scale.clamp(CAMERA_ZOOM_MIN, CAMERA_ZOOM_MAX);
     }
 }

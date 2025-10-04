@@ -16,17 +16,15 @@ use crate::{
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.register_type::<HoveredTile>();
     app.init_resource::<HoveredTile>();
 
-    app.register_type::<TileClicked>();
-    app.add_event::<TileClicked>();
+    app.add_message::<TileClicked>();
 
     app.add_systems(
         Update,
         (
             mark_highlighted_tile,
-            propogate_world_click.run_if(on_event::<Pointer<Click>>),
+            propogate_world_click.run_if(on_message::<Pointer<Click>>),
         )
             .in_set(FactorySystems::Input),
     );
@@ -34,7 +32,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, highlight_hovered_tile.in_set(FactorySystems::UI));
 }
 
-#[derive(Event, Reflect, Debug)]
+#[derive(Message, Reflect, Debug)]
 pub struct TileClicked(pub Coord);
 
 #[derive(Resource, Reflect, Debug)]
@@ -70,7 +68,7 @@ fn mark_highlighted_tile(
 
         let cursor_in_map_pos = {
             let cursor_pos = Vec4::from((cursor_position.0, 0.0, 1.0));
-            let cursor_in_map_pos = map_transform.compute_matrix().inverse() * cursor_pos;
+            let cursor_in_map_pos = map_transform.to_matrix().inverse() * cursor_pos;
             cursor_in_map_pos.xy()
         };
 
@@ -118,7 +116,7 @@ fn propogate_world_click(
     hovered_tile: Res<HoveredTile>,
     valid_placement: Res<ValidPlacement>,
     tile_query: Query<&TilePos>,
-    mut events: EventWriter<TileClicked>,
+    mut tile_clicks: MessageWriter<TileClicked>,
 ) {
     if !valid_placement.0 {
         return;
@@ -128,5 +126,5 @@ fn propogate_world_click(
         return;
     };
 
-    events.write(TileClicked(Coord::new(tile_pos.x, tile_pos.y)));
+    tile_clicks.write(TileClicked(Coord::new(tile_pos.x, tile_pos.y)));
 }

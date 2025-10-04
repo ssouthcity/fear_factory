@@ -11,13 +11,6 @@ const HELD_OBJECT_Z_INDEX: i32 = 15;
 const HOVERED_SLOT_LIGHTEN_FACTOR: f32 = 0.05;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<AddedToSlot>();
-    app.register_type::<RemovedFromSlot>();
-
-    app.register_type::<Slot>();
-    app.register_type::<SlotOccupant>();
-    app.register_type::<InSlot>();
-
     app.add_observer(on_add_slot);
     app.add_observer(on_add_slot_occupant);
 
@@ -25,11 +18,17 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, sync_slot_child.run_if(in_state(Screen::Gameplay)));
 }
 
-#[derive(Event, Reflect)]
-pub struct AddedToSlot(pub Entity);
+#[derive(EntityEvent, Reflect)]
+pub struct AddedToSlot {
+    pub entity: Entity,
+    pub item: Entity,
+}
 
-#[derive(Event, Reflect)]
-pub struct RemovedFromSlot(pub Entity);
+#[derive(EntityEvent, Reflect)]
+pub struct RemovedFromSlot {
+    pub entity: Entity,
+    pub item: Entity,
+}
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -53,19 +52,19 @@ pub struct SlotOccupant(Entity);
 )]
 pub struct InSlot(pub Entity);
 
-fn on_add_slot(trigger: Trigger<OnAdd, Slot>, mut commands: Commands) {
+fn on_add_slot(add: On<Add, Slot>, mut commands: Commands) {
     commands
-        .entity(trigger.target())
+        .entity(add.entity)
         .observe(
-            |trigger: Trigger<Pointer<Over>>, mut query: Query<&mut BackgroundColor>| {
-                if let Ok(mut color) = query.get_mut(trigger.target) {
+            |pointer_over: On<Pointer<Over>>, mut query: Query<&mut BackgroundColor>| {
+                if let Ok(mut color) = query.get_mut(pointer_over.entity) {
                     color.0 = color.0.lighter(HOVERED_SLOT_LIGHTEN_FACTOR);
                 }
             },
         )
         .observe(
-            |trigger: Trigger<Pointer<Out>>, mut query: Query<&mut BackgroundColor>| {
-                if let Ok(mut color) = query.get_mut(trigger.target) {
+            |pointer_out: On<Pointer<Out>>, mut query: Query<&mut BackgroundColor>| {
+                if let Ok(mut color) = query.get_mut(pointer_out.entity) {
                     color.0 = color.0.darker(HOVERED_SLOT_LIGHTEN_FACTOR);
                 }
             },
@@ -73,30 +72,30 @@ fn on_add_slot(trigger: Trigger<OnAdd, Slot>, mut commands: Commands) {
         .observe(on_slot_drag_and_drop);
 }
 
-fn on_add_slot_occupant(trigger: Trigger<OnAdd, InSlot>, mut commands: Commands) {
+fn on_add_slot_occupant(add: On<Add, InSlot>, mut commands: Commands) {
     commands
-        .entity(trigger.target())
+        .entity(add.entity)
         .observe(
-            |trigger: Trigger<Pointer<DragStart>>,
+            |pointer_drag_start: On<Pointer<DragStart>>,
              mut query: Query<(&mut Node, &mut GlobalZIndex)>| {
-                if let Ok((mut node, mut z_index)) = query.get_mut(trigger.target) {
+                if let Ok((mut node, mut z_index)) = query.get_mut(pointer_drag_start.entity) {
                     node.position_type = PositionType::Absolute;
                     z_index.0 = HELD_OBJECT_Z_INDEX;
                 }
             },
         )
         .observe(
-            |trigger: Trigger<Pointer<Drag>>, mut query: Query<&mut Node>| {
-                if let Ok(mut node) = query.get_mut(trigger.target) {
-                    node.left = Val::Px(trigger.distance.x);
-                    node.top = Val::Px(trigger.distance.y);
+            |pointer_drag: On<Pointer<Drag>>, mut query: Query<&mut Node>| {
+                if let Ok(mut node) = query.get_mut(pointer_drag.entity) {
+                    node.left = Val::Px(pointer_drag.distance.x);
+                    node.top = Val::Px(pointer_drag.distance.y);
                 }
             },
         )
         .observe(
-            |trigger: Trigger<Pointer<DragEnd>>,
+            |pointer_drag_end: On<Pointer<DragEnd>>,
              mut query: Query<(&mut Node, &mut GlobalZIndex)>| {
-                if let Ok((mut node, mut z_index)) = query.get_mut(trigger.target) {
+                if let Ok((mut node, mut z_index)) = query.get_mut(pointer_drag_end.entity) {
                     node.position_type = PositionType::default();
                     node.left = Val::Auto;
                     node.top = Val::Auto;
@@ -113,13 +112,13 @@ fn sync_slot_child(query: Query<(Entity, &InSlot), Changed<InSlot>>, mut command
 }
 
 fn on_slot_drag_and_drop(
-    trigger: Trigger<Pointer<DragDrop>>,
+    pointer_drag_drop: On<Pointer<DragDrop>>,
     mut commands: Commands,
     item_query: Query<&InSlot>,
     slot_query: Query<&SlotOccupant>,
 ) {
-    let destination_slot = trigger.target();
-    let source_item = trigger.dropped;
+    let destination_slot = pointer_drag_drop.entity;
+    let source_item = pointer_drag_drop.dropped;
 
     let Ok(source_slot) = item_query.get(source_item).map(|slot| slot.0) else {
         return;
@@ -141,27 +140,31 @@ fn on_slot_drag_and_drop(
         .entity(source_item)
         .insert(InSlot(destination_slot));
 
-    commands
-        .entity(source_slot)
-        .trigger(RemovedFromSlot(source_item));
+    commands.trigger(RemovedFromSlot {
+        item: source_item,
+        entity: source_slot,
+    });
 
     if let Ok(destination_item) = destination_item {
         commands
             .entity(destination_item)
             .insert(InSlot(source_slot));
 
-        commands
-            .entity(destination_slot)
-            .trigger(RemovedFromSlot(destination_item));
+        commands.trigger(RemovedFromSlot {
+            item: destination_item,
+            entity: destination_slot,
+        });
 
-        commands
-            .entity(source_slot)
-            .trigger(AddedToSlot(destination_item));
+        commands.trigger(AddedToSlot {
+            item: destination_item,
+            entity: source_slot,
+        });
     }
 
-    commands
-        .entity(destination_slot)
-        .trigger(AddedToSlot(source_item));
+    commands.trigger(AddedToSlot {
+        item: source_item,
+        entity: destination_slot,
+    });
 }
 
 fn setup(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, asset_server: Res<AssetServer>) {

@@ -19,7 +19,6 @@ where
     T: Asset + Indexable,
 {
     fn build(&self, app: &mut App) {
-        app.register_type::<IndexMap<T>>();
         app.init_resource::<IndexMap<T>>();
 
         app.add_systems(Update, populate_index::<T>);
@@ -40,11 +39,11 @@ where
 }
 
 fn populate_index<T: Asset + Indexable>(
-    mut events: EventReader<AssetEvent<T>>,
+    mut asset_events: MessageReader<AssetEvent<T>>,
     assets: Res<Assets<T>>,
     mut index_map: ResMut<IndexMap<T>>,
 ) {
-    for event in events.read() {
+    for event in asset_events.read() {
         if let AssetEvent::Added { id } = event {
             let Some(asset) = assets.get(*id) else {
                 continue;

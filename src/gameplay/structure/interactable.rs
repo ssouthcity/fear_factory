@@ -6,15 +6,7 @@ use crate::assets::tracking::LoadResource;
 const INTERACTABLE_BUTTON: KeyCode = KeyCode::KeyE;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<InteractionAssets>()
-        .load_resource::<InteractionAssets>();
-
-    app.register_type::<Interactable>();
-    app.register_type::<Interact>();
-
-    app.register_type::<HoveredInteractable>();
-    app.register_type::<ButtonIndicator>();
-    app.register_type::<ButtonIndicatorOf>();
+    app.load_resource::<InteractionAssets>();
 
     app.init_resource::<HoveredInteractable>();
 
@@ -29,8 +21,10 @@ pub fn plugin(app: &mut App) {
 #[require(Pickable)]
 pub struct Interactable;
 
-#[derive(Event, Reflect, Default)]
-pub struct Interact;
+#[derive(EntityEvent, Reflect, Debug)]
+pub struct Interact {
+    pub entity: Entity,
+}
 
 #[derive(Resource, Reflect, Default)]
 #[reflect(Resource)]
@@ -74,46 +68,46 @@ struct ButtonIndicator(Entity);
 struct ButtonIndicatorOf(Entity);
 
 fn on_hover(
-    mut trigger: Trigger<Pointer<Over>>,
+    mut pointer_over: On<Pointer<Over>>,
     interactables: Query<Entity, With<Interactable>>,
     mut commands: Commands,
     mut hovered_interactable: ResMut<HoveredInteractable>,
     interaction_assets: Res<InteractionAssets>,
 ) {
-    if !interactables.contains(trigger.target) {
+    if !interactables.contains(pointer_over.entity) {
         return;
     }
 
-    hovered_interactable.0 = Some(trigger.target);
+    hovered_interactable.0 = Some(pointer_over.entity);
 
     commands.spawn((
         Name::new("Interact Indicator"),
         Transform::from_xyz(0.0, 0.0, 1.0),
-        ChildOf(trigger.target),
-        ButtonIndicatorOf(trigger.target),
+        ChildOf(pointer_over.entity),
+        ButtonIndicatorOf(pointer_over.entity),
         interaction_assets.sprite(INTERACTABLE_BUTTON),
     ));
 
-    trigger.propagate(false);
+    pointer_over.propagate(false);
 }
 
 fn on_leave(
-    mut trigger: Trigger<Pointer<Out>>,
+    mut pointer_out: On<Pointer<Out>>,
     interactables: Query<Entity, With<Interactable>>,
     mut commands: Commands,
     mut hovered_interactable: ResMut<HoveredInteractable>,
 ) {
-    if !interactables.contains(trigger.target) {
+    if !interactables.contains(pointer_out.entity) {
         return;
     }
 
     hovered_interactable.0 = None;
 
     commands
-        .entity(trigger.target)
+        .entity(pointer_out.entity)
         .despawn_related::<ButtonIndicator>();
 
-    trigger.propagate(false);
+    pointer_out.propagate(false);
 }
 
 fn on_interact_button_click(
@@ -129,5 +123,7 @@ fn on_interact_button_click(
         return;
     };
 
-    commands.trigger_targets(Interact, interactable);
+    commands.trigger(Interact {
+        entity: interactable,
+    });
 }

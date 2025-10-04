@@ -8,13 +8,11 @@ use crate::assets::{
 };
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<ItemDef>();
     app.add_plugins((
         TomlAssetPlugin::<ItemDef>::extensions(&["item.toml"]),
         AssetIndexPlugin::<ItemDef>::default(),
     ));
 
-    app.register_type::<ItemAssets>();
     app.load_resource::<ItemAssets>();
 }
 

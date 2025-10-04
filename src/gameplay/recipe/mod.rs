@@ -6,12 +6,6 @@ pub mod progress;
 pub mod select;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<Inputs>();
-    app.register_type::<InputOf>();
-    app.register_type::<Outputs>();
-    app.register_type::<OutputOf>();
-    app.register_type::<RequiredQuantity>();
-
     app.add_plugins((
         assets::plugin,
         process::plugin,

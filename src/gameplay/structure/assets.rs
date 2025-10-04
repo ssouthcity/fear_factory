@@ -13,8 +13,7 @@ pub fn plugin(app: &mut App) {
         AssetIndexPlugin::<StructureDef>::default(),
     ));
 
-    app.register_type::<StructureAssets>()
-        .load_resource::<StructureAssets>();
+    app.load_resource::<StructureAssets>();
 }
 
 #[derive(Asset, Resource, Reflect, Clone)]

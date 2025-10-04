@@ -6,10 +6,6 @@ mod info;
 mod select;
 
 pub fn plugin(app: &mut App) {
-    app.register_type::<InspectionMenuState>();
-    app.register_type::<InspectedEntity>();
-    app.register_type::<Inspect>();
-
     app.init_state::<InspectionMenuState>();
     app.init_resource::<InspectedEntity>();
 
@@ -42,20 +38,22 @@ impl Default for InspectedEntity {
     }
 }
 
-#[derive(Event, Reflect)]
-pub struct Inspect;
+#[derive(EntityEvent, Reflect)]
+pub struct Inspect {
+    pub entity: Entity,
+}
 
 fn on_inspect(
-    trigger: Trigger<Inspect>,
+    inspect: On<Inspect>,
     mut next_state: ResMut<NextState<InspectionMenuState>>,
     mut inspected_entity: ResMut<InspectedEntity>,
     selected_recipes: Query<&SelectedRecipe>,
 ) {
-    let Ok(selected_recipe) = selected_recipes.get(trigger.target()) else {
+    let Ok(selected_recipe) = selected_recipes.get(inspect.entity) else {
         return;
     };
 
-    inspected_entity.0 = trigger.target();
+    inspected_entity.0 = inspect.entity;
 
     if selected_recipe.is_some() {
         next_state.set(InspectionMenuState::RecipeInspect);

@@ -16,7 +16,7 @@ pub fn plugin(app: &mut App) {
 fn spawn_loading_screen(mut commands: Commands) {
     commands.spawn((
         Name::new("Container"),
-        StateScoped(Screen::Loading),
+        DespawnOnExit(Screen::Loading),
         Node {
             width: Val::Percent(100.0),
             height: Val::Percent(100.0),
