@@ -31,18 +31,18 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>
         widgets::container(),
         Children::spawn_one((
             Node {
-                width: Val::Percent(70.0),
-                height: Val::Percent(70.0),
+                width: percent(70.0),
+                height: percent(70.0),
                 display: Display::Flex,
                 flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(32.0)),
+                padding: px(32.0).all(),
                 ..default()
             },
             BackgroundColor(Color::WHITE.with_alpha(0.5)),
             Children::spawn((
                 Spawn((
                     Node {
-                        width: Val::Percent(100.0),
+                        width: percent(100.0),
                         display: Display::Flex,
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::SpaceBetween,
@@ -71,7 +71,7 @@ pub fn recipe_select_menu(mut commands: Commands, recipes: Res<Assets<RecipeDef>
                         |(recipe_id, recipe_name)| {
                             (
                                 Node {
-                                    padding: UiRect::all(Val::Px(32.0)),
+                                    padding: px(32.0).all(),
                                     ..default()
                                 },
                                 BackgroundColor(Color::BLACK.with_alpha(0.5)),

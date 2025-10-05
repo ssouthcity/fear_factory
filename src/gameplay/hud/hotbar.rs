@@ -130,14 +130,14 @@ fn spawn_hotbar(mut commands: Commands) {
         DespawnOnExit(Screen::Gameplay),
         Node {
             position_type: PositionType::Absolute,
-            bottom: Val::Px(8.0),
-            width: Val::Auto,
-            height: Val::Auto,
-            margin: UiRect::axes(Val::Auto, Val::ZERO),
+            bottom: px(8.0),
+            width: auto(),
+            height: auto(),
+            margin: auto().horizontal(),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
-            column_gap: Val::Px(8.0),
-            row_gap: Val::Px(8.0),
+            column_gap: px(8.0),
+            row_gap: px(8.0),
             ..default()
         },
         Pickable::IGNORE,
@@ -145,9 +145,9 @@ fn spawn_hotbar(mut commands: Commands) {
             (
                 Name::new(format!("Hotbar Slot {}", i + 1)),
                 Node {
-                    width: Val::Px(64.0),
-                    height: Val::Px(64.0),
-                    border: UiRect::all(Val::Px(4.0)),
+                    width: px(64.0),
+                    height: px(64.0),
+                    border: px(4.0).all(),
                     display: Display::Flex,
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,

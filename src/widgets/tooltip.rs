@@ -23,11 +23,8 @@ fn spawn_tooltip(mut commands: Commands) {
     commands.spawn((
         Name::new("Tooltip"),
         Tooltip,
-        Node {
-            position_type: PositionType::Absolute,
-            ..default()
-        },
-        Text::new("hello world!"),
+        Node::default(),
+        Text::default(),
         BackgroundColor(Color::hsl(210.0, 0.13, 0.5)),
         GlobalZIndex(100),
         Visibility::Hidden,
@@ -36,29 +33,29 @@ fn spawn_tooltip(mut commands: Commands) {
 
 fn on_show_tooltip(
     show_tooltip: On<ShowTooltip>,
-    tooltip_query: Query<(&mut Text, &mut Visibility), With<Tooltip>>,
+    tooltip_query: Single<(&mut Text, &mut Visibility), With<Tooltip>>,
 ) {
-    for (mut text, mut visibility) in tooltip_query {
-        text.0 = show_tooltip.0.to_owned();
-        *visibility = Visibility::Inherited;
-    }
+    let (mut text, mut visibility) = tooltip_query.into_inner();
+    text.0 = show_tooltip.0.to_owned();
+    *visibility = Visibility::Inherited;
 }
 
 fn on_hide_tooltip(
     _hide_tooltip: On<HideTooltip>,
-    tooltip_query: Query<(&mut Text, &mut Visibility), With<Tooltip>>,
+    tooltip_query: Single<(&mut Text, &mut Visibility), With<Tooltip>>,
 ) {
-    for (mut text, mut visibility) in tooltip_query {
-        text.0 = String::default();
-        *visibility = Visibility::Hidden;
-    }
+    let (mut text, mut visibility) = tooltip_query.into_inner();
+    text.0 = String::default();
+    *visibility = Visibility::Hidden;
 }
 
-fn follow_mouse(pointer_move: On<Pointer<Move>>, tooltip_query: Query<&mut Node, With<Tooltip>>) {
-    for mut node in tooltip_query {
-        let tooltip_origin = pointer_move.pointer_location.position + TOOLTIP_POINTER_OFFSET;
+fn follow_mouse(
+    pointer_move: On<Pointer<Move>>,
+    tooltip_query: Single<&mut UiTransform, With<Tooltip>>,
+) {
+    let tooltip_origin = pointer_move.pointer_location.position + TOOLTIP_POINTER_OFFSET;
 
-        node.left = Val::Px(tooltip_origin.x);
-        node.top = Val::Px(tooltip_origin.y);
-    }
+    let mut transform = tooltip_query.into_inner();
+    transform.translation.x = px(tooltip_origin.x);
+    transform.translation.y = px(tooltip_origin.y);
 }

@@ -3,14 +3,14 @@ use bevy::{prelude::*, ui_widgets::observe};
 use crate::{
     assets::indexing::IndexMap,
     gameplay::{
-        hud::{
-            inspect::{InspectedEntity, InspectionMenuState},
-            item_slot::{AddedToSlot, InSlot, RemovedFromSlot},
-        },
-        item::{Item, assets::ItemDef},
-        recipe::{assets::RecipeDef, select::SelectedRecipe},
+        hud::inspect::{InspectedEntity, InspectionMenuState},
+        recipe::{Inputs, Outputs, assets::RecipeDef, select::SelectedRecipe},
     },
-    widgets::{self, item::item_icon},
+    widgets::{
+        self,
+        item::StackIcon,
+        slot::{AddedToSlot, RemovedFromSlot},
+    },
 };
 
 pub fn plugin(app: &mut App) {
@@ -22,19 +22,18 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct HeldRelic(Handle<ItemDef>);
+pub struct HeldRelic(Entity);
 
 #[allow(clippy::too_many_arguments)]
 pub fn open_recipe_menu(
     mut commands: Commands,
     inspected_entity: Res<InspectedEntity>,
-    selected_recipes: Query<&SelectedRecipe>,
+    structure_query: Query<(&SelectedRecipe, &Inputs, &Outputs)>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
     held_relics: Query<&HeldRelic>,
-    asset_server: Res<AssetServer>,
 ) {
-    let Ok(selected_recipe) = selected_recipes.get(inspected_entity.0) else {
+    let Ok((selected_recipe, inputs, outputs)) = structure_query.get(inspected_entity.0) else {
         return;
     };
 
@@ -62,11 +61,11 @@ pub fn open_recipe_menu(
         .spawn((
             ChildOf(container_id),
             Node {
-                width: Val::Percent(70.0),
-                height: Val::Percent(70.0),
+                width: percent(70.0),
+                height: percent(70.0),
                 display: Display::Flex,
                 flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(32.0)),
+                padding: px(32.0).all(),
                 ..default()
             },
             BackgroundColor(Color::WHITE.with_alpha(0.5)),
@@ -76,7 +75,7 @@ pub fn open_recipe_menu(
     commands.spawn((
         ChildOf(menu_id),
         Node {
-            width: Val::Percent(100.0),
+            width: percent(100.0),
             display: Display::Flex,
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::SpaceBetween,
@@ -101,8 +100,8 @@ pub fn open_recipe_menu(
         .spawn((
             ChildOf(menu_id),
             Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
+                width: percent(100.0),
+                height: percent(100.0),
                 display: Display::Flex,
                 flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::Center,
@@ -122,26 +121,11 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for (input_id, quantity) in recipe.input.iter() {
-        commands.spawn((
-            ChildOf(input_list_id),
-            widgets::slot(),
-            children![
-                item_icon(asset_server.load(format!("manifests/items/{input_id}.item.toml"))),
-                (
-                    Node {
-                        position_type: PositionType::Absolute,
-                        right: Val::ZERO,
-                        bottom: Val::ZERO,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                    BackgroundColor(Color::WHITE),
-                    TextColor(Color::BLACK),
-                    Text::new(quantity.to_string()),
-                )
-            ],
-        ));
+    for input in inputs.iter() {
+        let slot = commands
+            .spawn((ChildOf(input_list_id), widgets::slot::slot_container()))
+            .id();
+        commands.spawn(widgets::slot::slotted_stack(slot, input));
     }
 
     let middle_column_id = commands
@@ -164,38 +148,41 @@ pub fn open_recipe_menu(
     ));
 
     let relic_slot_id = commands
-        .spawn((ChildOf(middle_column_id), widgets::slot()))
+        .spawn((
+            ChildOf(middle_column_id),
+            widgets::slot::slot_container(),
+            observe(
+                |added_to_slot: On<AddedToSlot>,
+                 inspected_entity: Res<InspectedEntity>,
+                 mut commands: Commands,
+                 slot_occupant_query: Query<&Children>,
+                 stack_icon_query: Query<&StackIcon>| {
+                    let Ok(children) = slot_occupant_query.get(added_to_slot.item) else {
+                        return;
+                    };
+
+                    let Ok(stack_icon) = stack_icon_query.get(*children.first().unwrap()) else {
+                        return;
+                    };
+
+                    commands
+                        .entity(inspected_entity.0)
+                        .insert(HeldRelic(stack_icon.0));
+                },
+            ),
+            observe(
+                |_removed_from_slot: On<RemovedFromSlot>,
+                 inspected_entity: Res<InspectedEntity>,
+                 mut commands: Commands| {
+                    commands.entity(inspected_entity.0).remove::<HeldRelic>();
+                },
+            ),
+        ))
         .id();
 
     if let Ok(relic) = held_relics.get(inspected_entity.0) {
-        commands.spawn((
-            InSlot(relic_slot_id),
-            ChildOf(relic_slot_id),
-            item_icon(relic.0.clone()),
-        ));
+        commands.spawn(widgets::slot::slotted_stack(relic_slot_id, relic.0));
     }
-
-    commands
-        .entity(relic_slot_id)
-        .observe(
-            |added_to_slot: On<AddedToSlot>,
-             inspected_entity: Res<InspectedEntity>,
-             mut commands: Commands,
-             items: Query<&Item>| {
-                if let Ok(item) = items.get(added_to_slot.entity) {
-                    commands
-                        .entity(inspected_entity.0)
-                        .insert(HeldRelic(item.0.clone()));
-                }
-            },
-        )
-        .observe(
-            |_removed_from_slot: On<RemovedFromSlot>,
-             inspected_entity: Res<InspectedEntity>,
-             mut commands: Commands| {
-                commands.entity(inspected_entity.0).remove::<HeldRelic>();
-            },
-        );
 
     let output_list_id = commands
         .spawn((
@@ -207,26 +194,11 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for (output_id, quantity) in recipe.output.iter() {
-        commands.spawn((
-            ChildOf(output_list_id),
-            widgets::slot(),
-            children![
-                item_icon(asset_server.load(format!("manifests/items/{output_id}.item.toml"))),
-                (
-                    Node {
-                        position_type: PositionType::Absolute,
-                        right: Val::ZERO,
-                        bottom: Val::ZERO,
-                        ..default()
-                    },
-                    Pickable::IGNORE,
-                    BackgroundColor(Color::WHITE),
-                    TextColor(Color::BLACK),
-                    Text::new(quantity.to_string()),
-                )
-            ],
-        ));
+    for output in outputs.iter() {
+        let slot = commands
+            .spawn((ChildOf(output_list_id), widgets::slot::slot_container()))
+            .id();
+        commands.spawn(widgets::slot::slotted_stack(slot, output));
     }
 }
 
