@@ -18,8 +18,8 @@ fn spawn_loading_screen(mut commands: Commands) {
         Name::new("Container"),
         DespawnOnExit(Screen::Loading),
         Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
+            width: percent(100.0),
+            height: percent(100.0),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             ..default()

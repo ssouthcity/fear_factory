@@ -1,6 +1,6 @@
 use bevy::{input::common_conditions::input_just_pressed, prelude::*};
 
-use crate::{gameplay::item::assets::ItemDef, widgets::item::item_icon};
+use crate::gameplay::item::assets::ItemDef;
 
 pub fn plugin(app: &mut App) {
     app.init_state::<CompendiumState>();
@@ -30,11 +30,7 @@ fn toggle_compendium_state(
     }
 }
 
-fn spawn_item_compendium(
-    mut commands: Commands,
-    items: Res<Assets<ItemDef>>,
-    asset_server: Res<AssetServer>,
-) {
+fn spawn_item_compendium(mut commands: Commands, items: Res<Assets<ItemDef>>) {
     let mut items_sorted: Vec<_> = items.iter().collect();
     items_sorted.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 
@@ -43,8 +39,8 @@ fn spawn_item_compendium(
             Name::new("Item Compendium"),
             DespawnOnExit(CompendiumState::Item),
             Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
+                width: percent(100.0),
+                height: percent(100.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..default()
@@ -55,11 +51,11 @@ fn spawn_item_compendium(
     let item_list = commands
         .spawn((
             Node {
-                padding: UiRect::all(Val::Px(16.0)),
+                padding: px(16.0).all(),
                 display: Display::Grid,
                 grid_template_columns: vec![RepeatedGridTrack::auto(2)],
-                column_gap: Val::Px(8.0),
-                row_gap: Val::Px(8.0),
+                column_gap: px(8.0),
+                row_gap: px(8.0),
                 ..default()
             },
             BackgroundColor(Color::BLACK.with_alpha(0.5)),
@@ -67,7 +63,7 @@ fn spawn_item_compendium(
         ))
         .id();
 
-    for (item_asset_id, item_def) in items_sorted.iter() {
+    for (_, item_def) in items_sorted.iter() {
         let item_box = commands
             .spawn((
                 Node {
@@ -79,8 +75,8 @@ fn spawn_item_compendium(
                     grid_template_rows: vec![RepeatedGridTrack::px(2, 32.0)],
                     justify_items: JustifyItems::Start,
                     align_items: AlignItems::Center,
-                    column_gap: Val::Px(16.0),
-                    padding: UiRect::all(Val::Px(4.0)),
+                    column_gap: px(16.0),
+                    padding: px(4.0).all(),
                     ..default()
                 },
                 ChildOf(item_list),
@@ -93,13 +89,13 @@ fn spawn_item_compendium(
                 justify_self: JustifySelf::Center,
                 grid_column: GridPlacement::span(1),
                 grid_row: GridPlacement::span(2),
-                width: Val::Px(56.0),
-                height: Val::Px(56.0),
+                width: px(56.0),
+                height: px(56.0),
                 ..default()
             },
-            children![item_icon(
-                asset_server.get_id_handle(*item_asset_id).unwrap()
-            )],
+            // children![stack_icon(
+            // asset_server.get_id_handle(*item_asset_id).unwrap()
+            // )],
             ChildOf(item_box),
         ));
 

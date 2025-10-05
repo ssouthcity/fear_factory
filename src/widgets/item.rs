@@ -3,7 +3,7 @@ use bevy::{prelude::*, ui_widgets::observe};
 use crate::{
     gameplay::{
         FactorySystems,
-        item::{Item, assets::ItemDef},
+        item::{Full, Item, Quantity, assets::ItemDef},
     },
     widgets::tooltip::{HideTooltip, ShowTooltip},
 };
@@ -14,23 +14,45 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-pub struct ItemIcon;
+pub struct StackIcon(pub Entity);
 
-pub fn item_icon(handle: Handle<ItemDef>) -> impl Bundle {
+pub fn stack_icon(stack: Entity) -> impl Bundle {
     (
         Name::new("Item Icon"),
-        ItemIcon,
-        Item(handle),
+        StackIcon(stack),
         Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
+            width: percent(100.0),
+            height: percent(100.0),
+            position_type: PositionType::Relative,
             ..default()
         },
-        ImageNode::default(),
         Pickable {
             is_hoverable: true,
             should_block_lower: false,
         },
+        children![
+            (
+                Node {
+                    width: percent(100.0),
+                    height: percent(100.0),
+                    ..default()
+                },
+                ImageNode::default(),
+                Pickable::IGNORE,
+            ),
+            (
+                Node {
+                    position_type: PositionType::Absolute,
+                    right: Val::ZERO,
+                    bottom: Val::ZERO,
+                    ..default()
+                },
+                BackgroundColor(Color::WHITE),
+                TextColor(Color::BLACK),
+                Text::default(),
+                Pickable::IGNORE,
+            ),
+        ],
         observe(
             |pointer_over: On<Pointer<Over>>,
              item_icon_query: Query<&Item>,
@@ -55,15 +77,37 @@ pub fn item_icon(handle: Handle<ItemDef>) -> impl Bundle {
 
 #[allow(clippy::type_complexity)]
 fn update_item_icons(
-    query: Query<(&Item, &mut ImageNode), (With<ItemIcon>, Changed<Item>)>,
+    stack_icon_query: Query<(&StackIcon, &Children)>,
+    stack_query: Query<(&Item, &Quantity, Option<&Full>)>,
+    mut image_node_query: Query<&mut ImageNode>,
+    mut quantity_text_query: Query<(&mut Text, &mut TextColor)>,
     item_defs: Res<Assets<ItemDef>>,
     asset_server: Res<AssetServer>,
 ) {
-    for (item, mut image_node) in query {
+    for (StackIcon(stack), children) in stack_icon_query {
+        let Ok((item, quantity, full)) = stack_query.get(*stack) else {
+            continue;
+        };
+
         let Some(item_def) = item_defs.get(&item.0) else {
             continue;
         };
 
-        image_node.image = asset_server.load(&item_def.sprite);
+        let mut children_iter = children.iter();
+
+        if let Ok(mut image_node) = image_node_query.get_mut(children_iter.next().unwrap()) {
+            image_node.image = asset_server.load(item_def.sprite.to_owned());
+        }
+
+        if let Ok((mut text, mut text_color)) =
+            quantity_text_query.get_mut(children_iter.next().unwrap())
+        {
+            text.0 = quantity.0.to_string();
+            text_color.0 = if full.is_some() {
+                Color::hsl(60.0, 1.0, 0.5)
+            } else {
+                Color::BLACK
+            };
+        }
     }
 }
