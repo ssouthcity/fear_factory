@@ -1,4 +1,4 @@
 id = "flora_a"
 name = "Flora A Deposit"
-recipe_id = "flora_a"
+item_id = "flora_a"
 quantity = 3
