@@ -1,7 +1,7 @@
 use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
-    gameplay::item::{Item, Quantity, assets::ItemDef},
+    gameplay::item::{assets::ItemDef, stack::Stack},
     screens::Screen,
     widgets::{self, item::stack_icon},
 };
@@ -222,8 +222,7 @@ fn setup(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, asset_server: 
             let relic = commands
                 .spawn((
                     Name::new("Relic"),
-                    Item(asset_server.get_id_handle(asset_id).unwrap()),
-                    Quantity(1),
+                    Stack::one(asset_server.get_id_handle(asset_id).unwrap()),
                 ))
                 .id();
 

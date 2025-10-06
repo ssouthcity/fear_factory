@@ -3,7 +3,7 @@ use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
 use crate::gameplay::{
     FactorySystems,
-    item::{Item, Quantity},
+    item::stack::Stack,
     logistics::pathfinding::{PorterPaths, WalkPath},
     recipe::Outputs,
     sprite_sort::{YSortSprite, ZIndexSprite},
@@ -60,7 +60,7 @@ fn spawn_porter(
         &mut PorterSpawnOutputIndex,
         &Outputs,
     )>,
-    mut output_query: Query<(&Item, &mut Quantity, &mut PorterPaths)>,
+    mut output_query: Query<(&mut Stack, &mut PorterPaths)>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
@@ -74,11 +74,11 @@ fn spawn_porter(
             continue;
         };
 
-        let Ok((item, mut quantity, mut porter_paths)) = output_query.get_mut(output) else {
+        let Ok((mut stack, mut porter_paths)) = output_query.get_mut(output) else {
             continue;
         };
 
-        if quantity.0 == 0 {
+        if stack.quantity == 0 {
             continue;
         }
 
@@ -96,14 +96,14 @@ fn spawn_porter(
             },
             YSortSprite,
             ZIndexSprite(10),
-            item.clone(),
+            stack.clone(),
             PorterOf(structure),
             PorterFromOutput(output),
             PorterToInput(*input),
             WalkPath(path.clone()),
         ));
 
-        quantity.0 -= 1;
+        stack.quantity -= 1;
         index.0 = (index.0 + 1) % outputs.len();
         porter_paths.0.rotate_left(1);
         timer.reset();
@@ -119,7 +119,7 @@ fn despawn_lost_porters(mut porter_losses: MessageReader<PorterLost>, mut comman
 fn drop_of_items(
     mut poter_arrivals: MessageReader<PorterArrival>,
     porter_query: Query<&PorterToInput>,
-    mut input_query: Query<&mut Quantity>,
+    mut input_query: Query<&mut Stack>,
     mut commands: Commands,
 ) {
     for PorterArrival(porter) in poter_arrivals.read() {
@@ -127,8 +127,8 @@ fn drop_of_items(
 
         let PorterToInput(input) = porter_query.get(*porter).unwrap();
 
-        if let Ok(mut quantity) = input_query.get_mut(*input) {
-            quantity.0 += 1;
+        if let Ok(mut stack) = input_query.get_mut(*input) {
+            stack.quantity += 1;
         }
     }
 }
