@@ -48,13 +48,9 @@ fn on_inspect(
     mut inspected_entity: ResMut<InspectedEntity>,
     selected_recipes: Query<&SelectedRecipe>,
 ) {
-    let Ok(selected_recipe) = selected_recipes.get(inspect.entity) else {
-        return;
-    };
-
     inspected_entity.0 = inspect.entity;
 
-    if selected_recipe.is_some() {
+    if selected_recipes.contains(inspected_entity.0) {
         next_state.set(InspectionMenuState::RecipeInspect);
     } else {
         next_state.set(InspectionMenuState::RecipeSelect);

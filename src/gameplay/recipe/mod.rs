@@ -22,7 +22,11 @@ pub struct Inputs(Vec<Entity>);
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[relationship(relationship_target = Inputs)]
-pub struct InputOf(pub Entity);
+pub struct InputOf {
+    #[relationship]
+    pub entity: Entity,
+    pub required_quantity: u32,
+}
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
@@ -32,8 +36,8 @@ pub struct Outputs(Vec<Entity>);
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[relationship(relationship_target = Outputs)]
-pub struct OutputOf(pub Entity);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct RequiredQuantity(pub u32);
+pub struct OutputOf {
+    #[relationship]
+    pub entity: Entity,
+    pub output_quantity: u32,
+}

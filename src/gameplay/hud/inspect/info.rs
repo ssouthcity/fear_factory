@@ -37,12 +37,8 @@ pub fn open_recipe_menu(
         return;
     };
 
-    let Some(ref recipe_id) = selected_recipe.0 else {
-        return;
-    };
-
     let Some(recipe) = recipe_index
-        .get(recipe_id)
+        .get(selected_recipe.0.as_str())
         .and_then(|asset_id| recipes.get(*asset_id))
     else {
         return;
@@ -205,12 +201,12 @@ pub fn open_recipe_menu(
 fn on_deselect_recipe(
     _pointer_click: On<Pointer<Click>>,
     mut next_state: ResMut<NextState<InspectionMenuState>>,
-    mut selected_recipes: Query<&mut SelectedRecipe>,
     inspected_entity: Res<InspectedEntity>,
+    mut commands: Commands,
 ) {
-    if let Ok(mut selected_recipe) = selected_recipes.get_mut(inspected_entity.0) {
-        selected_recipe.0 = None;
-    }
+    commands
+        .entity(inspected_entity.0)
+        .remove::<SelectedRecipe>();
 
     next_state.set(InspectionMenuState::RecipeSelect);
 }

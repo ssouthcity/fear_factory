@@ -7,7 +7,7 @@ use bevy::{
 
 use crate::gameplay::{
     FactorySystems,
-    item::Item,
+    item::stack::Stack,
     logistics::{
         path::{Pathable, PathsUpdated},
         porter::{PorterArrival, PorterLost},
@@ -32,15 +32,15 @@ pub(super) fn plugin(app: &mut App) {
 pub struct WalkPath(pub Vec<Entity>);
 
 fn pathfind(
-    output_query: Query<(Entity, &Item, &OutputOf)>,
+    output_query: Query<(Entity, &Stack, &OutputOf)>,
     inputs_query: Query<&Inputs>,
-    input_query: Query<&Item, With<InputOf>>,
+    input_query: Query<&Stack, With<InputOf>>,
     pathable_query: Query<&Pathable>,
     coordinates: Query<&Coord>,
     mut commands: Commands,
     constructions: Res<Constructions>,
 ) {
-    for (entity, item, OutputOf(start)) in output_query {
+    for (entity, stack, OutputOf { entity: start, .. }) in output_query {
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
         let mut parent = HashMap::new();
@@ -74,7 +74,7 @@ fn pathfind(
                 let input_entity = inputs_query.get(*neighbor).ok().and_then(|inputs| {
                     inputs
                         .iter()
-                        .find(|input| input_query.get(*input).is_ok_and(|i| i.0 == item.0))
+                        .find(|input| input_query.get(*input).is_ok_and(|i| i.item == stack.item))
                 });
 
                 if let Some(goal) = input_entity {

@@ -4,8 +4,8 @@ use super::process::ProcessState;
 use crate::{
     assets::indexing::IndexMap,
     gameplay::{
-        item::{Item, Quantity, assets::ItemDef},
-        recipe::{InputOf, Inputs, OutputOf, Outputs, RequiredQuantity, assets::RecipeDef},
+        item::{assets::ItemDef, stack::Stack},
+        recipe::{InputOf, Inputs, OutputOf, Outputs, assets::RecipeDef},
     },
 };
 
@@ -18,7 +18,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Default, Deref, DerefMut)]
 #[reflect(Component)]
 #[require(ProcessState, Inputs, Outputs)]
-pub struct SelectedRecipe(pub Option<String>);
+pub struct SelectedRecipe(pub String);
 
 #[derive(EntityEvent, Reflect)]
 pub struct SelectRecipe {
@@ -60,10 +60,11 @@ fn on_select_recipe(
         commands.spawn((
             Name::new("Input"),
             ChildOf(select_recipe.entity),
-            Item(item_handle),
-            Quantity(0),
-            RequiredQuantity(*quantity),
-            InputOf(select_recipe.entity),
+            Stack::empty(item_handle),
+            InputOf {
+                entity: select_recipe.entity,
+                required_quantity: *quantity,
+            },
         ));
     }
 
@@ -76,16 +77,17 @@ fn on_select_recipe(
         commands.spawn((
             Name::new("Output"),
             ChildOf(select_recipe.entity),
-            Item(item_handle),
-            Quantity(0),
-            RequiredQuantity(*quantity),
-            OutputOf(select_recipe.entity),
+            Stack::empty(item_handle),
+            OutputOf {
+                entity: select_recipe.entity,
+                output_quantity: *quantity,
+            },
         ));
     }
 
     commands
         .entity(select_recipe.entity)
-        .insert(SelectedRecipe(Some(select_recipe.recipe_id.to_owned())));
+        .insert(SelectedRecipe(select_recipe.recipe_id.to_owned()));
 
     recipe_changes.write(RecipeChanged(select_recipe.entity));
 }

@@ -4,8 +4,8 @@ use crate::{
     assets::indexing::IndexMap,
     gameplay::{
         FactorySystems,
-        item::{Full, Quantity},
-        recipe::{Inputs, Outputs, RequiredQuantity, assets::RecipeDef, select::SelectedRecipe},
+        item::stack::{Full, Stack},
+        recipe::{InputOf, Inputs, OutputOf, Outputs, assets::RecipeDef, select::SelectedRecipe},
     },
 };
 
@@ -42,7 +42,7 @@ impl ProcessState {
 
 fn consume_input(
     query: Query<(&mut ProcessState, &Inputs, &SelectedRecipe)>,
-    mut input_entities: Query<(&mut Quantity, &RequiredQuantity)>,
+    mut input_entities: Query<(&mut Stack, &InputOf)>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
 ) {
@@ -51,25 +51,22 @@ fn consume_input(
             continue;
         }
 
-        if !inputs
-            .iter()
-            .all(|input| input_entities.get(input).is_ok_and(|(q, rq)| q.0 >= rq.0))
-        {
+        if !inputs.iter().all(|input| {
+            input_entities
+                .get(input)
+                .is_ok_and(|(stack, input_of)| stack.quantity >= input_of.required_quantity)
+        }) {
             continue;
         }
 
         for input in inputs.iter() {
-            if let Ok((mut quantity, required_quantity)) = input_entities.get_mut(input) {
-                quantity.0 -= required_quantity.0;
+            if let Ok((mut stack, input_of)) = input_entities.get_mut(input) {
+                stack.quantity -= input_of.required_quantity;
             }
         }
 
-        let Some(ref recipe_id) = selected_recipe.0 else {
-            continue;
-        };
-
         let recipe = recipe_index
-            .get(recipe_id)
+            .get(selected_recipe.0.as_str())
             .and_then(|asset_id| recipes.get(*asset_id))
             .expect("Selected recipe refers to non-existent recipe");
 
@@ -95,7 +92,7 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
 
 fn produce_output(
     query: Query<(&mut ProcessState, &Outputs)>,
-    mut output_entities: Query<(&mut Quantity, &RequiredQuantity), Without<Full>>,
+    mut output_entities: Query<(&mut Stack, &OutputOf), Without<Full>>,
 ) {
     for (mut state, outputs) in query {
         if !matches!(*state, ProcessState::Completed) {
@@ -110,11 +107,11 @@ fn produce_output(
         }
 
         for output in outputs.iter() {
-            let Ok((ref mut quantity, required_quantity)) = output_entities.get_mut(output) else {
+            let Ok((mut stack, output_of)) = output_entities.get_mut(output) else {
                 continue;
             };
 
-            quantity.0 += required_quantity.0;
+            stack.quantity += output_of.output_quantity;
         }
 
         *state = ProcessState::InsufficientInput;
