@@ -9,11 +9,14 @@ use crate::gameplay::{
     FactorySystems,
     item::stack::Stack,
     logistics::{
-        path::{Pathable, PathsUpdated},
+        path::Pathable,
         porter::{PorterArrival, PorterLost},
     },
     recipe::{InputOf, Inputs, OutputOf, select::RecipeChanged},
-    world::{construction::Constructions, tilemap::coord::Coord},
+    world::{
+        construction::{Constructions, StructureConstructed},
+        tilemap::coord::Coord,
+    },
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -21,7 +24,7 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         pathfind
             .in_set(FactorySystems::Logistics)
-            .run_if(on_message::<RecipeChanged>.or(on_message::<PathsUpdated>)),
+            .run_if(on_message::<RecipeChanged>.or(on_message::<StructureConstructed>)),
     );
 
     app.add_systems(Update, walk_along_path.in_set(FactorySystems::Logistics));
