@@ -17,6 +17,10 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Coord(pub UVec2);
 
+#[derive(Component, Reflect, Debug, Default, Deref, DerefMut)]
+#[reflect(Component)]
+pub struct CoordOffset(pub Vec2);
+
 impl Coord {
     pub fn new(x: u32, y: u32) -> Self {
         Self(UVec2 { x, y })
@@ -25,7 +29,7 @@ impl Coord {
 
 #[allow(clippy::type_complexity)]
 fn translate_coord_to_transform(
-    coord_query: Query<(&mut Transform, &Coord), Changed<Coord>>,
+    coord_query: Query<(&mut Transform, &Coord, Option<&CoordOffset>), Changed<Coord>>,
     chunk_query: Single<&Layers, With<Chunk>>,
     tile_storage_query: Query<&TileStorage>,
     tilemap_query: Query<
@@ -40,7 +44,7 @@ fn translate_coord_to_transform(
         Without<Coord>,
     >,
 ) {
-    for (mut transform, coord) in coord_query {
+    for (mut transform, coord, coord_offset) in coord_query {
         let tile_pos = TilePos::new(coord.x, coord.y);
 
         let Some(layer) = chunk_query.iter().find(|layer| {
@@ -62,7 +66,9 @@ fn translate_coord_to_transform(
             .extend(0.0);
 
         let z = transform.translation.z;
-        transform.translation = tile_translation + tilemap_transform.translation;
+        transform.translation = tile_translation
+            + tilemap_transform.translation
+            + coord_offset.map(|co| co.0).unwrap_or_default().extend(0.0);
         transform.translation.z = z;
     }
 }
