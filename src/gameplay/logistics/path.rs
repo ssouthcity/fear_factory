@@ -165,9 +165,9 @@ fn compute_sprite(
 
     let name = if name.is_empty() {
         String::from("C")
-    } else if name == "W" && name == "E" {
+    } else if name == "W" || name == "E" {
         String::from("EW")
-    } else if name == "N" && name == "S" {
+    } else if name == "N" || name == "S" {
         String::from("NS")
     } else {
         name
