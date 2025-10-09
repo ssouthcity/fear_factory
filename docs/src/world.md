@@ -1,6 +1,6 @@
 # World
 
-The world is isometric and tilebased with multiple layers along the z-axis.
+The world is isometric and tilebased with multiple layers along the z-axis. North is oriented towards top right. Assets used in the world space such as tiles and constructs are 256 x 128 px. Item assets are 256 x 256 px.
 
 ## Discovery
 
