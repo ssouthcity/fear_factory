@@ -8,11 +8,7 @@ use crate::gameplay::{
     world::{
         construction::{Constructions, StructureConstructed},
         demolition::{Demolishable, Demolished},
-        tilemap::{
-            TILE_OFFSET,
-            coord::{Coord, CoordOffset},
-            map::TileClicked,
-        },
+        tilemap::{TILE_OFFSET, coord::Coord, map::TileClicked},
     },
 };
 
@@ -65,13 +61,12 @@ fn spawn_path(
             .spawn((
                 Name::new("Path"),
                 Pathable::walkable(),
+                Coord::new(coord.x, coord.y),
                 Sprite::sized(TILE_OFFSET),
                 AseSlice {
                     aseprite: asset_server.load("sprites/logistics/path_segments.aseprite"),
                     name: "C".into(),
                 },
-                Coord::new(coord.x, coord.y),
-                CoordOffset(Vec2::new(0.0, -32.0)),
                 YSortSprite,
                 ZIndexSprite(9),
                 Demolishable,

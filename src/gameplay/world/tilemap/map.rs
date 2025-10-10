@@ -6,10 +6,7 @@ use crate::{
         FactorySystems,
         world::{
             construction::ValidPlacement,
-            tilemap::{
-                chunk::{Chunk, Layers},
-                coord::Coord,
-            },
+            tilemap::{chunk::Chunk, coord::Coord},
         },
     },
     input::cursor::CursorPosition,
@@ -48,7 +45,7 @@ impl Default for HoveredTile {
 fn mark_highlighted_tile(
     cursor_position: Res<CursorPosition>,
     mut hovered_tile: ResMut<HoveredTile>,
-    chunk_query: Single<&Layers, With<Chunk>>,
+    chunk_entity: Single<Entity, With<Chunk>>,
     tilemap_query: Query<(
         &TilemapSize,
         &TilemapGridSize,
@@ -59,37 +56,33 @@ fn mark_highlighted_tile(
         &TilemapAnchor,
     )>,
 ) {
-    for layer in chunk_query.iter().rev() {
-        let Ok((map_size, grid_size, tile_size, map_type, tile_storage, map_transform, anchor)) =
-            tilemap_query.get(layer)
-        else {
-            continue;
-        };
+    let Ok((map_size, grid_size, tile_size, map_type, tile_storage, map_transform, anchor)) =
+        tilemap_query.get(*chunk_entity)
+    else {
+        return;
+    };
 
-        let cursor_in_map_pos = {
-            let cursor_pos = Vec4::from((cursor_position.0, 0.0, 1.0));
-            let cursor_in_map_pos = map_transform.to_matrix().inverse() * cursor_pos;
-            cursor_in_map_pos.xy()
-        };
+    let cursor_in_map_pos = {
+        let cursor_pos = Vec4::from((cursor_position.0, 0.0, 1.0));
+        let cursor_in_map_pos = map_transform.to_matrix().inverse() * cursor_pos;
+        cursor_in_map_pos.xy()
+    };
 
-        let Some(tile_pos) = TilePos::from_world_pos(
-            &cursor_in_map_pos,
-            map_size,
-            grid_size,
-            tile_size,
-            map_type,
-            anchor,
-        ) else {
-            continue;
-        };
+    let Some(tile_pos) = TilePos::from_world_pos(
+        &cursor_in_map_pos,
+        map_size,
+        grid_size,
+        tile_size,
+        map_type,
+        anchor,
+    ) else {
+        hovered_tile.0 = Entity::PLACEHOLDER;
+        return;
+    };
 
-        if let Some(tile_entity) = tile_storage.get(&tile_pos) {
-            hovered_tile.0 = tile_entity;
-            return;
-        }
+    if let Some(tile_entity) = tile_storage.get(&tile_pos) {
+        hovered_tile.0 = tile_entity;
     }
-
-    hovered_tile.0 = Entity::PLACEHOLDER;
 }
 
 fn highlight_hovered_tile(
