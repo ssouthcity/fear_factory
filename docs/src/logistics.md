@@ -20,7 +20,7 @@ Describes a porters process for efficiently discovering and navigating paths wit
 A porter without a remembered path will pick a random branch at intersections. This process repeats until the porter arrives at a structure with an input for their tasked delivery item. The porter derives the shortest path from this structure back to their originating structure as its remembered path. During subsequent trips, the porter will pick a branch based on the following weights:
 
 
-\begin{align} \text{Correct branch: }&  \frac{1}{n} + \frac{n-1}{n} \cdot \frac{m-k}{m} = \frac{-kn + k + mn}{mn}\\\ \text{Incorrect branch: }& \frac{1}{n} - \frac{1}{n} \cdot \frac{m-k}{m} = \frac{k}{mn} 
+\begin{align} \text{Correct branch: }&  1 - \frac{n-1}{n} \cdot \frac{k}{m} = \frac{-kn + k + mn}{mn}\\\ \text{Incorrect branch: }& \frac{1}{n} \cdot \frac{k}{m} = \frac{k}{mn} 
 \end{align}
 
-where *c* is the complexity, computed from the number of possible incorrect branches at every intersection along the remembered path, *m* is the number of branches the porter is capable of remembering before each branch is equally weighted and *n* is the number of branches in the intersection.
+where *c* is the sum of incorrect branches at every intersection along the remembered path, *m* is the number of incorrect branches the porter is capable of remembering before each branch is equally weighted and *n* is the number of branches in the intersection.
