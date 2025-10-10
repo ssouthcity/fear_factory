@@ -1,26 +1,20 @@
-# Resource Node
+# Resources
+Basic materials used for recipies. A resource is characterized by its origin and represents an abstracted ingredient that is contextualized by the recipie its used in. Resources come from 3 domains; flora, fauna and minerale. Each domain has 3 subdomain further characterizing the resource origin.
 
-A construct in the world that yields a resource when harvested. Resource nodes contain a temporary quantity and disappear when completely harvested.
+* Fauna
+    * Humane - Relates to human life, originates from population centers.
+    * Beastial - Relates to animals, originates from farms and waterholes.
+    * Deceased - Relates to human death, originates from graveyards and morgues.
 
-Can spawn in clusters where each node represents some quantity of resource.
+* Flora
+    * Flower
+    * Plant
+    * Vegetable
 
-> [!NOTE]
-> Each resource node correspons to these 9
+* Minerale
+    * Rock
+    * Gem
+    * Polished Glass
 
-## Flora
-
-* Flower
-* Plant
-* Vegetable
-
-## Fauna
-
-* Humane
-* Beastial
-* Deceased
-
-## Minerale
-
-* Rock
-* Gem
-* Polished Glass
+## Resource Node
+Construct that yields resources when harvested. Nodes contain a finite quantity of resources and disappear when completely exhausted. They spawn in continuous clusters across the map with respect to biomes.

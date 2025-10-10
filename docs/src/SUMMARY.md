@@ -1,6 +1,6 @@
 # Summary
 
 - [World](./world.md)
-    - [Resource Nodes](./resources.md#resource-node)
+- [Resources](./resources.md)
 - [Structures](./structures.md)
 - [Logistics](./logistics.md)
