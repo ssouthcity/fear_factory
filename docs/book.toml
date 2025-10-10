@@ -3,3 +3,6 @@ authors = []
 language = "en"
 src = "src"
 title = "Design Doc for Fear Factory"
+
+[output.html]
+mathjax-support = true
