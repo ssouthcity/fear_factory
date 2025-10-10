@@ -55,12 +55,10 @@ fn pathfind(
         while let Some(current) = queue.pop_front() {
             let coord = coordinates.get(current).unwrap();
 
-            let neighbors = vec![
-                UVec2::new(coord.x.saturating_add(1), coord.y),
-                UVec2::new(coord.x.saturating_sub(1), coord.y),
-                UVec2::new(coord.x, coord.y.saturating_add(1)),
-                UVec2::new(coord.x, coord.y.saturating_sub(1)),
-            ];
+            let neighbors: Vec<IVec2> = [IVec2::X, IVec2::NEG_X, IVec2::Y, IVec2::NEG_Y]
+                .into_iter()
+                .map(|c| c + coord.0)
+                .collect();
 
             for neighbor_coord in neighbors {
                 let Some(neighbor) = constructions.get(&neighbor_coord) else {

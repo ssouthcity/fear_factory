@@ -8,7 +8,7 @@ use crate::gameplay::{
     world::{
         construction::{Constructions, StructureConstructed},
         demolition::{Demolishable, Demolished},
-        tilemap::{TILE_OFFSET, coord::Coord, map::TileClicked},
+        tilemap::{TILE_OFFSET, TileClicked, coord::Coord},
     },
 };
 
@@ -61,7 +61,7 @@ fn spawn_path(
             .spawn((
                 Name::new("Path"),
                 Pathable::walkable(),
-                Coord::new(coord.x, coord.y),
+                Coord(IVec2::new(coord.x, coord.y)),
                 Sprite::sized(TILE_OFFSET),
                 AseSlice {
                     aseprite: asset_server.load("sprites/logistics/path_segments.aseprite"),
@@ -90,13 +90,10 @@ fn pick_path_sprite(
             continue;
         };
 
-        let coords = [
-            coord.0,
-            coord.0.saturating_add(UVec2::Y),
-            coord.0.saturating_add(UVec2::X),
-            coord.0.saturating_sub(UVec2::Y),
-            coord.0.saturating_sub(UVec2::X),
-        ];
+        let coords: Vec<IVec2> = [IVec2::ZERO, IVec2::Y, IVec2::X, IVec2::NEG_Y, IVec2::NEG_X]
+            .into_iter()
+            .map(|c| coord.0 + c)
+            .collect();
 
         for coord in coords {
             if let Some(&entity) = constructions.get(&coord) {
@@ -112,13 +109,10 @@ fn update_path_segments_on_destroy(
     mut commands: Commands,
 ) {
     for Demolished { coord, .. } in demolitions.read() {
-        let coords = [
-            coord.0,
-            coord.0.saturating_add(UVec2::Y),
-            coord.0.saturating_add(UVec2::X),
-            coord.0.saturating_sub(UVec2::Y),
-            coord.0.saturating_sub(UVec2::X),
-        ];
+        let coords: Vec<IVec2> = [IVec2::ZERO, IVec2::Y, IVec2::X, IVec2::NEG_Y, IVec2::NEG_X]
+            .into_iter()
+            .map(|c| coord.0 + c)
+            .collect();
 
         for coord in coords {
             if let Some(&entity) = constructions.get(&coord) {
@@ -144,18 +138,17 @@ fn compute_sprite(
 
     let dirs = ['N', 'E', 'S', 'W'];
 
-    let coords = [
-        coord.0.saturating_add(UVec2::Y),
-        coord.0.saturating_add(UVec2::X),
-        coord.0.saturating_sub(UVec2::Y),
-        coord.0.saturating_sub(UVec2::X),
-    ];
-
-    let name = coords
+    let name = [IVec2::Y, IVec2::X, IVec2::NEG_Y, IVec2::NEG_X]
         .into_iter()
-        .map(|cardinal| constructions.get(&cardinal))
+        .map(|c| coord.0 + c)
         .enumerate()
-        .flat_map(|(i, e)| if e.is_some() { Some(dirs[i]) } else { None })
+        .flat_map(|(i, c)| {
+            if constructions.contains_key(&c) {
+                Some(dirs[i])
+            } else {
+                None
+            }
+        })
         .collect::<String>();
 
     let name = if name.is_empty() {
