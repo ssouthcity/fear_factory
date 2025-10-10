@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
-use crate::gameplay::{
-    FactorySystems,
-    world::tilemap::chunk::{Chunk, Layers},
-};
+use crate::gameplay::{FactorySystems, world::tilemap::chunk::Chunk};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -26,8 +23,7 @@ impl Coord {
 #[allow(clippy::type_complexity)]
 fn translate_coord_to_transform(
     coord_query: Query<(&mut Transform, &Coord), Changed<Coord>>,
-    chunk_query: Single<&Layers, With<Chunk>>,
-    tile_storage_query: Query<&TileStorage>,
+    chunk_entity: Single<Entity, With<Chunk>>,
     tilemap_query: Query<
         (
             &Transform,
@@ -43,16 +39,8 @@ fn translate_coord_to_transform(
     for (mut transform, coord) in coord_query {
         let tile_pos = TilePos::new(coord.x, coord.y);
 
-        let Some(layer) = chunk_query.iter().find(|layer| {
-            tile_storage_query
-                .get(*layer)
-                .is_ok_and(|storage| storage.get(&tile_pos).is_none())
-        }) else {
-            continue;
-        };
-
         let Ok((tilemap_transform, map_size, grid_size, tile_size, map_type, anchor)) =
-            tilemap_query.get(layer)
+            tilemap_query.get(*chunk_entity)
         else {
             continue;
         };
@@ -61,8 +49,7 @@ fn translate_coord_to_transform(
             .center_in_world(map_size, grid_size, tile_size, map_type, anchor)
             .extend(0.0);
 
-        let z = transform.translation.z;
-        transform.translation = tile_translation + tilemap_transform.translation;
-        transform.translation.z = z;
+        transform.translation =
+            tile_translation.with_z(0.0) + tilemap_transform.translation.with_z(0.0);
     }
 }

@@ -1,3 +1,4 @@
 id = "fauna_a"
 name = "Fauna A"
+sprite = "sprites/items/fauna_a.png"
 stack_size = 100

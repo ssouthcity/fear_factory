@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_tilemap::tiles::TilePos;
 
@@ -78,14 +78,6 @@ fn spawn_preview(
         return;
     };
 
-    let sprite_location = match action {
-        HotbarActionKind::PlaceStructure(handle) => format!(
-            "sprites/structures/{}.aseprite",
-            structure_defs.get(handle).unwrap().id.to_owned()
-        ),
-        HotbarActionKind::PlacePath => "sprites/logistics/path.png".to_string(),
-    };
-
     let id = commands
         .spawn((
             Name::new("Construction Preview"),
@@ -96,19 +88,25 @@ fn spawn_preview(
         ))
         .id();
 
-    if sprite_location.ends_with(".aseprite") {
-        commands.entity(id).insert(AseAnimation {
-            aseprite: asset_server.load(sprite_location),
-            animation: Animation::tag("work"),
-        });
-    } else {
-        commands.entity(id).insert(Sprite {
-            image: asset_server.load(sprite_location),
-            color: Color::WHITE.with_alpha(0.5),
-            custom_size: TILE_SIZE.into(),
-            ..default()
-        });
-    }
+    match action {
+        HotbarActionKind::PlaceStructure(handle) => {
+            let sprite_path = format!(
+                "sprites/structures/{}.aseprite",
+                structure_defs.get(handle).unwrap().id.to_owned()
+            );
+
+            commands.entity(id).insert(AseAnimation {
+                aseprite: asset_server.load(sprite_path),
+                animation: Animation::tag("work"),
+            });
+        }
+        HotbarActionKind::PlacePath => {
+            commands.entity(id).insert(AseSlice {
+                aseprite: asset_server.load("sprites/logistics/path_segments.aseprite"),
+                name: "C".into(),
+            });
+        }
+    };
 }
 
 fn despawn_preview(mut commands: Commands, previews: Query<Entity, With<ConstructionPreview>>) {
@@ -177,6 +175,7 @@ fn construct(
             .spawn((
                 Name::new(structure.name.clone()),
                 Coord::new(tile_click.0.x, tile_click.0.y),
+                Anchor(Vec2::new(0.0, -0.25)),
                 Sprite::default(),
                 AseAnimation {
                     aseprite: asset_server

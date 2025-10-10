@@ -6,9 +6,7 @@ use bevy::{
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    gameplay::{
-        FactorySystems, structure::assets::StructureDef, world::construction::StructureConstructed,
-    },
+    gameplay::{FactorySystems, structure::assets::StructureDef},
     screens::Screen,
 };
 
@@ -31,7 +29,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
-        (spawn_hotbar, assign_hotbar_items, assign_path_action).chain(),
+        (spawn_hotbar, assign_hotbar_structures, assign_hotbar_paths).chain(),
     );
 
     app.add_observer(select_on_click);
@@ -43,7 +41,6 @@ pub fn plugin(app: &mut App) {
                 .in_set(FactorySystems::Input)
                 .run_if(on_message::<KeyboardInput>),
             highlight_selected_slot.in_set(FactorySystems::UI),
-            deselect_slot.run_if(on_message::<StructureConstructed>),
         ),
     );
 }
@@ -162,7 +159,7 @@ fn spawn_hotbar(mut commands: Commands) {
     ));
 }
 
-fn assign_hotbar_items(
+fn assign_hotbar_structures(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     structure_defs: Res<Assets<StructureDef>>,
@@ -189,7 +186,7 @@ fn assign_hotbar_items(
     }
 }
 
-fn assign_path_action(
+fn assign_hotbar_paths(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     query: Query<Entity, (With<HotbarShortcut>, Without<Children>)>,
@@ -206,7 +203,11 @@ fn assign_path_action(
         Pickable::IGNORE,
         Node::default(),
         children![(
-            ImageNode::new(asset_server.load("sprites/logistics/path.png")),
+            ImageNode::default(),
+            AseSlice {
+                aseprite: asset_server.load("sprites/logistics/path_segments.aseprite"),
+                name: "C".into(),
+            },
             Pickable::IGNORE,
         )],
     ));
@@ -250,8 +251,4 @@ fn select_on_keyboard_shortcuts(
             hotbar.select(Some(entity));
         }
     }
-}
-
-fn deselect_slot(mut hotbar: HotbarSelector) {
-    hotbar.select(None);
 }
