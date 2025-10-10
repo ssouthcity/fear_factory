@@ -1,4 +1,4 @@
-use bevy::{asset::LoadedFolder, prelude::*};
+use bevy::{asset::LoadedFolder, prelude::*, sprite::Anchor};
 use bevy_ecs_tilemap::tiles::TilePos;
 use rand::Rng;
 use serde::Deserialize;
@@ -76,6 +76,7 @@ fn spawn_deposits(
                 .spawn((
                     Name::new(deposit.name.clone()),
                     Coord::new(tile_pos.x, tile_pos.y),
+                    Anchor(Vec2::new(0.0, -0.25)),
                     YSortSprite,
                     ZIndexSprite(10),
                     Sprite {

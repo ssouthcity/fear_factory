@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 use bevy_ecs_tilemap::prelude::*;
 
-use crate::gameplay::{
-    FactorySystems,
-    world::tilemap::chunk::{Chunk, Layers},
-};
+use crate::gameplay::{FactorySystems, world::tilemap::chunk::Chunk};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -17,10 +14,6 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Coord(pub UVec2);
 
-#[derive(Component, Reflect, Debug, Default, Deref, DerefMut)]
-#[reflect(Component)]
-pub struct CoordOffset(pub Vec2);
-
 impl Coord {
     pub fn new(x: u32, y: u32) -> Self {
         Self(UVec2 { x, y })
@@ -29,9 +22,8 @@ impl Coord {
 
 #[allow(clippy::type_complexity)]
 fn translate_coord_to_transform(
-    coord_query: Query<(&mut Transform, &Coord, Option<&CoordOffset>), Changed<Coord>>,
-    chunk_query: Single<&Layers, With<Chunk>>,
-    tile_storage_query: Query<&TileStorage>,
+    coord_query: Query<(&mut Transform, &Coord), Changed<Coord>>,
+    chunk_entity: Single<Entity, With<Chunk>>,
     tilemap_query: Query<
         (
             &Transform,
@@ -44,19 +36,11 @@ fn translate_coord_to_transform(
         Without<Coord>,
     >,
 ) {
-    for (mut transform, coord, coord_offset) in coord_query {
+    for (mut transform, coord) in coord_query {
         let tile_pos = TilePos::new(coord.x, coord.y);
 
-        let Some(layer) = chunk_query.iter().find(|layer| {
-            tile_storage_query
-                .get(*layer)
-                .is_ok_and(|storage| storage.get(&tile_pos).is_none())
-        }) else {
-            continue;
-        };
-
         let Ok((tilemap_transform, map_size, grid_size, tile_size, map_type, anchor)) =
-            tilemap_query.get(layer)
+            tilemap_query.get(*chunk_entity)
         else {
             continue;
         };
@@ -65,10 +49,7 @@ fn translate_coord_to_transform(
             .center_in_world(map_size, grid_size, tile_size, map_type, anchor)
             .extend(0.0);
 
-        let z = transform.translation.z;
-        transform.translation = tile_translation
-            + tilemap_transform.translation
-            + coord_offset.map(|co| co.0).unwrap_or_default().extend(0.0);
-        transform.translation.z = z;
+        transform.translation =
+            tile_translation.with_z(0.0) + tilemap_transform.translation.with_z(0.0);
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::*;
 use bevy_ecs_tilemap::tiles::TilePos;
 
@@ -175,6 +175,7 @@ fn construct(
             .spawn((
                 Name::new(structure.name.clone()),
                 Coord::new(tile_click.0.x, tile_click.0.y),
+                Anchor(Vec2::new(0.0, -0.25)),
                 Sprite::default(),
                 AseAnimation {
                     aseprite: asset_server

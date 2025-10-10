@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
 use crate::gameplay::{
@@ -90,6 +90,7 @@ fn spawn_porter(
             Name::new("Porter"),
             *transform,
             Sprite::default(),
+            Anchor::BOTTOM_CENTER,
             AseAnimation {
                 aseprite: asset_server.load("sprites/logistics/porter.aseprite"),
                 animation: Animation::tag("idle"),
