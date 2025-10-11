@@ -1,5 +1,4 @@
 use bevy::{asset::LoadedFolder, prelude::*, sprite::Anchor};
-use bevy_ecs_tilemap::tiles::TilePos;
 use rand::Rng;
 use serde::Deserialize;
 
@@ -67,15 +66,15 @@ fn spawn_deposits(
 
     for (_, deposit) in deposit_definitions.iter() {
         for _ in 0..deposit.quantity {
-            let tile_pos = TilePos::new(
-                rng.random_range(0..CHUNK_SIZE.x),
-                rng.random_range(0..CHUNK_SIZE.y),
+            let pos = IVec2::new(
+                rng.random_range(-(CHUNK_SIZE.x as i32)..CHUNK_SIZE.x as i32),
+                rng.random_range(-(CHUNK_SIZE.y as i32)..CHUNK_SIZE.y as i32),
             );
 
             let entity = commands
                 .spawn((
                     Name::new(deposit.name.clone()),
-                    Coord::new(tile_pos.x, tile_pos.y),
+                    Coord(pos),
                     Anchor(Vec2::new(0.0, -0.25)),
                     YSortSprite,
                     ZIndexSprite(10),
@@ -88,7 +87,7 @@ fn spawn_deposits(
                 ))
                 .id();
 
-            constructions.insert(tile_pos.into(), entity);
+            constructions.insert(pos, entity);
         }
     }
 }
