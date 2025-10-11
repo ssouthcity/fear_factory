@@ -33,7 +33,7 @@ pub struct World;
 #[reflect(Component)]
 pub struct Chunk(pub IVec2);
 
-const CHUNK_RENDER_DISTANCE: UVec2 = UVec2::new(2, 2);
+const CHUNK_RENDER_DISTANCE: UVec2 = UVec2::new(3, 3);
 
 const CHUNK_SIZE_PIXELS: Vec2 = Vec2::new(
     CHUNK_SIZE.x as f32 * TILE_OFFSET.x,
