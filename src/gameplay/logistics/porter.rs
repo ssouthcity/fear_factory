@@ -90,10 +90,10 @@ fn spawn_porter(
             Name::new("Porter"),
             *transform,
             Sprite::default(),
-            Anchor::BOTTOM_CENTER,
+            Anchor(Vec2::new(0.0, -0.25)),
             AseAnimation {
                 aseprite: asset_server.load("sprites/logistics/porter.aseprite"),
-                animation: Animation::tag("idle"),
+                animation: Animation::tag("walk"),
             },
             YSortSprite,
             ZIndexSprite(10),
