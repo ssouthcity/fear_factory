@@ -20,3 +20,6 @@ After securing more resources and increasing their workforce, the player begins 
 
 ## Evolution of terminology
 Terminology for the workforce evolve throughout the game to reflect the player character's fleeting humanity. Words devolve from terms for acts of kindness to indebted servitude, e.g., friend -> worker -> noviciate -> ant.
+
+## Ending
+After the relic has been cultivated through a number of stages, the ending sequence will begin. Porters and workers around the map will begin congregating around some type of end-game structure, and the player will no longer be able to utilize the relic. Subtle signs will compel the player to drag and slot the player character into the crowded structure, much like the player has been slotting the relic throughout the game. This triggeres an ending cutscene which reveales some greater piece of context for the relic before credits roll. 
