@@ -1,7 +1,6 @@
 use bevy::prelude::*;
-use bevy_ecs_tilemap::prelude::*;
 
-use crate::gameplay::{FactorySystems, world::tilemap::chunk::Chunk};
+use crate::gameplay::{FactorySystems, world::tilemap::TILE_OFFSET};
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
@@ -12,44 +11,26 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Debug, Default, Deref, DerefMut)]
 #[reflect(Component)]
-pub struct Coord(pub UVec2);
+pub struct Coord(pub IVec2);
 
-impl Coord {
-    pub fn new(x: u32, y: u32) -> Self {
-        Self(UVec2 { x, y })
-    }
+pub const TILE_MATRIX: Mat2 = Mat2::from_cols(
+    Vec2::new(TILE_OFFSET.x * 0.5, -(TILE_OFFSET.y * 0.5)),
+    Vec2::new(TILE_OFFSET.x * 0.5, TILE_OFFSET.y * 0.5),
+);
+
+pub fn translation_to_coord(translation: &Vec2) -> Coord {
+    let ivec = (TILE_MATRIX.inverse() * translation).round().as_ivec2();
+
+    Coord(ivec)
+}
+
+pub fn coord_to_translation(coord: &Coord) -> Vec2 {
+    TILE_MATRIX * coord.0.as_vec2()
 }
 
 #[allow(clippy::type_complexity)]
-fn translate_coord_to_transform(
-    coord_query: Query<(&mut Transform, &Coord), Changed<Coord>>,
-    chunk_entity: Single<Entity, With<Chunk>>,
-    tilemap_query: Query<
-        (
-            &Transform,
-            &TilemapSize,
-            &TilemapGridSize,
-            &TilemapTileSize,
-            &TilemapType,
-            &TilemapAnchor,
-        ),
-        Without<Coord>,
-    >,
-) {
+fn translate_coord_to_transform(coord_query: Query<(&mut Transform, &Coord), Changed<Coord>>) {
     for (mut transform, coord) in coord_query {
-        let tile_pos = TilePos::new(coord.x, coord.y);
-
-        let Ok((tilemap_transform, map_size, grid_size, tile_size, map_type, anchor)) =
-            tilemap_query.get(*chunk_entity)
-        else {
-            continue;
-        };
-
-        let tile_translation = tile_pos
-            .center_in_world(map_size, grid_size, tile_size, map_type, anchor)
-            .extend(0.0);
-
-        transform.translation =
-            tile_translation.with_z(0.0) + tilemap_transform.translation.with_z(0.0);
+        transform.translation = coord_to_translation(coord).extend(transform.translation.z);
     }
 }

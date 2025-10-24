@@ -3,10 +3,10 @@
     "devenv": {
       "locked": {
         "dir": "src/modules",
-        "lastModified": 1759527603,
+        "lastModified": 1760162706,
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "ce82fad570fd74ac5dfe3ce587ee8b37e918d71f",
+        "rev": "0d5ad578728fe4bce66eb4398b8b1e66deceb4e4",
         "type": "github"
       },
       "original": {
@@ -74,10 +74,10 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1759381078,
+        "lastModified": 1760284886,
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "7df7ff7d8e00218376575f0acdcc5d66741351ee",
+        "rev": "cf3f5c4def3c7b5f1fc012b3d839575dbe552d43",
         "type": "github"
       },
       "original": {
@@ -87,11 +87,27 @@
         "type": "github"
       }
     },
+    "nixpkgs-tracy": {
+      "locked": {
+        "lastModified": 1758359088,
+        "owner": "MonaMayrhofer",
+        "repo": "nixpkgs",
+        "rev": "f71db25afbbef6a89e2e3fcabc6d7fb18459f67a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "MonaMayrhofer",
+        "ref": "tracy-upgrade",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "devenv": "devenv",
         "git-hooks": "git-hooks",
         "nixpkgs": "nixpkgs",
+        "nixpkgs-tracy": "nixpkgs-tracy",
         "pre-commit-hooks": [
           "git-hooks"
         ],
@@ -105,10 +121,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1759544920,
+        "lastModified": 1760323082,
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "bd3a63bbff2c4cb3cd48e9d49f54c2ccad457f70",
+        "rev": "c73e6874fe8dce0bab82c0387b510875f1eff9f8",
         "type": "github"
       },
       "original": {

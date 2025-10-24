@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::*;
-use bevy_ecs_tilemap::tiles::TilePos;
 
 use crate::{
     gameplay::{
@@ -13,9 +12,8 @@ use crate::{
         world::{
             demolition::Demolished,
             tilemap::{
-                TILE_OFFSET, TILE_SIZE,
-                coord::Coord,
-                map::{HoveredTile, TileClicked},
+                TILE_SIZE, TileClicked,
+                coord::{Coord, translation_to_coord},
             },
         },
     },
@@ -34,7 +32,7 @@ pub(super) fn plugin(app: &mut App) {
             (despawn_preview, spawn_preview)
                 .chain()
                 .run_if(on_message::<HotbarSelectionChanged>),
-            calculate_valid_placement.run_if(resource_changed::<HoveredTile>),
+            calculate_valid_placement,
             (move_preview, color_preview),
         )
             .in_set(FactorySystems::Construction),
@@ -66,7 +64,7 @@ pub struct ValidPlacement(pub bool);
 
 #[derive(Resource, Reflect, Debug, Default, Deref, DerefMut)]
 #[reflect(Resource)]
-pub struct Constructions(pub HashMap<UVec2, Entity>);
+pub struct Constructions(pub HashMap<IVec2, Entity>);
 
 fn spawn_preview(
     mut commands: Commands,
@@ -82,9 +80,10 @@ fn spawn_preview(
         .spawn((
             Name::new("Construction Preview"),
             ConstructionPreview,
+            Coord(IVec2::ZERO),
             Sprite::from_color(Color::WHITE.with_alpha(0.5), TILE_SIZE),
             YSortSprite,
-            ZIndexSprite(100),
+            ZIndexSprite(10),
         ))
         .id();
 
@@ -95,10 +94,13 @@ fn spawn_preview(
                 structure_defs.get(handle).unwrap().id.to_owned()
             );
 
-            commands.entity(id).insert(AseAnimation {
-                aseprite: asset_server.load(sprite_path),
-                animation: Animation::tag("work"),
-            });
+            commands.entity(id).insert((
+                Anchor(Vec2::new(0.0, -0.25)),
+                AseAnimation {
+                    aseprite: asset_server.load(sprite_path),
+                    animation: Animation::tag("work"),
+                },
+            ));
         }
         HotbarActionKind::PlacePath => {
             commands.entity(id).insert(AseSlice {
@@ -116,27 +118,20 @@ fn despawn_preview(mut commands: Commands, previews: Query<Entity, With<Construc
 }
 
 fn calculate_valid_placement(
-    hovered_tile: Res<HoveredTile>,
+    preview: Single<&Coord, With<ConstructionPreview>>,
     constructions: Res<Constructions>,
-    tile_query: Query<&TilePos>,
     mut valid_placement: ResMut<ValidPlacement>,
 ) {
-    let Ok(spot_occupied) = tile_query
-        .get(hovered_tile.0)
-        .map(|tile_pos| constructions.contains_key(&UVec2::from(tile_pos)))
-    else {
-        return;
-    };
-
+    let spot_occupied = constructions.contains_key(*preview);
     valid_placement.0 = !spot_occupied;
 }
 
 fn move_preview(
     cursor_position: Res<CursorPosition>,
-    mut preview_query: Query<&mut Transform, With<ConstructionPreview>>,
+    mut preview_query: Query<&mut Coord, With<ConstructionPreview>>,
 ) {
-    for mut transform in preview_query.iter_mut() {
-        transform.translation = (cursor_position.0 + Vec2::Y * TILE_OFFSET.y).extend(0.0);
+    for mut coord in preview_query.iter_mut() {
+        *coord = translation_to_coord(&cursor_position.0);
     }
 }
 
@@ -148,7 +143,7 @@ fn color_preview(
         sprite.color = if !valid_placement.0 {
             Color::hsl(0.0, 1.0, 0.5)
         } else {
-            Color::default()
+            Color::default().with_alpha(0.5)
         };
     }
 }
@@ -174,7 +169,7 @@ fn construct(
         let entity = commands
             .spawn((
                 Name::new(structure.name.clone()),
-                Coord::new(tile_click.0.x, tile_click.0.y),
+                Coord(IVec2::new(tile_click.0.x, tile_click.0.y)),
                 Anchor(Vec2::new(0.0, -0.25)),
                 Sprite::default(),
                 AseAnimation {

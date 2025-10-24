@@ -6,7 +6,7 @@ use bevy::{
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
-    gameplay::{FactorySystems, structure::assets::StructureDef},
+    gameplay::{FactorySystems, structure::assets::StructureDef, world::tilemap::TileClicked},
     screens::Screen,
 };
 
@@ -42,6 +42,11 @@ pub fn plugin(app: &mut App) {
                 .run_if(on_message::<KeyboardInput>),
             highlight_selected_slot.in_set(FactorySystems::UI),
         ),
+    );
+
+    app.add_systems(
+        PostUpdate,
+        deselect_on_use.run_if(on_message::<TileClicked>),
     );
 }
 
@@ -120,6 +125,10 @@ pub enum HotbarActionKind {
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 struct HotbarShortcut(KeyCode);
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+struct HotbarPersistAfterUse;
 
 fn spawn_hotbar(mut commands: Commands) {
     commands.spawn((
@@ -200,6 +209,7 @@ fn assign_hotbar_paths(
         ChildOf(hotbar_slot),
         HotbarActionOf(hotbar_slot),
         HotbarActionKind::PlacePath,
+        HotbarPersistAfterUse,
         Pickable::IGNORE,
         Node::default(),
         children![(
@@ -251,4 +261,24 @@ fn select_on_keyboard_shortcuts(
             hotbar.select(Some(entity));
         }
     }
+}
+
+fn deselect_on_use(
+    mut selector: HotbarSelector,
+    hotbar_actions: Query<&HotbarAction>,
+    persisted_actions: Query<Entity, With<HotbarPersistAfterUse>>,
+) {
+    let Some(selected) = selector.selection.0 else {
+        return;
+    };
+
+    let Ok(HotbarAction(action)) = hotbar_actions.get(selected) else {
+        return;
+    };
+
+    if persisted_actions.contains(*action) {
+        return;
+    }
+
+    selector.select(None);
 }

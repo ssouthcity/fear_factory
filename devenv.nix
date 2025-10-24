@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, config, inputs, ... }:
 
 {
   packages = [
@@ -23,6 +23,9 @@
 
     # docs
     pkgs.mdbook
+
+    # profiling
+    inputs.nixpkgs-tracy.legacyPackages.${pkgs.system}.tracy
   ];
 
   languages.rust = {

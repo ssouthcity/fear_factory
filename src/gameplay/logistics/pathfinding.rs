@@ -55,12 +55,10 @@ fn pathfind(
         while let Some(current) = queue.pop_front() {
             let coord = coordinates.get(current).unwrap();
 
-            let neighbors = vec![
-                UVec2::new(coord.x.saturating_add(1), coord.y),
-                UVec2::new(coord.x.saturating_sub(1), coord.y),
-                UVec2::new(coord.x, coord.y.saturating_add(1)),
-                UVec2::new(coord.x, coord.y.saturating_sub(1)),
-            ];
+            let neighbors: Vec<IVec2> = [IVec2::X, IVec2::NEG_X, IVec2::Y, IVec2::NEG_Y]
+                .into_iter()
+                .map(|c| c + coord.0)
+                .collect();
 
             for neighbor_coord in neighbors {
                 let Some(neighbor) = constructions.get(&neighbor_coord) else {
@@ -107,7 +105,7 @@ fn pathfind(
 pub struct PorterPaths(pub VecDeque<(Entity, Vec<Entity>)>);
 
 fn walk_along_path(
-    query: Query<(Entity, &mut Transform, &mut WalkPath)>,
+    query: Query<(Entity, &mut Transform, &mut WalkPath, &mut Sprite)>,
     transforms: Query<&Transform, Without<WalkPath>>,
     time: Res<Time>,
     mut porter_arrivals: MessageWriter<PorterArrival>,
@@ -116,7 +114,7 @@ fn walk_along_path(
     const SPEED: f32 = 64.0;
     const ARRIVAL_THRESHHOLD: f32 = 8.0;
 
-    for (entity, mut transform, mut walk_path) in query {
+    for (entity, mut transform, mut walk_path, mut sprite) in query {
         let Some(goal) = walk_path.0.last() else {
             continue;
         };
@@ -125,6 +123,8 @@ fn walk_along_path(
             porter_losses.write(PorterLost(entity));
             continue;
         };
+
+        sprite.flip_x = goal_transform.translation.x < transform.translation.x;
 
         transform.translation = transform
             .translation
