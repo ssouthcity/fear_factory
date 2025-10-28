@@ -21,13 +21,16 @@ use crate::gameplay::{
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        Update,
+        FixedUpdate,
         pathfind
             .in_set(FactorySystems::Logistics)
             .run_if(on_message::<RecipeChanged>.or(on_message::<StructureConstructed>)),
     );
 
-    app.add_systems(Update, walk_along_path.in_set(FactorySystems::Logistics));
+    app.add_systems(
+        FixedUpdate,
+        walk_along_path.in_set(FactorySystems::Logistics),
+    );
 }
 
 #[derive(Component, Reflect)]

@@ -15,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_message::<Demolished>();
 
     app.add_systems(
-        Update,
+        FixedUpdate,
         (
             add_to_selection.run_if(on_message::<Pointer<Over>>),
             remove_from_selection.run_if(on_message::<Pointer<Out>>),
@@ -25,7 +25,7 @@ pub(super) fn plugin(app: &mut App) {
     );
 
     app.add_systems(
-        Update,
+        FixedUpdate,
         (
             tick_demolish_timer,
             highlight_demolition,

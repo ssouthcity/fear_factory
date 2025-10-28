@@ -1,18 +1,15 @@
 use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
-    gameplay::{
-        FactorySystems,
-        item::{
-            assets::ItemDef,
-            stack::{Full, Stack},
-        },
+    gameplay::item::{
+        assets::ItemDef,
+        stack::{Full, Stack},
     },
     widgets::tooltip::{HideTooltip, ShowTooltip},
 };
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, update_item_icons.in_set(FactorySystems::UI));
+    app.add_systems(Update, update_item_icons);
 }
 
 #[derive(Component, Reflect, Debug)]

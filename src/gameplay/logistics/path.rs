@@ -14,16 +14,13 @@ use crate::gameplay::{
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        Update,
+        FixedUpdate,
         spawn_path
             .in_set(FactorySystems::Construction)
             .run_if(on_message::<TileClicked>),
     );
 
-    app.add_systems(
-        Update,
-        (pick_path_sprite, update_path_segments_on_destroy).in_set(FactorySystems::UI),
-    );
+    app.add_systems(Update, (pick_path_sprite, update_path_segments_on_destroy));
 
     app.add_observer(compute_sprite);
 }

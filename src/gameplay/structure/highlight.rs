@@ -7,7 +7,10 @@ const HIGHLIGHT_COLOR: Color = Color::hsl(60.0, 1.0, 0.5);
 pub fn plugin(app: &mut App) {
     app.init_resource::<HighlightColor>();
 
-    app.add_systems(Update, highlight_pickable.before(FactorySystems::Demolish));
+    app.add_systems(
+        FixedUpdate,
+        highlight_pickable.before(FactorySystems::Demolish),
+    );
 }
 
 #[derive(Resource, Reflect)]

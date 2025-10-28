@@ -14,7 +14,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_message::<PorterLost>();
 
     app.add_systems(
-        Update,
+        FixedUpdate,
         (spawn_porter, despawn_lost_porters, drop_of_items).in_set(FactorySystems::Logistics),
     );
 }

@@ -27,7 +27,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_message::<StructureConstructed>();
 
     app.add_systems(
-        Update,
+        FixedUpdate,
         (
             (despawn_preview, spawn_preview)
                 .chain()
@@ -39,15 +39,15 @@ pub(super) fn plugin(app: &mut App) {
     );
 
     app.add_systems(
-        Update,
+        FixedUpdate,
         construct
             .in_set(FactorySystems::Construction)
             .run_if(on_message::<TileClicked>),
     );
 
     app.add_systems(
-        Update,
-        remove_demolished_constructions.in_set(FactorySystems::PostDemolition),
+        FixedUpdate,
+        remove_demolished_constructions.after(FactorySystems::Demolish),
     );
 }
 

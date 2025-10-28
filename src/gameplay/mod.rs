@@ -12,16 +12,12 @@ pub mod world;
 
 pub fn plugin(app: &mut App) {
     app.configure_sets(
-        Update,
+        FixedUpdate,
         (
-            FactorySystems::Input,
             FactorySystems::Construction,
-            FactorySystems::PostConstruction,
             FactorySystems::Logistics,
             FactorySystems::Work,
             FactorySystems::Demolish,
-            FactorySystems::PostDemolition,
-            FactorySystems::UI,
         )
             .chain()
             .run_if(in_state(Screen::Gameplay)),
@@ -40,12 +36,8 @@ pub fn plugin(app: &mut App) {
 
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum FactorySystems {
-    Input,
     Construction,
-    PostConstruction,
     Logistics,
     Work,
     Demolish,
-    PostDemolition,
-    UI,
 }
