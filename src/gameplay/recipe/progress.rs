@@ -5,10 +5,9 @@ use bevy::{
 };
 
 use super::process::ProcessState;
-use crate::gameplay::FactorySystems;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, update_progress_bars.in_set(FactorySystems::UI));
+    app.add_systems(Update, update_progress_bars);
 }
 
 #[derive(Component, Reflect)]

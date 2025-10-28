@@ -1,9 +1,7 @@
 use bevy::prelude::*;
 
-use crate::gameplay::FactorySystems;
-
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, sort_sprites.in_set(FactorySystems::UI));
+    app.add_systems(Update, sort_sprites);
 }
 
 #[derive(Component, Reflect, Debug, Default)]

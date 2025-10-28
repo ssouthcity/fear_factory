@@ -1,15 +1,11 @@
 use bevy::prelude::*;
 
-use crate::gameplay::FactorySystems;
-
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<CursorPosition>();
 
     app.add_systems(
         Update,
-        record_cursor_position
-            .in_set(FactorySystems::Input)
-            .run_if(on_message::<CursorMoved>),
+        record_cursor_position.run_if(on_message::<CursorMoved>),
     );
 }
 

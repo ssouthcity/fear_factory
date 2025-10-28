@@ -13,7 +13,7 @@ use super::progress::on_progress_state_add;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(
-        Update,
+        FixedUpdate,
         (consume_input, progress_work, produce_output)
             .chain()
             .in_set(FactorySystems::Work),

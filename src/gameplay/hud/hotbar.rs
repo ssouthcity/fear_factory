@@ -37,16 +37,16 @@ pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            select_on_keyboard_shortcuts
-                .in_set(FactorySystems::Input)
-                .run_if(on_message::<KeyboardInput>),
-            highlight_selected_slot.in_set(FactorySystems::UI),
+            select_on_keyboard_shortcuts.run_if(on_message::<KeyboardInput>),
+            highlight_selected_slot,
         ),
     );
 
     app.add_systems(
-        PostUpdate,
-        deselect_on_use.run_if(on_message::<TileClicked>),
+        FixedPostUpdate,
+        deselect_on_use
+            .run_if(on_message::<TileClicked>)
+            .after(FactorySystems::Construction),
     );
 }
 
