@@ -25,6 +25,16 @@ pub struct ChunkManager {
     pub spawned_chunks: HashMap<IVec2, Entity>,
 }
 
+#[derive(Event, Reflect, Debug)]
+pub struct ChunkLoaded {
+    pub chunk: Entity,
+}
+
+#[derive(Event, Reflect, Debug)]
+pub struct ChunkUnloaded {
+    pub chunk: Entity,
+}
+
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 pub struct World;
@@ -124,6 +134,8 @@ fn spawn_chunks_around_camera(
             ));
 
             chunk_manager.spawned_chunks.insert(chunk_pos, chunk);
+
+            commands.trigger(ChunkLoaded { chunk });
         }
     }
 }
@@ -136,12 +148,13 @@ fn despawn_chunks(
 ) {
     let focused_chunk = translation_to_chunk(&camera_transform.translation.xy());
 
-    for (chunk_entity, chunk) in chunk_query {
-        if chunk.x.abs_diff(focused_chunk.x) > CHUNK_RENDER_DISTANCE.x
-            || chunk.y.abs_diff(focused_chunk.y) > CHUNK_RENDER_DISTANCE.y
+    for (chunk, chunk_coord) in chunk_query {
+        if chunk_coord.x.abs_diff(focused_chunk.x) > CHUNK_RENDER_DISTANCE.x
+            || chunk_coord.y.abs_diff(focused_chunk.y) > CHUNK_RENDER_DISTANCE.y
         {
-            commands.entity(chunk_entity).despawn();
-            chunk_manager.spawned_chunks.remove(&chunk.0);
+            commands.trigger(ChunkUnloaded { chunk });
+            commands.entity(chunk).despawn();
+            chunk_manager.spawned_chunks.remove(&chunk_coord.0);
         }
     }
 }

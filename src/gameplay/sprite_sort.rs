@@ -15,11 +15,10 @@ pub struct ZIndexSprite(pub u32);
 
 fn sort_sprites(query: Query<(&mut Transform, &ZIndexSprite, Option<&YSortSprite>)>) {
     for (mut transform, z_index, y_sort) in query {
-        let mut z_coordinate = z_index.0 as f32;
+        let mut z_coordinate = z_index.0 as f32 * 10.0;
 
         if y_sort.is_some() {
-            let atan_mapping = 1.0 - transform.translation.y.atan() / std::f32::consts::PI + 0.5;
-            z_coordinate += atan_mapping;
+            z_coordinate -= transform.translation.y * 0.001;
         }
 
         transform.translation.z = z_coordinate;

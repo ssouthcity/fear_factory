@@ -1,4 +1,4 @@
 id = "fauna_a"
 name = "Fauna A Deposit"
 recipe_id = "fauna_a"
-quantity = 10
+seed = 463724
