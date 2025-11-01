@@ -1,4 +1,6 @@
 id = "ectoplasm"
 name = "Ectoplasm"
+taxonomy = "Fauna"
+transport = "Bag"
 sprite = "sprites/items/ectoplasm.png"
 stack_size = 50

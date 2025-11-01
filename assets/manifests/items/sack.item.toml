@@ -1,4 +1,6 @@
 id = "sack"
 name = "Sack"
+taxonomy = "Flora"
+transport = "Bag"
 sprite = "sprites/items/sack.png"
 stack_size = 75

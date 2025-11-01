@@ -115,7 +115,7 @@ fn walk_along_path(
     mut porter_losses: MessageWriter<PorterLost>,
 ) {
     const SPEED: f32 = 64.0;
-    const ARRIVAL_THRESHHOLD: f32 = 8.0;
+    const ARRIVAL_THRESHHOLD: f32 = 16.0;
 
     for (entity, mut transform, mut walk_path, mut sprite) in query {
         let Some(goal) = walk_path.0.last() else {
