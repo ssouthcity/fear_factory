@@ -23,6 +23,21 @@ pub struct ItemDef {
     #[serde(default = "placeholder_sprite")]
     pub sprite: String,
     pub stack_size: u32,
+    pub taxonomy: Taxonomy,
+    pub transport: Transport,
+}
+
+#[derive(Clone, Debug, Deserialize, Reflect)]
+pub enum Taxonomy {
+    Fauna,
+    Flora,
+    Minerale,
+}
+
+#[derive(Clone, Debug, Deserialize, Reflect)]
+pub enum Transport {
+    Box,
+    Bag,
 }
 
 fn placeholder_sprite() -> String {

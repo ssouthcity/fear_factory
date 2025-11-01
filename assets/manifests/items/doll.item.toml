@@ -1,4 +1,6 @@
 id = "doll"
 name = "Doll"
+taxonomy = "Flora"
+transport = "Box"
 sprite = "sprites/items/doll.png"
 stack_size = 25

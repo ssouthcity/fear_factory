@@ -1,4 +1,6 @@
 id = "ritual_doll"
 name = "Ritual Doll"
+taxonomy = "Fauna"
+transport = "Box"
 sprite = "sprites/items/ritual_doll.png"
 stack_size = 5

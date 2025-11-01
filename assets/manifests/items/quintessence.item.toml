@@ -1,4 +1,6 @@
 id = "quintessence"
 name = "Quintessence"
+taxonomy = "Fauna"
+transport = "Bag"
 sprite = "sprites/items/quintessence.png"
 stack_size = 10

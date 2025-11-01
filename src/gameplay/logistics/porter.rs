@@ -3,7 +3,10 @@ use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
 use crate::gameplay::{
     FactorySystems,
-    item::stack::Stack,
+    item::{
+        assets::{ItemDef, Transport},
+        stack::Stack,
+    },
     logistics::pathfinding::{PorterPaths, WalkPath},
     recipe::Outputs,
     sprite_sort::{YSortSprite, ZIndexSprite},
@@ -62,6 +65,7 @@ fn spawn_porter(
     )>,
     mut output_query: Query<(&mut Stack, &mut PorterPaths)>,
     mut commands: Commands,
+    item_definitions: Res<Assets<ItemDef>>,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
@@ -86,6 +90,10 @@ fn spawn_porter(
             continue;
         };
 
+        let Some(item_def) = item_definitions.get(&stack.item) else {
+            continue;
+        };
+
         commands.spawn((
             Name::new("Porter"),
             *transform,
@@ -93,7 +101,10 @@ fn spawn_porter(
             Anchor(Vec2::new(0.0, -0.25)),
             AseAnimation {
                 aseprite: asset_server.load("sprites/logistics/porter.aseprite"),
-                animation: Animation::tag("walk"),
+                animation: match item_def.transport {
+                    Transport::Box => Animation::tag("walk_item"),
+                    Transport::Bag => Animation::tag("walk_bag"),
+                },
             },
             YSortSprite,
             ZIndexSprite(10),
