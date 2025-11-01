@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.2.0](https://github.com/ssouthcity/fear_factory/compare/v0.1.0...v0.2.0) (2025-11-01)
+
+
+### Features
+
+* add bfs pathfinding for porters ([#31](https://github.com/ssouthcity/fear_factory/issues/31)) ([a1c967e](https://github.com/ssouthcity/fear_factory/commit/a1c967eab32f52be8358233a180926b04e0b018b))
+* add chunk loading ([#58](https://github.com/ssouthcity/fear_factory/issues/58)) ([5efd25f](https://github.com/ssouthcity/fear_factory/commit/5efd25f5747a1ac8d82978f32477db7a4e7251d7))
+* add deposit spawns with perlin noise ([#67](https://github.com/ssouthcity/fear_factory/issues/67)) ([d11b14f](https://github.com/ssouthcity/fear_factory/commit/d11b14ff8d015924d21cae6b692c058ed7f40b1a))
+* add first items and recipes ([#39](https://github.com/ssouthcity/fear_factory/issues/39)) ([0226f68](https://github.com/ssouthcity/fear_factory/commit/0226f68ea3fcb5b65ad814c5ccf81a0744ecd0a1))
+* add mdbook and github pages deployment ([#45](https://github.com/ssouthcity/fear_factory/issues/45)) ([3a73d31](https://github.com/ssouthcity/fear_factory/commit/3a73d317e4555ed0ea1cdb93426a0980ce300196))
+* add new and dynamic path segment textures ([#53](https://github.com/ssouthcity/fear_factory/issues/53)) ([d7af71b](https://github.com/ssouthcity/fear_factory/commit/d7af71bb0e9bf6956af0dade564cff4ced82fb42))
+* add new porter sprites ([#68](https://github.com/ssouthcity/fear_factory/issues/68)) ([111bc18](https://github.com/ssouthcity/fear_factory/commit/111bc18431cd7663ed83471fa95af865cec9a596))
+* add relic slot to machine menu ([#22](https://github.com/ssouthcity/fear_factory/issues/22)) ([2457775](https://github.com/ssouthcity/fear_factory/commit/245777503e2d84b5c4986f723f75ec6d15f7fd64))
+* add road logistics ([#28](https://github.com/ssouthcity/fear_factory/issues/28)) ([44f1c3f](https://github.com/ssouthcity/fear_factory/commit/44f1c3f06ed78ff76bd70edb392359b5557fa5bb))
+* add simple porter ([#29](https://github.com/ssouthcity/fear_factory/issues/29)) ([198abf3](https://github.com/ssouthcity/fear_factory/commit/198abf3f751cc47667d0509718b6c6d1f4d982ce))
+* add slots with drag-n-drop occupants ([#21](https://github.com/ssouthcity/fear_factory/issues/21)) ([5b7fa46](https://github.com/ssouthcity/fear_factory/commit/5b7fa46713d64905e542402a860a22630ffafe60))
+* add structure sprites ([#69](https://github.com/ssouthcity/fear_factory/issues/69)) ([22a0f71](https://github.com/ssouthcity/fear_factory/commit/22a0f713764f613d6e7c107f2450248f109fdd45))
+* add tooltip text ([#40](https://github.com/ssouthcity/fear_factory/issues/40)) ([2c56931](https://github.com/ssouthcity/fear_factory/commit/2c5693160865180d44c30888699b2e2f64311724))
+* remove unused features & refactor file structure ([#24](https://github.com/ssouthcity/fear_factory/issues/24)) ([7bd6880](https://github.com/ssouthcity/fear_factory/commit/7bd68802649742008d7c085679e18cc0b4599a97))
+* rework game to work with isometric map ([#37](https://github.com/ssouthcity/fear_factory/issues/37)) ([4a25ea0](https://github.com/ssouthcity/fear_factory/commit/4a25ea05c7d4f31ef1ff0726c8bd92bb783e8b45))
+* rework paths to work with isometric layout ([#38](https://github.com/ssouthcity/fear_factory/issues/38)) ([ada2e0a](https://github.com/ssouthcity/fear_factory/commit/ada2e0ade4f22a0cb89f6655ee3f3cced58f354a))
+
+
+### Bug Fixes
+
+* add token to release please action ([#70](https://github.com/ssouthcity/fear_factory/issues/70)) ([5b42a02](https://github.com/ssouthcity/fear_factory/commit/5b42a02685915bdb4d228a6570845a61506f35b3))
+* alter pathfinding to work round-robin ([#32](https://github.com/ssouthcity/fear_factory/issues/32)) ([5352732](https://github.com/ssouthcity/fear_factory/commit/5352732140d2505018a7fe9936e362cb06f4e8d3))
+* new items n sprites ([#23](https://github.com/ssouthcity/fear_factory/issues/23)) ([4cd76b7](https://github.com/ssouthcity/fear_factory/commit/4cd76b78589448f78a16114716c89c07bfad52de))
+* proper conditional for path sprite selection ([#54](https://github.com/ssouthcity/fear_factory/issues/54)) ([ee62e3e](https://github.com/ssouthcity/fear_factory/commit/ee62e3eca8ff999b73ab3684541cdc629f04832e))
+* remove layers and pick uniform coordinate system ([#56](https://github.com/ssouthcity/fear_factory/issues/56)) ([2400730](https://github.com/ssouthcity/fear_factory/commit/24007303000fc66f39bb916fa302d67aad110c9e))
+* return deselect on use feature for the hotbar ([#59](https://github.com/ssouthcity/fear_factory/issues/59)) ([4d217f7](https://github.com/ssouthcity/fear_factory/commit/4d217f7ee69cf2c09ef408f6d5d2804e6b9df600))
+* use docs/ subdir for github pages deployment ([#46](https://github.com/ssouthcity/fear_factory/issues/46)) ([b9702e7](https://github.com/ssouthcity/fear_factory/commit/b9702e79bf0ac50ad88b541672dbd3491d78b02d))
+
+
+### Performance Improvements
+
+* add indexing on custom asset id ([#16](https://github.com/ssouthcity/fear_factory/issues/16)) ([4617ce1](https://github.com/ssouthcity/fear_factory/commit/4617ce1ce5d87f72ee3896f6926a50e21e81bae3))
+* separate ui and logic systems ([#66](https://github.com/ssouthcity/fear_factory/issues/66)) ([f636931](https://github.com/ssouthcity/fear_factory/commit/f636931d2fd118f9c55582d7b214d6a90ad50054))
+
 ## 0.1.0 (2025-08-25)
 
 
