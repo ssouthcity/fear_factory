@@ -12,7 +12,7 @@ use crate::{
         world::{
             demolition::Demolished,
             tilemap::{
-                TILE_SIZE, TileClicked,
+                TileClicked,
                 coord::{Coord, translation_to_coord},
             },
         },
@@ -81,7 +81,10 @@ fn spawn_preview(
             Name::new("Construction Preview"),
             ConstructionPreview,
             Coord(IVec2::ZERO),
-            Sprite::from_color(Color::WHITE.with_alpha(0.5), TILE_SIZE),
+            Sprite {
+                color: Color::WHITE.with_alpha(0.5),
+                ..default()
+            },
             YSortSprite,
             ZIndexSprite(10),
         ))
@@ -95,7 +98,7 @@ fn spawn_preview(
             );
 
             commands.entity(id).insert((
-                Anchor(Vec2::new(0.0, -0.25)),
+                Anchor(Vec2::new(0.0, -0.33)),
                 AseAnimation {
                     aseprite: asset_server.load(sprite_path),
                     animation: Animation::tag("work"),
@@ -170,7 +173,7 @@ fn construct(
             .spawn((
                 Name::new(structure.name.clone()),
                 Coord(IVec2::new(tile_click.0.x, tile_click.0.y)),
-                Anchor(Vec2::new(0.0, -0.25)),
+                Anchor(Vec2::new(0.0, -0.33)),
                 Sprite::default(),
                 AseAnimation {
                     aseprite: asset_server
