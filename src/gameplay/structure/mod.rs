@@ -9,6 +9,7 @@ use crate::gameplay::{
 
 pub mod assets;
 pub mod default_recipe;
+pub mod harvest;
 pub mod highlight;
 pub mod interactable;
 
@@ -16,6 +17,7 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         assets::plugin,
         default_recipe::plugin,
+        harvest::plugin,
         highlight::plugin,
         interactable::plugin,
     ));

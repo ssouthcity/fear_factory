@@ -27,7 +27,8 @@ pub struct ItemDef {
     pub transport: Transport,
 }
 
-#[derive(Clone, Debug, Deserialize, Reflect)]
+#[derive(Component, Clone, Debug, Deserialize, Reflect, PartialEq, Eq)]
+#[reflect(Component)]
 pub enum Taxonomy {
     Fauna,
     Flora,

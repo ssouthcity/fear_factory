@@ -7,6 +7,7 @@ use serde::Deserialize;
 use crate::{
     assets::{loaders::toml::TomlAssetPlugin, tracking::LoadResource},
     gameplay::{
+        item::assets::Taxonomy,
         sprite_sort::{YSortSprite, ZIndexSprite},
         world::{
             construction::Constructions,
@@ -35,8 +36,14 @@ pub fn plugin(app: &mut App) {
 pub struct DepositDef {
     pub id: String,
     pub name: String,
-    pub recipe_id: String,
+    pub taxonomy: Taxonomy,
     pub seed: u32,
+}
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct Deposit {
+    pub quantity: u32,
 }
 
 #[derive(Asset, Resource, Reflect, Clone)]
@@ -56,10 +63,6 @@ impl FromWorld for DepositAssets {
         }
     }
 }
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct DepositRecipe(pub String);
 
 #[derive(Resource, Debug, Default)]
 pub struct DepositNoise {
@@ -125,7 +128,8 @@ fn spawn_deposits(
                             custom_size: Vec2::new(TILE_SIZE.x, TILE_SIZE.y).into(),
                             ..default()
                         },
-                        DepositRecipe(deposit_def.recipe_id.clone()),
+                        Deposit { quantity: 100 },
+                        deposit_def.taxonomy.clone(),
                     ))
                     .id();
 
