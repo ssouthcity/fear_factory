@@ -9,10 +9,8 @@ use crate::{
         hud::hotbar::{HotbarActionKind, HotbarSelection, HotbarSelectionChanged},
         sprite_sort::{YSortSprite, ZIndexSprite},
         structure::{
-            Structure,
-            assets::StructureDef,
-            harvest::{Harvester, Range},
-            interactable::Interactable,
+            Structure, assets::StructureDef, harvest::Harvester, interactable::Interactable,
+            range::Range,
         },
         world::{
             demolition::Demolished,
