@@ -1,17 +1,12 @@
 use bevy::{prelude::*, ui_widgets::observe};
 
-use crate::{
-    gameplay::item::{assets::ItemDef, stack::Stack},
-    screens::Screen,
-    widgets::{self, item::stack_icon},
-};
+use crate::{screens::Screen, widgets::item::stack_icon};
 
 const SLOTTED_OBJECT_Z_INDEX: i32 = 10;
 const HELD_OBJECT_Z_INDEX: i32 = 15;
 const HOVERED_SLOT_LIGHTEN_FACTOR: f32 = 0.05;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Screen::Gameplay), setup);
     app.add_systems(Update, sync_slot_child.run_if(in_state(Screen::Gameplay)));
 }
 
@@ -171,62 +166,4 @@ fn on_slot_drag_and_drop(
         item: source_item,
         entity: destination_slot,
     });
-}
-
-fn setup(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, asset_server: Res<AssetServer>) {
-    let mut items_iter = item_defs.iter();
-
-    let container_id = commands
-        .spawn((
-            Name::new("Inventory"),
-            Node {
-                width: percent(100.0),
-                height: percent(100.0),
-                justify_content: JustifyContent::FlexEnd,
-                align_items: AlignItems::FlexEnd,
-                ..default()
-            },
-            Pickable::IGNORE,
-        ))
-        .id();
-
-    let grid_id = commands
-        .spawn((
-            Name::new("Grid"),
-            Node {
-                display: Display::Grid,
-                ..default()
-            },
-            ChildOf(container_id),
-            BackgroundColor(Color::hsl(180.0, 1.0, 0.5)),
-        ))
-        .id();
-
-    for i in 0..10 {
-        let grid_cell_id = commands
-            .spawn((
-                Node {
-                    grid_column: GridPlacement::start(i % 5 + 1),
-                    grid_row: GridPlacement::start(i / 5 + 1),
-                    ..default()
-                },
-                ChildOf(grid_id),
-            ))
-            .id();
-
-        let slot_id = commands
-            .spawn((widgets::slot::slot_container(), ChildOf(grid_cell_id)))
-            .id();
-
-        if let Some((asset_id, _)) = items_iter.next() {
-            let relic = commands
-                .spawn((
-                    Name::new("Relic"),
-                    Stack::one(asset_server.get_id_handle(asset_id).unwrap()),
-                ))
-                .id();
-
-            commands.spawn(slotted_stack(slot_id, relic));
-        }
-    }
 }
