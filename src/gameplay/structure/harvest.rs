@@ -123,7 +123,7 @@ fn assign_harvester_taxonomy(
         };
 
         ase_animation.aseprite =
-            asset_server.load(format!("sprites/structures/harvester_{}.aseprite", variant));
+            asset_server.load(format!("sprites/structures/harvester_{variant}.aseprite"));
     }
 }
 

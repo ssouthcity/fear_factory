@@ -95,8 +95,7 @@ mod tests {
         for p in inside_points {
             assert!(
                 range.contains(&origin, &p),
-                "Expected {:?} to be inside diamond of range 2",
-                p
+                "Expected {p:?} to be inside diamond of range 2",
             );
         }
     }
@@ -111,8 +110,7 @@ mod tests {
         for p in outside_points {
             assert!(
                 !range.contains(&origin, &p),
-                "Expected {:?} to be outside diamond of range 2",
-                p
+                "Expected {p:?} to be outside diamond of range 2",
             );
         }
     }
@@ -139,8 +137,7 @@ mod tests {
         for pos in range.iter(origin) {
             assert!(
                 range.contains(&origin, &pos),
-                "Iterator yielded {:?}, but contains() returned false",
-                pos
+                "Iterator yielded {pos:?}, but contains() returned false",
             );
         }
     }
