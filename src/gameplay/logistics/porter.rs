@@ -5,10 +5,11 @@ use crate::gameplay::{
     FactorySystems,
     item::{
         assets::{ItemDef, Transport},
+        inventory::Slots,
         stack::Stack,
     },
     logistics::pathfinding::{PorterPaths, WalkPath},
-    recipe::Outputs,
+    recipe::Output,
     sprite_sort::{YSortSprite, ZIndexSprite},
 };
 
@@ -61,24 +62,29 @@ fn spawn_porter(
         &Transform,
         &mut PorterSpawnTimer,
         &mut PorterSpawnOutputIndex,
-        &Outputs,
+        &Slots,
     )>,
-    mut output_query: Query<(&mut Stack, &mut PorterPaths)>,
+    mut output_query: Query<(&mut Stack, &mut PorterPaths), With<Output>>,
     mut commands: Commands,
     item_definitions: Res<Assets<ItemDef>>,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
-    for (structure, transform, mut timer, mut index, outputs) in structure_query {
+    for (structure, transform, mut timer, mut index, slots) in structure_query {
         if !timer.tick(time.delta()).is_finished() {
             continue;
         }
+
+        let outputs = slots
+            .iter()
+            .filter(|slot| output_query.contains(*slot))
+            .collect::<Vec<Entity>>();
 
         let Some(output) = outputs.iter().nth(index.0) else {
             continue;
         };
 
-        let Ok((mut stack, mut porter_paths)) = output_query.get_mut(output) else {
+        let Ok((mut stack, mut porter_paths)) = output_query.get_mut(*output) else {
             continue;
         };
 
@@ -110,7 +116,7 @@ fn spawn_porter(
             ZIndexSprite(10),
             stack.clone(),
             PorterOf(structure),
-            PorterFromOutput(output),
+            PorterFromOutput(*output),
             PorterToInput(*input),
             WalkPath(path.clone()),
         ));

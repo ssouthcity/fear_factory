@@ -3,7 +3,12 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::gameplay::{
     FactorySystems,
-    item::{assets::Taxonomy, stack::Stack},
+    item::{
+        assets::Taxonomy,
+        inventory::{SlotOf, Slots},
+        stack::Stack,
+    },
+    recipe::Output,
     structure::range::Range,
     world::{
         construction::{Constructions, StructureConstructed},
@@ -97,12 +102,17 @@ fn assign_harvester_taxonomy(
             continue;
         };
 
-        commands.entity(*structure).insert((
-            taxonomy.clone(),
+        commands.entity(*structure).insert(taxonomy.clone());
+
+        commands.spawn((
+            Name::new("Slot"),
+            ChildOf(*structure),
+            SlotOf(*structure),
             Stack {
                 item: stack.item.clone(),
                 quantity: 0,
             },
+            Output { quantity: 1 },
         ));
 
         let variant = match taxonomy {
@@ -150,8 +160,9 @@ fn assign_harvester_deposit(
 
 fn harvest_deposit(
     q_people: Query<(&Harvests, &mut HarvestTimer, &HousedIn), With<Person>>,
-    mut q_deposits: Query<(Entity, &mut Stack, &Coord), With<Deposit>>,
-    mut q_harvesters: Query<&mut Stack, (With<Harvester>, Without<Deposit>)>,
+    q_harvesters: Query<&Slots, With<Harvester>>,
+    mut q_slots: Query<&mut Stack>,
+    mut q_deposits: Query<(Entity, &Coord), With<Deposit>>,
     mut constructions: ResMut<Constructions>,
     mut commands: Commands,
     time: Res<Time>,
@@ -161,11 +172,20 @@ fn harvest_deposit(
             continue;
         }
 
-        let Ok((deposit, mut deposit_stack, coord)) = q_deposits.get_mut(harvests.0) else {
+        let Ok((deposit, coord)) = q_deposits.get_mut(harvests.0) else {
             continue;
         };
 
-        let Ok(mut harvester_stack) = q_harvesters.get_mut(housed_in.0) else {
+        let Some(harvester_slot) = q_harvesters
+            .iter_descendants(housed_in.0)
+            .find(|slot| q_slots.contains(*slot))
+        else {
+            continue;
+        };
+
+        let Ok([mut deposit_stack, mut harvester_stack]) =
+            q_slots.get_many_mut([deposit, harvester_slot])
+        else {
             continue;
         };
 

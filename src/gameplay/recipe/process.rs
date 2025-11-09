@@ -4,8 +4,8 @@ use crate::{
     assets::indexing::IndexMap,
     gameplay::{
         FactorySystems,
-        item::stack::{Full, Stack},
-        recipe::{InputOf, Inputs, OutputOf, Outputs, assets::RecipeDef, select::SelectedRecipe},
+        item::{inventory::Slots, stack::Stack},
+        recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
     },
 };
 
@@ -41,27 +41,27 @@ impl ProcessState {
 }
 
 fn consume_input(
-    query: Query<(&mut ProcessState, &Inputs, &SelectedRecipe)>,
-    mut input_entities: Query<(&mut Stack, &InputOf)>,
+    query: Query<(&mut ProcessState, &Slots, &SelectedRecipe)>,
+    mut input_query: Query<(&mut Stack, &Input)>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
 ) {
-    for (mut state, inputs, selected_recipe) in query {
+    for (mut state, slots, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
             continue;
         }
 
-        if !inputs.iter().all(|input| {
-            input_entities
-                .get(input)
-                .is_ok_and(|(stack, input_of)| stack.quantity >= input_of.required_quantity)
-        }) {
+        if !slots
+            .iter()
+            .filter_map(|slot| input_query.get(slot).ok())
+            .all(|(stack, input)| stack.quantity >= input.quantity)
+        {
             continue;
         }
 
-        for input in inputs.iter() {
-            if let Ok((mut stack, input_of)) = input_entities.get_mut(input) {
-                stack.quantity -= input_of.required_quantity;
+        for slot in slots.iter() {
+            if let Ok((mut stack, input)) = input_query.get_mut(slot) {
+                stack.quantity = stack.quantity.saturating_sub(input.quantity);
             }
         }
 
@@ -91,27 +91,20 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
 }
 
 fn produce_output(
-    query: Query<(&mut ProcessState, &Outputs)>,
-    mut output_entities: Query<(&mut Stack, &OutputOf), Without<Full>>,
+    query: Query<(&mut ProcessState, &Slots)>,
+    mut output_query: Query<(&mut Stack, &Output)>,
 ) {
-    for (mut state, outputs) in query {
+    for (mut state, slots) in query {
         if !matches!(*state, ProcessState::Completed) {
             continue;
         }
 
-        if !outputs
-            .iter()
-            .any(|output| output_entities.get(output).is_ok())
-        {
-            continue;
-        }
-
-        for output in outputs.iter() {
-            let Ok((mut stack, output_of)) = output_entities.get_mut(output) else {
+        for output in slots.iter() {
+            let Ok((mut stack, output)) = output_query.get_mut(output) else {
                 continue;
             };
 
-            stack.quantity += output_of.output_quantity;
+            stack.quantity = stack.quantity.saturating_add(output.quantity);
         }
 
         *state = ProcessState::InsufficientInput;
