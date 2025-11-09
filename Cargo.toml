@@ -70,3 +70,8 @@ codegen-units = 4
 
 [profile.ci.package."*"]
 opt-level = 0
+
+[lints.clippy]
+too_many_arguments = "allow"
+type_complexity = "allow"
+nonstandard_macro_braces = "warn"

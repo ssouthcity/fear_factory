@@ -4,8 +4,12 @@ use super::process::ProcessState;
 use crate::{
     assets::indexing::IndexMap,
     gameplay::{
-        item::{assets::ItemDef, stack::Stack},
-        recipe::{InputOf, Inputs, OutputOf, Outputs, assets::RecipeDef},
+        item::{
+            assets::ItemDef,
+            inventory::{SlotOf, Slots},
+            stack::Stack,
+        },
+        recipe::{Input, Output, assets::RecipeDef},
     },
 };
 
@@ -17,7 +21,7 @@ pub fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Default, Deref, DerefMut)]
 #[reflect(Component)]
-#[require(ProcessState, Inputs, Outputs)]
+#[require(ProcessState)]
 pub struct SelectedRecipe(pub String);
 
 #[derive(EntityEvent, Reflect)]
@@ -45,11 +49,7 @@ fn on_select_recipe(
 
     commands
         .entity(select_recipe.entity)
-        .despawn_related::<Inputs>();
-
-    commands
-        .entity(select_recipe.entity)
-        .despawn_related::<Outputs>();
+        .despawn_related::<Slots>();
 
     for (item_id, quantity) in recipe_def.input.iter() {
         let item_handle = item_index
@@ -60,10 +60,10 @@ fn on_select_recipe(
         commands.spawn((
             Name::new("Input"),
             ChildOf(select_recipe.entity),
+            SlotOf(select_recipe.entity),
             Stack::empty(item_handle),
-            InputOf {
-                entity: select_recipe.entity,
-                required_quantity: *quantity,
+            Input {
+                quantity: *quantity,
             },
         ));
     }
@@ -77,10 +77,10 @@ fn on_select_recipe(
         commands.spawn((
             Name::new("Output"),
             ChildOf(select_recipe.entity),
+            SlotOf(select_recipe.entity),
             Stack::empty(item_handle),
-            OutputOf {
-                entity: select_recipe.entity,
-                output_quantity: *quantity,
+            Output {
+                quantity: *quantity,
             },
         ));
     }

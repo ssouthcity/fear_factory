@@ -8,7 +8,10 @@ use crate::{
         FactorySystems,
         hud::hotbar::{HotbarActionKind, HotbarSelection, HotbarSelectionChanged},
         sprite_sort::{YSortSprite, ZIndexSprite},
-        structure::{Structure, assets::StructureDef, interactable::Interactable},
+        structure::{
+            Structure, assets::StructureDef, harvest::Harvester, interactable::Interactable,
+            range::Range,
+        },
         world::{
             demolition::Demolished,
             tilemap::{
@@ -186,6 +189,12 @@ fn construct(
                 Interactable,
             ))
             .id();
+
+        if structure.id == "harvester" {
+            commands
+                .entity(entity)
+                .insert((Harvester, Range::Diamond(4)));
+        }
 
         constructions.insert(tile_click.0.xy(), entity);
 
