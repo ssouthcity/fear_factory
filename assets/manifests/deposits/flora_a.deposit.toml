@@ -1,4 +1,5 @@
 id = "flora_a"
 name = "Flora A Deposit"
+item_id = "flora_a"
 taxonomy = "Flora"
 seed = 821954

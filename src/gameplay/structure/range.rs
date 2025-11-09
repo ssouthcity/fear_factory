@@ -28,6 +28,7 @@ impl Range {
     }
 
     /// Checks whether a point is contained within anothers radius
+    #[allow(unused)]
     pub fn contains(&self, position: &IVec2, other: &IVec2) -> bool {
         match self {
             Self::Diamond(range) => position.manhattan_distance(*other) <= *range as u32,

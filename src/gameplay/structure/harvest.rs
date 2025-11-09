@@ -3,7 +3,7 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::gameplay::{
     FactorySystems,
-    item::assets::Taxonomy,
+    item::{assets::Taxonomy, stack::Stack},
     structure::range::Range,
     world::{
         construction::{Constructions, StructureConstructed},
@@ -37,7 +37,7 @@ pub struct Person;
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-#[relationship_target(relationship = HousedIn)]
+#[relationship_target(relationship = HousedIn, linked_spawn)]
 pub struct Houses(Vec<Entity>);
 
 #[derive(Component, Reflect, Debug)]
@@ -53,7 +53,12 @@ pub struct HarvestedBy(Vec<Entity>);
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 #[relationship(relationship_target = HarvestedBy)]
+#[require(HarvestTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))]
 pub struct Harvests(pub Entity);
+
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct HarvestTimer(pub Timer);
 
 fn add_people_to_harvester(
     mut structures_constructed: MessageReader<StructureConstructed>,
@@ -74,7 +79,7 @@ fn add_people_to_harvester(
 fn assign_harvester_taxonomy(
     mut structures_constructed: MessageReader<StructureConstructed>,
     mut harvester_query: Query<(&Coord, &Range, &mut AseAnimation), With<Harvester>>,
-    deposit_query: Query<&Taxonomy, With<Deposit>>,
+    deposit_query: Query<(&Stack, &Taxonomy), With<Deposit>>,
     constructions: Res<Constructions>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -84,7 +89,7 @@ fn assign_harvester_taxonomy(
             continue;
         };
 
-        let Some(taxonomy) = range.iter(coord.0).find_map(|pos| {
+        let Some((stack, taxonomy)) = range.iter(coord.0).find_map(|pos| {
             constructions
                 .get(&pos)
                 .and_then(|d| deposit_query.get(*d).ok())
@@ -92,7 +97,13 @@ fn assign_harvester_taxonomy(
             continue;
         };
 
-        commands.entity(*structure).insert(taxonomy.clone());
+        commands.entity(*structure).insert((
+            taxonomy.clone(),
+            Stack {
+                item: stack.item.clone(),
+                quantity: 0,
+            },
+        ));
 
         let variant = match taxonomy {
             Taxonomy::Flora => "flora",
@@ -138,21 +149,34 @@ fn assign_harvester_deposit(
 }
 
 fn harvest_deposit(
-    person_query: Query<&Harvests, With<Person>>,
-    mut deposit_query: Query<(Entity, &mut Deposit, &Coord)>,
+    q_people: Query<(&Harvests, &mut HarvestTimer, &HousedIn), With<Person>>,
+    mut q_deposits: Query<(Entity, &mut Stack, &Coord), With<Deposit>>,
+    mut q_harvesters: Query<&mut Stack, (With<Harvester>, Without<Deposit>)>,
     mut constructions: ResMut<Constructions>,
     mut commands: Commands,
+    time: Res<Time>,
 ) {
-    for harvests in person_query {
-        let Ok((deposit_entity, mut deposit, coord)) = deposit_query.get_mut(harvests.0) else {
+    for (harvests, mut harvest_timer, housed_in) in q_people {
+        if !harvest_timer.0.tick(time.delta()).just_finished() {
+            continue;
+        }
+
+        let Ok((deposit, mut deposit_stack, coord)) = q_deposits.get_mut(harvests.0) else {
             continue;
         };
 
-        deposit.quantity = deposit.quantity.saturating_sub(1);
+        let Ok(mut harvester_stack) = q_harvesters.get_mut(housed_in.0) else {
+            continue;
+        };
 
-        if deposit.quantity == 0 {
+        let to_take = deposit_stack.quantity.min(1);
+
+        deposit_stack.quantity = deposit_stack.quantity.saturating_sub(to_take);
+        harvester_stack.quantity = harvester_stack.quantity.saturating_add(to_take);
+
+        if deposit_stack.quantity == 0 {
             constructions.remove(&coord);
-            commands.entity(deposit_entity).despawn();
+            commands.entity(deposit).despawn();
         }
     }
 }

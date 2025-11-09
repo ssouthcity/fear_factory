@@ -1,4 +1,5 @@
 id = "fauna_a"
 name = "Fauna A Deposit"
+item_id = "fauna_a"
 taxonomy = "Fauna"
 seed = 463724

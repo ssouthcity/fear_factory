@@ -5,9 +5,12 @@ use noise::{Fbm, MultiFractal, NoiseFn, Perlin};
 use serde::Deserialize;
 
 use crate::{
-    assets::{loaders::toml::TomlAssetPlugin, tracking::LoadResource},
+    assets::{indexing::IndexMap, loaders::toml::TomlAssetPlugin, tracking::LoadResource},
     gameplay::{
-        item::assets::Taxonomy,
+        item::{
+            assets::{ItemDef, Taxonomy},
+            stack::Stack,
+        },
         sprite_sort::{YSortSprite, ZIndexSprite},
         world::{
             construction::Constructions,
@@ -36,15 +39,14 @@ pub fn plugin(app: &mut App) {
 pub struct DepositDef {
     pub id: String,
     pub name: String,
+    pub item_id: String,
     pub taxonomy: Taxonomy,
     pub seed: u32,
 }
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-pub struct Deposit {
-    pub quantity: u32,
-}
+pub struct Deposit;
 
 #[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
@@ -89,6 +91,7 @@ fn spawn_deposits(
     chunk_query: Query<&Chunk>,
     mut commands: Commands,
     deposit_definitions: Res<Assets<DepositDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
     asset_server: Res<AssetServer>,
     deposit_noise: Res<DepositNoise>,
     mut constructions: ResMut<Constructions>,
@@ -99,6 +102,13 @@ fn spawn_deposits(
 
     for (deposit_id, deposit_def) in deposit_definitions.iter() {
         let Some(fbm) = deposit_noise.noises.get(&deposit_id) else {
+            return;
+        };
+
+        let Some(item) = item_index
+            .get(&deposit_def.item_id)
+            .and_then(|id| asset_server.get_id_handle(*id))
+        else {
             return;
         };
 
@@ -118,6 +128,12 @@ fn spawn_deposits(
                 let entity = commands
                     .spawn((
                         Name::new(deposit_def.name.clone()),
+                        Deposit,
+                        deposit_def.taxonomy.clone(),
+                        Stack {
+                            item: item.clone(),
+                            quantity: 100,
+                        },
                         Coord(absolute_tile_pos),
                         Anchor(Vec2::new(0.0, -0.25)),
                         YSortSprite,
@@ -128,8 +144,6 @@ fn spawn_deposits(
                             custom_size: Vec2::new(TILE_SIZE.x, TILE_SIZE.y).into(),
                             ..default()
                         },
-                        Deposit { quantity: 100 },
-                        deposit_def.taxonomy.clone(),
                     ))
                     .id();
 

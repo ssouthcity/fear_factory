@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::gameplay::item::assets::ItemDef;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, mark_full_stacks);
+    app.add_systems(FixedUpdate, mark_full_stacks);
 }
 
 #[derive(Component, Reflect, Debug, Clone)]
