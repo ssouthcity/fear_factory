@@ -25,7 +25,6 @@ pub fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct HeldRelic(Entity);
 
-#[allow(clippy::too_many_arguments)]
 pub fn open_recipe_menu(
     mut commands: Commands,
     inspected_entity: Res<InspectedEntity>,

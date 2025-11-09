@@ -25,7 +25,6 @@ pub fn coord_to_translation(coord: &Coord) -> Vec2 {
     TILE_MATRIX * coord.0.as_vec2()
 }
 
-#[allow(clippy::type_complexity)]
 fn translate_coord_to_transform(coord_query: Query<(&mut Transform, &Coord), Changed<Coord>>) {
     for (mut transform, coord) in coord_query {
         transform.translation = coord_to_translation(coord).extend(transform.translation.z);

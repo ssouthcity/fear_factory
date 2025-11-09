@@ -77,7 +77,6 @@ pub fn stack_icon(stack: Entity) -> impl Bundle {
     )
 }
 
-#[allow(clippy::type_complexity)]
 fn update_item_icons(
     stack_icon_query: Query<(&StackIcon, &Children)>,
     stack_query: Query<&Stack>,

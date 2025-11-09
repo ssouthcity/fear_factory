@@ -80,7 +80,7 @@ fn spawn_porter(
             .filter(|slot| output_query.contains(*slot))
             .collect::<Vec<Entity>>();
 
-        let Some(output) = outputs.iter().nth(index.0) else {
+        let Some(output) = outputs.get(index.0) else {
             continue;
         };
 

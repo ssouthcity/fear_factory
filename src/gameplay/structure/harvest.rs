@@ -197,7 +197,7 @@ fn cleanup_empty_deposits(
 ) {
     for (deposit, stack, coord) in q_deposits {
         if stack.quantity == 0 {
-            constructions.remove(&coord);
+            constructions.remove(coord);
             commands.entity(deposit).despawn();
         }
     }
