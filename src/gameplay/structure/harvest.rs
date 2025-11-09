@@ -26,6 +26,7 @@ pub fn plugin(app: &mut App) {
             sync_harvester_range,
             assign_harvester_deposit,
             harvest_deposit,
+            cleanup_empty_deposits,
         )
             .chain()
             .in_set(FactorySystems::Harvest),
@@ -162,19 +163,12 @@ fn harvest_deposit(
     q_people: Query<(&Harvests, &mut HarvestTimer, &HousedIn), With<Person>>,
     q_harvesters: Query<&Slots, With<Harvester>>,
     mut q_slots: Query<&mut Stack>,
-    mut q_deposits: Query<(Entity, &Coord), With<Deposit>>,
-    mut constructions: ResMut<Constructions>,
-    mut commands: Commands,
     time: Res<Time>,
 ) {
     for (harvests, mut harvest_timer, housed_in) in q_people {
         if !harvest_timer.0.tick(time.delta()).just_finished() {
             continue;
         }
-
-        let Ok((deposit, coord)) = q_deposits.get_mut(harvests.0) else {
-            continue;
-        };
 
         let Some(harvester_slot) = q_harvesters
             .iter_descendants(housed_in.0)
@@ -184,7 +178,7 @@ fn harvest_deposit(
         };
 
         let Ok([mut deposit_stack, mut harvester_stack]) =
-            q_slots.get_many_mut([deposit, harvester_slot])
+            q_slots.get_many_mut([harvests.0, harvester_slot])
         else {
             continue;
         };
@@ -193,8 +187,16 @@ fn harvest_deposit(
 
         deposit_stack.quantity = deposit_stack.quantity.saturating_sub(to_take);
         harvester_stack.quantity = harvester_stack.quantity.saturating_add(to_take);
+    }
+}
 
-        if deposit_stack.quantity == 0 {
+fn cleanup_empty_deposits(
+    q_deposits: Query<(Entity, &Stack, &Coord), With<Deposit>>,
+    mut constructions: ResMut<Constructions>,
+    mut commands: Commands,
+) {
+    for (deposit, stack, coord) in q_deposits {
+        if stack.quantity == 0 {
             constructions.remove(&coord);
             commands.entity(deposit).despawn();
         }
