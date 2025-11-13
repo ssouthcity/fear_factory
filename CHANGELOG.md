@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/ssouthcity/fear_factory/compare/v0.2.0...v0.3.0) (2025-11-13)
+
+
+### Features
+
+* add harvesting and rework inputs/outputs ([#71](https://github.com/ssouthcity/fear_factory/issues/71)) ([f4b4f52](https://github.com/ssouthcity/fear_factory/commit/f4b4f52c8c3cbdb7250bf7630192f1a1f566debc))
+
 ## [0.2.0](https://github.com/ssouthcity/fear_factory/compare/v0.1.0...v0.2.0) (2025-11-01)
 
 
