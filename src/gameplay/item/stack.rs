@@ -16,9 +16,4 @@ impl Stack {
         let quantity = 0;
         Stack { item, quantity }
     }
-
-    pub fn one(item: Handle<ItemDef>) -> Stack {
-        let quantity = 1;
-        Stack { item, quantity }
-    }
 }
