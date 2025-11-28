@@ -1,5 +1,8 @@
 id = "sack"
 name = "Sack"
+description = """
+A container woven from dried leaves
+"""
 taxonomy = "Flora"
 transport = "Bag"
 sprite = "sprites/items/sack.png"

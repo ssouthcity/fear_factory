@@ -1,5 +1,8 @@
 id = "quintessence"
 name = "Quintessence"
+description = """
+The purest essence of materia
+"""
 taxonomy = "Fauna"
 transport = "Bag"
 sprite = "sprites/items/quintessence.png"

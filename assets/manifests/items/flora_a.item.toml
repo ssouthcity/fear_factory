@@ -1,5 +1,8 @@
 id = "flora_a"
 name = "Flora A"
+description = """
+Flowers and leaves foraged from the fields
+"""
 taxonomy = "Flora"
 transport = "Bag"
 sprite = "sprites/items/flora_a.png"

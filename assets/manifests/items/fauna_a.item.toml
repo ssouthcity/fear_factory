@@ -1,5 +1,8 @@
 id = "fauna_a"
 name = "Fauna A"
+description = """
+Remnants of a being that was once sprawling with life
+"""
 taxonomy = "Fauna"
 transport = "Box"
 sprite = "sprites/items/fauna_a.png"

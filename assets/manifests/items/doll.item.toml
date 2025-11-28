@@ -1,5 +1,8 @@
 id = "doll"
 name = "Doll"
+description = """
+A small woven figure stuffed with straw
+"""
 taxonomy = "Flora"
 transport = "Box"
 sprite = "sprites/items/doll.png"
