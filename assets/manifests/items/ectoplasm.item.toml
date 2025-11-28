@@ -1,5 +1,8 @@
 id = "ectoplasm"
 name = "Ectoplasm"
+description = """
+Slimy fluorescent goop, it emits a faint odor
+"""
 taxonomy = "Fauna"
 transport = "Bag"
 sprite = "sprites/items/ectoplasm.png"

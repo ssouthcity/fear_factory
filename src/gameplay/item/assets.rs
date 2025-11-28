@@ -20,6 +20,7 @@ pub fn plugin(app: &mut App) {
 pub struct ItemDef {
     pub id: String,
     pub name: String,
+    pub description: String,
     #[serde(default = "placeholder_sprite")]
     pub sprite: String,
     pub stack_size: u32,

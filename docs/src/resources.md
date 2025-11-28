@@ -12,7 +12,7 @@ Basic materials used for recipies. A resource is characterized by its origin and
     * Fungal - Relates to molds and mushrooms, originates from the undergrowth.
 
 * Minerale
-    * Alluvial[^1] - Relates to granular sediments, originates from rivers and shores. 
+    * Alluvial[^1] - Relates to granular sediments, originates from rivers and shores.
     * Lithic[^2] - Relates to geological rocks, originates from crags and caves.
     * Lapidary[^3] - Relates to gems and precious ores, originates from mines and quarries.
 

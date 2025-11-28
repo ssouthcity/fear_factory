@@ -1,5 +1,8 @@
 id = "ritual_doll"
 name = "Ritual Doll"
+description = """
+Once a lifeless doll, it has gained an odd presence
+"""
 taxonomy = "Fauna"
 transport = "Box"
 sprite = "sprites/items/ritual_doll.png"
