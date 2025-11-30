@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0](https://github.com/ssouthcity/fear_factory/compare/v0.2.0...v0.3.0) (2025-11-30)
+
+
+### Features
+
+* add harvesting and rework inputs/outputs ([#71](https://github.com/ssouthcity/fear_factory/issues/71)) ([f4b4f52](https://github.com/ssouthcity/fear_factory/commit/f4b4f52c8c3cbdb7250bf7630192f1a1f566debc))
+* add tome menu and textures ([#75](https://github.com/ssouthcity/fear_factory/issues/75)) ([c389933](https://github.com/ssouthcity/fear_factory/commit/c389933b5542dbe5c9a0d0b8a631909cf5d5d6e6))
+* move input logic to standalone plugin ([#77](https://github.com/ssouthcity/fear_factory/issues/77)) ([dfac385](https://github.com/ssouthcity/fear_factory/commit/dfac385d7baa68894e79f31f3304b88218131650))
+
 ## [0.2.0](https://github.com/ssouthcity/fear_factory/compare/v0.1.0...v0.2.0) (2025-11-01)
 
 
