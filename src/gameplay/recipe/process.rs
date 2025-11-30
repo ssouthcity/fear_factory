@@ -54,7 +54,7 @@ fn consume_input(
 
         if !storage
             .iter()
-            .filter_map(|entity| input_query.get(entity).ok())
+            .filter_map(|stored| input_query.get(stored).ok())
             .all(|(stack, input)| stack.quantity >= input.quantity)
         {
             continue;
