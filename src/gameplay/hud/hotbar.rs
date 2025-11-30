@@ -1,25 +1,25 @@
 use bevy::{
     ecs::{spawn::SpawnIter, system::SystemParam},
-    input::keyboard::KeyboardInput,
     prelude::*,
 };
 use bevy_aseprite_ultra::prelude::*;
 
 use crate::{
     gameplay::{FactorySystems, structure::assets::StructureDef, world::tilemap::TileClicked},
+    input::input_map::{Action, InputActions},
     screens::Screen,
 };
 
-const DIGIT_KEYS: [KeyCode; 9] = [
-    KeyCode::Digit1,
-    KeyCode::Digit2,
-    KeyCode::Digit3,
-    KeyCode::Digit4,
-    KeyCode::Digit5,
-    KeyCode::Digit6,
-    KeyCode::Digit7,
-    KeyCode::Digit8,
-    KeyCode::Digit9,
+const HOTBAR_ACTIONS: [Action; 9] = [
+    Action::Hotbar1,
+    Action::Hotbar2,
+    Action::Hotbar3,
+    Action::Hotbar4,
+    Action::Hotbar5,
+    Action::Hotbar6,
+    Action::Hotbar7,
+    Action::Hotbar8,
+    Action::Hotbar9,
 ];
 
 pub fn plugin(app: &mut App) {
@@ -36,10 +36,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (
-            select_on_keyboard_shortcuts.run_if(on_message::<KeyboardInput>),
-            highlight_selected_slot,
-        ),
+        (select_on_keyboard_shortcuts, highlight_selected_slot),
     );
 
     app.add_systems(
@@ -124,7 +121,7 @@ pub enum HotbarActionKind {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct HotbarShortcut(KeyCode);
+struct HotbarShortcut(Action);
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
@@ -147,7 +144,7 @@ fn spawn_hotbar(mut commands: Commands) {
             ..default()
         },
         Pickable::IGNORE,
-        Children::spawn(SpawnIter((0..DIGIT_KEYS.len()).map(|i| {
+        Children::spawn(SpawnIter((0..HOTBAR_ACTIONS.len()).map(|i| {
             (
                 Name::new(format!("Hotbar Slot {}", i + 1)),
                 Node {
@@ -162,7 +159,7 @@ fn spawn_hotbar(mut commands: Commands) {
                 Pickable::default(),
                 BorderColor::all(Color::WHITE),
                 HotbarSlot,
-                HotbarShortcut(DIGIT_KEYS[i]),
+                HotbarShortcut(HOTBAR_ACTIONS[i]),
             )
         }))),
     ));
@@ -252,12 +249,12 @@ fn select_on_click(
 }
 
 fn select_on_keyboard_shortcuts(
-    keys: Res<ButtonInput<KeyCode>>,
     hotbar_slots: Query<(Entity, &HotbarShortcut), With<HotbarSlot>>,
+    input_actions: Res<InputActions>,
     mut hotbar: HotbarSelector,
 ) {
     for (entity, shortcut) in hotbar_slots {
-        if keys.just_pressed(shortcut.0) {
+        if input_actions.just_pressed.contains(&shortcut.0) {
             hotbar.select(Some(entity));
         }
     }
