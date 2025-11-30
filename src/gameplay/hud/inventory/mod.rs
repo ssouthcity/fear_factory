@@ -1,9 +1,10 @@
 use bevy::{
-    input::common_conditions::input_just_pressed,
     prelude::*,
     ui::Checked,
     ui_widgets::{RadioButton, RadioGroup, ValueChange, observe},
 };
+
+use crate::input::input_map::{Action, action_just_pressed};
 
 pub mod items;
 pub mod people;
@@ -25,7 +26,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            toggle_inventory_ui.run_if(input_just_pressed(KeyCode::KeyT)),
+            toggle_inventory_ui.run_if(action_just_pressed(Action::OpenTome)),
             update_tab_color,
             update_entry_color,
         ),

@@ -1,6 +1,9 @@
-use bevy::{input::common_conditions::input_just_pressed, prelude::*};
+use bevy::prelude::*;
 
-use crate::gameplay::recipe::select::SelectedRecipe;
+use crate::{
+    gameplay::recipe::select::SelectedRecipe,
+    input::input_map::{Action, action_just_pressed},
+};
 
 mod info;
 mod select;
@@ -15,7 +18,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        close_menu.run_if(input_just_pressed(KeyCode::Escape)),
+        close_menu.run_if(action_just_pressed(Action::Dismiss)),
     );
 }
 

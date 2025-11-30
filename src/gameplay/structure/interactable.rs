@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::assets::tracking::LoadResource;
-
-const INTERACTABLE_BUTTON: KeyCode = KeyCode::KeyE;
+use crate::{
+    assets::tracking::LoadResource,
+    input::input_map::{Action, InputMap, action_just_pressed},
+};
 
 pub fn plugin(app: &mut App) {
     app.load_resource::<InteractionAssets>();
@@ -13,7 +14,10 @@ pub fn plugin(app: &mut App) {
     app.add_observer(on_hover);
     app.add_observer(on_leave);
 
-    app.add_systems(Update, on_interact_button_click);
+    app.add_systems(
+        Update,
+        on_interact_button_click.run_if(action_just_pressed(Action::Interact)),
+    );
 }
 
 #[derive(Component, Reflect, Default)]
@@ -73,6 +77,7 @@ fn on_hover(
     mut commands: Commands,
     mut hovered_interactable: ResMut<HoveredInteractable>,
     interaction_assets: Res<InteractionAssets>,
+    input_map: Res<InputMap>,
 ) {
     if !interactables.contains(pointer_over.entity) {
         return;
@@ -85,7 +90,7 @@ fn on_hover(
         Transform::from_xyz(0.0, 0.0, 1.0),
         ChildOf(pointer_over.entity),
         ButtonIndicatorOf(pointer_over.entity),
-        interaction_assets.sprite(INTERACTABLE_BUTTON),
+        interaction_assets.sprite(*input_map.keymap.get(&Action::Interact).unwrap()),
     ));
 
     pointer_over.propagate(false);
@@ -111,14 +116,9 @@ fn on_leave(
 }
 
 fn on_interact_button_click(
-    keys: Res<ButtonInput<KeyCode>>,
     hovered_interactable: Res<HoveredInteractable>,
     mut commands: Commands,
 ) {
-    if !keys.just_pressed(INTERACTABLE_BUTTON) {
-        return;
-    }
-
     let Some(interactable) = hovered_interactable.0 else {
         return;
     };

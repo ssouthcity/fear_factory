@@ -1,11 +1,12 @@
 use std::collections::HashSet;
 
-use bevy::{input::common_conditions::input_just_pressed, prelude::*};
+use bevy::prelude::*;
 
-use crate::gameplay::{FactorySystems, world::tilemap::coord::Coord};
+use crate::{
+    gameplay::{FactorySystems, world::tilemap::coord::Coord},
+    input::input_map::{Action, InputActions, action_just_pressed},
+};
 
-pub const DEMOLISH_BUTTON: KeyCode = KeyCode::KeyF;
-pub const DEMOLISH_CANCEL_BUTTON: KeyCode = KeyCode::Escape;
 pub const DEMOLISH_DURATION_SECS: f32 = 1.0;
 
 pub(super) fn plugin(app: &mut App) {
@@ -14,20 +15,21 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_message::<Demolished>();
 
+    app.add_observer(add_to_selection);
+    app.add_observer(remove_from_selection);
+
     app.add_systems(
-        FixedUpdate,
+        Update,
         (
-            add_to_selection.run_if(on_message::<Pointer<Over>>),
-            remove_from_selection.run_if(on_message::<Pointer<Out>>),
-            clear_selection.run_if(input_just_pressed(DEMOLISH_CANCEL_BUTTON)),
+            clear_selection.run_if(action_just_pressed(Action::Dismiss)),
+            tick_demolish_timer,
         )
-            .in_set(FactorySystems::Demolish),
+            .chain(),
     );
 
     app.add_systems(
         FixedUpdate,
         (
-            tick_demolish_timer,
             highlight_demolition,
             demolish_selection.run_if(demolish_timer_finished),
         )
@@ -63,48 +65,40 @@ impl Default for DemolishTimer {
 
 fn tick_demolish_timer(
     mut timer: ResMut<DemolishTimer>,
-    keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
+    input_actions: Res<InputActions>,
 ) {
-    if keys.just_released(DEMOLISH_BUTTON) {
-        timer.reset();
-    }
-
-    if keys.pressed(DEMOLISH_BUTTON) {
+    if input_actions.pressed.contains(&Action::Demolish) {
         timer.tick(time.delta());
+    } else {
+        timer.reset();
     }
 }
 
 fn demolish_timer_finished(timer: Res<DemolishTimer>) -> bool {
-    timer.just_finished()
+    timer.is_finished()
 }
 
 fn add_to_selection(
-    mut pointer_overs: MessageReader<Pointer<Over>>,
-    mut selection: ResMut<DemolishSelection>,
+    pointer_over: On<Pointer<Over>>,
     demolishables: Query<Entity, With<Demolishable>>,
+    mut selection: ResMut<DemolishSelection>,
 ) {
-    for pointer_over in pointer_overs.read() {
-        if !demolishables.contains(pointer_over.entity) {
-            continue;
-        }
-
+    if demolishables.contains(pointer_over.entity) {
         selection.insert(pointer_over.entity);
     }
 }
 
 fn remove_from_selection(
-    mut pointer_outs: MessageReader<Pointer<Out>>,
+    pointer_out: On<Pointer<Out>>,
+    input_actions: Res<InputActions>,
     mut selection: ResMut<DemolishSelection>,
-    keys: Res<ButtonInput<KeyCode>>,
 ) {
-    for pointer_out in pointer_outs.read() {
-        if keys.pressed(KeyCode::ShiftLeft) {
-            continue;
-        }
-
-        selection.remove(&pointer_out.entity);
+    if input_actions.pressed.contains(&Action::MultiSelect) {
+        return;
     }
+
+    selection.remove(&pointer_out.entity);
 }
 
 fn clear_selection(mut selection: ResMut<DemolishSelection>) {
