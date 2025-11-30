@@ -7,15 +7,13 @@ use bevy::{
 
 use crate::gameplay::{
     FactorySystems,
-    item::{
-        inventory::{SlotOf, Slots},
-        stack::Stack,
-    },
+    item::stack::Stack,
     logistics::{
         path::Pathable,
         porter::{PorterArrival, PorterLost},
     },
     recipe::{Input, Output, select::RecipeChanged},
+    storage::{Storage, StoredBy},
     world::{
         construction::{Constructions, StructureConstructed},
         tilemap::coord::Coord,
@@ -41,15 +39,15 @@ pub(super) fn plugin(app: &mut App) {
 pub struct WalkPath(pub Vec<Entity>);
 
 fn pathfind(
-    output_query: Query<(Entity, &Stack, &SlotOf), With<Output>>,
-    slots_query: Query<&Slots>,
+    output_query: Query<(Entity, &Stack, &StoredBy), With<Output>>,
+    storage_query: Query<&Storage>,
     input_query: Query<&Stack, With<Input>>,
     pathable_query: Query<&Pathable>,
     coordinates: Query<&Coord>,
     mut commands: Commands,
     constructions: Res<Constructions>,
 ) {
-    for (entity, stack, SlotOf(start)) in output_query {
+    for (entity, stack, StoredBy(start)) in output_query {
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
         let mut parent = HashMap::new();
@@ -78,10 +76,10 @@ fn pathfind(
                 visited.insert(*neighbor);
                 parent.insert(neighbor, current);
 
-                let input_entity = slots_query.get(*neighbor).ok().and_then(|slots| {
-                    slots
+                let input_entity = storage_query.get(*neighbor).ok().and_then(|storage| {
+                    storage
                         .iter()
-                        .find(|slot| input_query.get(*slot).is_ok_and(|i| i.item == stack.item))
+                        .find(|stored| input_query.get(*stored).is_ok_and(|i| i.item == stack.item))
                 });
 
                 if let Some(goal) = input_entity {

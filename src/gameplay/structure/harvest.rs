@@ -3,12 +3,9 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::gameplay::{
     FactorySystems,
-    item::{
-        assets::Taxonomy,
-        inventory::{SlotOf, Slots},
-        stack::Stack,
-    },
+    item::{assets::Taxonomy, stack::Stack},
     recipe::Output,
+    storage::{Storage, StoredBy},
     structure::range::Range,
     world::{
         construction::{Constructions, StructureConstructed},
@@ -108,7 +105,7 @@ fn assign_harvester_taxonomy(
         commands.spawn((
             Name::new("Slot"),
             ChildOf(*structure),
-            SlotOf(*structure),
+            StoredBy(*structure),
             Stack {
                 item: stack.item.clone(),
                 quantity: 0,
@@ -161,8 +158,8 @@ fn assign_harvester_deposit(
 
 fn harvest_deposit(
     q_people: Query<(&Harvests, &mut HarvestTimer, &HousedIn), With<Person>>,
-    q_harvesters: Query<&Slots, With<Harvester>>,
-    mut q_slots: Query<&mut Stack>,
+    q_harvesters: Query<&Storage, With<Harvester>>,
+    mut q_stacks: Query<&mut Stack>,
     time: Res<Time>,
 ) {
     for (harvests, mut harvest_timer, housed_in) in q_people {
@@ -170,15 +167,15 @@ fn harvest_deposit(
             continue;
         }
 
-        let Some(harvester_slot) = q_harvesters
+        let Some(harvester_stored) = q_harvesters
             .iter_descendants(housed_in.0)
-            .find(|slot| q_slots.contains(*slot))
+            .find(|stored| q_stacks.contains(*stored))
         else {
             continue;
         };
 
         let Ok([mut deposit_stack, mut harvester_stack]) =
-            q_slots.get_many_mut([harvests.0, harvester_slot])
+            q_stacks.get_many_mut([harvests.0, harvester_stored])
         else {
             continue;
         };

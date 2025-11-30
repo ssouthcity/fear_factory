@@ -1,8 +1,9 @@
 use bevy::{prelude::*, ui::Checked, ui_widgets::RadioButton};
 
 use crate::gameplay::{
-    hud::inventory::{InInventory, UIEntry, UIEntryDetails, UIEntryList, UIInventoryTab},
+    hud::inventory::{UIEntry, UIEntryDetails, UIEntryList, UIInventoryTab},
     item::{assets::ItemDef, stack::Stack},
+    storage::StoredBy,
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -31,7 +32,7 @@ fn fill_item_inventory(
     q_tab: Single<&UIInventoryTab, Changed<Checked>>,
     q_entry_list: Single<Entity, With<UIEntryList>>,
     q_entry_details: Single<Entity, With<UIEntryDetails>>,
-    q_items: Query<&Stack, With<InInventory>>,
+    q_items: Query<&Stack, With<StoredBy>>,
     mut commands: Commands,
 ) {
     commands.entity(*q_entry_list).despawn_children();

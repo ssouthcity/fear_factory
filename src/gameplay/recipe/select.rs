@@ -4,12 +4,9 @@ use super::process::ProcessState;
 use crate::{
     assets::indexing::IndexMap,
     gameplay::{
-        item::{
-            assets::ItemDef,
-            inventory::{SlotOf, Slots},
-            stack::Stack,
-        },
+        item::{assets::ItemDef, stack::Stack},
         recipe::{Input, Output, assets::RecipeDef},
+        storage::{Storage, StoredBy},
     },
 };
 
@@ -49,7 +46,7 @@ fn on_select_recipe(
 
     commands
         .entity(select_recipe.entity)
-        .despawn_related::<Slots>();
+        .despawn_related::<Storage>();
 
     for (item_id, quantity) in recipe_def.input.iter() {
         let item_handle = item_index
@@ -60,7 +57,7 @@ fn on_select_recipe(
         commands.spawn((
             Name::new("Input"),
             ChildOf(select_recipe.entity),
-            SlotOf(select_recipe.entity),
+            StoredBy(select_recipe.entity),
             Stack::empty(item_handle),
             Input {
                 quantity: *quantity,
@@ -77,7 +74,7 @@ fn on_select_recipe(
         commands.spawn((
             Name::new("Output"),
             ChildOf(select_recipe.entity),
-            SlotOf(select_recipe.entity),
+            StoredBy(select_recipe.entity),
             Stack::empty(item_handle),
             Output {
                 quantity: *quantity,
