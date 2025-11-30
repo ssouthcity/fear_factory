@@ -5,11 +5,6 @@ use bevy::{
     ui_widgets::{RadioButton, RadioGroup, ValueChange, observe},
 };
 
-use crate::{
-    gameplay::item::{assets::ItemDef, stack::Stack},
-    screens::Screen,
-};
-
 pub mod items;
 pub mod people;
 
@@ -26,8 +21,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins((items::plugin, people::plugin));
 
     app.add_systems(Startup, spawn_ui_root);
-
-    app.add_systems(OnEnter(Screen::Gameplay), spawn_inventory);
 
     app.add_systems(
         Update,
@@ -228,28 +221,4 @@ fn entry_details(asset_server: &AssetServer) -> impl Bundle {
             ..default()
         },
     )
-}
-
-#[derive(Component, Reflect, Debug, Default)]
-#[reflect(Component)]
-pub struct InInventory;
-
-fn spawn_inventory(
-    asset_server: Res<AssetServer>,
-    item_defs: Res<Assets<ItemDef>>,
-    mut commands: Commands,
-) {
-    let inventory = commands.spawn(Name::new("Inventory")).id();
-
-    for (item_id, item_def) in item_defs.iter() {
-        commands.spawn((
-            Name::new(item_def.name.clone()),
-            ChildOf(inventory),
-            Stack {
-                item: asset_server.get_id_handle(item_id).unwrap(),
-                quantity: 0,
-            },
-            InInventory,
-        ));
-    }
 }

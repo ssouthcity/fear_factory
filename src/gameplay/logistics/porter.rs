@@ -5,12 +5,12 @@ use crate::gameplay::{
     FactorySystems,
     item::{
         assets::{ItemDef, Transport},
-        inventory::Slots,
         stack::Stack,
     },
     logistics::pathfinding::{PorterPaths, WalkPath},
     recipe::Output,
     sprite_sort::{YSortSprite, ZIndexSprite},
+    storage::Storage,
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -62,7 +62,7 @@ fn spawn_porter(
         &Transform,
         &mut PorterSpawnTimer,
         &mut PorterSpawnOutputIndex,
-        &Slots,
+        &Storage,
     )>,
     mut output_query: Query<(&mut Stack, &mut PorterPaths), With<Output>>,
     mut commands: Commands,
@@ -70,14 +70,14 @@ fn spawn_porter(
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
-    for (structure, transform, mut timer, mut index, slots) in structure_query {
+    for (structure, transform, mut timer, mut index, storage) in structure_query {
         if !timer.tick(time.delta()).is_finished() {
             continue;
         }
 
-        let outputs = slots
+        let outputs = storage
             .iter()
-            .filter(|slot| output_query.contains(*slot))
+            .filter(|stored| output_query.contains(*stored))
             .collect::<Vec<Entity>>();
 
         let Some(output) = outputs.get(index.0) else {

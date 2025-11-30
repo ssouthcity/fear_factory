@@ -4,8 +4,9 @@ use crate::{
     assets::indexing::IndexMap,
     gameplay::{
         FactorySystems,
-        item::{inventory::Slots, stack::Stack},
+        item::stack::Stack,
         recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
+        storage::Storage,
     },
 };
 
@@ -41,26 +42,26 @@ impl ProcessState {
 }
 
 fn consume_input(
-    query: Query<(&mut ProcessState, &Slots, &SelectedRecipe)>,
+    query: Query<(&mut ProcessState, &Storage, &SelectedRecipe)>,
     mut input_query: Query<(&mut Stack, &Input)>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
 ) {
-    for (mut state, slots, selected_recipe) in query {
+    for (mut state, storage, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
             continue;
         }
 
-        if !slots
+        if !storage
             .iter()
-            .filter_map(|slot| input_query.get(slot).ok())
+            .filter_map(|entity| input_query.get(entity).ok())
             .all(|(stack, input)| stack.quantity >= input.quantity)
         {
             continue;
         }
 
-        for slot in slots.iter() {
-            if let Ok((mut stack, input)) = input_query.get_mut(slot) {
+        for stored in storage.iter() {
+            if let Ok((mut stack, input)) = input_query.get_mut(stored) {
                 stack.quantity = stack.quantity.saturating_sub(input.quantity);
             }
         }
@@ -91,16 +92,16 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
 }
 
 fn produce_output(
-    query: Query<(&mut ProcessState, &Slots)>,
+    query: Query<(&mut ProcessState, &Storage)>,
     mut output_query: Query<(&mut Stack, &Output)>,
 ) {
-    for (mut state, slots) in query {
+    for (mut state, storage) in query {
         if !matches!(*state, ProcessState::Completed) {
             continue;
         }
 
-        for output in slots.iter() {
-            let Ok((mut stack, output)) = output_query.get_mut(output) else {
+        for stored in storage.iter() {
+            let Ok((mut stack, output)) = output_query.get_mut(stored) else {
                 continue;
             };
 

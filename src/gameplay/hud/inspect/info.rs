@@ -4,8 +4,8 @@ use crate::{
     assets::indexing::IndexMap,
     gameplay::{
         hud::inspect::{InspectedEntity, InspectionMenuState},
-        item::inventory::Slots,
         recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
+        storage::Storage,
     },
     widgets::{
         self,
@@ -28,14 +28,14 @@ pub struct HeldRelic(Entity);
 pub fn open_recipe_menu(
     mut commands: Commands,
     inspected_entity: Res<InspectedEntity>,
-    structure_query: Query<(&SelectedRecipe, &Slots)>,
+    structure_query: Query<(&SelectedRecipe, &Storage)>,
     input_query: Query<(), With<Input>>,
     output_query: Query<(), With<Output>>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
     held_relics: Query<&HeldRelic>,
 ) {
-    let Ok((selected_recipe, slots)) = structure_query.get(inspected_entity.0) else {
+    let Ok((selected_recipe, storage)) = structure_query.get(inspected_entity.0) else {
         return;
     };
 
@@ -119,7 +119,7 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for input in slots.iter().filter(|s| input_query.contains(*s)) {
+    for input in storage.iter().filter(|s| input_query.contains(*s)) {
         let slot = commands
             .spawn((ChildOf(input_list_id), widgets::slot::slot_container()))
             .id();
@@ -192,7 +192,7 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for output in slots.iter().filter(|s| output_query.contains(*s)) {
+    for output in storage.iter().filter(|s| output_query.contains(*s)) {
         let slot = commands
             .spawn((ChildOf(output_list_id), widgets::slot::slot_container()))
             .id();
