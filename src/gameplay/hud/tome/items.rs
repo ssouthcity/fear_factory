@@ -1,12 +1,14 @@
 use bevy::{prelude::*, ui::Checked, ui_widgets::RadioButton};
 
 use crate::gameplay::{
-    hud::inventory::{UIEntry, UIEntryDetails, UIEntryList, UIInventoryTab},
+    hud::tome::{TomeTab, UIEntry, UIEntryDetails, UIEntryList, UITomeLeftPageRoot, widgets},
     item::{assets::ItemDef, stack::Stack},
     storage::StoredBy,
 };
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_systems(OnEnter(TomeTab::Items), spawn_item_list);
+
     app.add_systems(Update, (fill_item_inventory, update_item_entry).chain());
 
     app.add_systems(Update, (fill_item_details, update_item_details).chain());
@@ -15,6 +17,19 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 pub struct ItemHandle(Handle<ItemDef>);
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+pub struct UIItemDetails;
+
+fn spawn_item_list(mut commands: Commands, left_page: Single<Entity, With<UITomeLeftPageRoot>>) {
+    commands.spawn((
+        UIEntryList,
+        DespawnOnExit(TomeTab::Items),
+        widgets::list_page(),
+        ChildOf(*left_page),
+    ));
+}
 
 fn item_entry(handle: Handle<ItemDef>) -> impl Bundle {
     (
@@ -29,7 +44,7 @@ fn item_entry(handle: Handle<ItemDef>) -> impl Bundle {
 }
 
 fn fill_item_inventory(
-    q_tab: Single<&UIInventoryTab, Changed<Checked>>,
+    q_tab: Single<&TomeTab, Changed<Checked>>,
     q_entry_list: Single<Entity, With<UIEntryList>>,
     q_entry_details: Single<Entity, With<UIEntryDetails>>,
     q_items: Query<&Stack, With<StoredBy>>,
@@ -38,7 +53,7 @@ fn fill_item_inventory(
     commands.entity(*q_entry_list).despawn_children();
     commands.entity(*q_entry_details).despawn_children();
 
-    if **q_tab != UIInventoryTab::Items {
+    if **q_tab != TomeTab::Items {
         return;
     }
 
@@ -65,10 +80,6 @@ fn update_item_entry(
         )]);
     }
 }
-
-#[derive(Component, Reflect, Debug, Default)]
-#[reflect(Component)]
-pub struct UIItemDetails;
 
 fn item_details(handle: Handle<ItemDef>) -> impl Bundle {
     (
