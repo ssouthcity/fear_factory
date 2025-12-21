@@ -9,12 +9,12 @@ use crate::screens::Screen;
 
 pub mod hotbar;
 pub mod inspect;
-pub mod inventory;
+pub mod tome;
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((UiWidgetsPlugins, InputDispatchPlugin, TabNavigationPlugin));
 
-    app.add_plugins((hotbar::plugin, inspect::plugin, inventory::plugin));
+    app.add_plugins((hotbar::plugin, inspect::plugin, tome::plugin));
 
     app.add_systems(OnEnter(Screen::Gameplay), (setup_portrait, setup_relic));
 }
