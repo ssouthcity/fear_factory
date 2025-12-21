@@ -1,34 +1,29 @@
 use bevy::{
     prelude::*,
     ui::Checked,
-    ui_widgets::{RadioButton, RadioGroup, ValueChange, observe},
+    ui_widgets::{RadioButton, ValueChange, observe},
 };
 
 use crate::{
-    gameplay::recipe::assets::RecipeDef,
+    gameplay::{
+        hud::tome::widgets::{TAB_COLOR_CHECKED, TAB_COLOR_DEFAULT},
+        recipe::assets::RecipeDef,
+    },
     input::input_map::{Action, action_just_pressed},
     screens::Screen,
 };
 
-pub mod items;
-pub mod people;
+pub mod tab_items;
+pub mod tab_people;
+pub mod tab_recipes;
 pub mod widgets;
 
-pub const TAB_COLOR_DEFAULT: Color = Color::hsl(300.0, 0.25, 0.5);
-pub const TAB_COLOR_CHECKED: Color = Color::hsl(160.0, 0.25, 0.5);
-
-pub const ENTRY_COLOR_DEFAULT: Color = Color::NONE;
-pub const ENTRY_COLOR_CHECKED: Color = Color::hsla(0.0, 0.0, 0.0, 0.1);
-
-pub const PAGE_WIDTH: f32 = 512.0;
-pub const PAGE_HEIGHT: f32 = PAGE_WIDTH * 1.6;
-
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((items::plugin, people::plugin));
+    app.add_plugins((tab_items::plugin, tab_people::plugin, tab_recipes::plugin));
 
     app.add_sub_state::<TomeOpen>();
     app.add_sub_state::<TomeTab>();
-    app.init_resource::<TomeDetails>();
+    app.init_resource::<TomeFocused>();
 
     app.add_systems(
         OnEnter(Screen::Gameplay),
@@ -44,7 +39,12 @@ pub(super) fn plugin(app: &mut App) {
             .run_if(in_state(Screen::Gameplay)),
     );
 
-    app.add_systems(Update, (update_tab_color, update_entry_color));
+    app.add_systems(
+        Update,
+        (refresh_tab_style, update_tab_color)
+            .chain()
+            .run_if(state_changed::<TomeTab>),
+    );
 }
 
 #[derive(SubStates, Debug, Hash, PartialEq, Eq, Clone, Copy, Default)]
@@ -62,7 +62,7 @@ pub enum TomeTab {
 }
 
 #[derive(Resource, Reflect, Debug, Default)]
-pub enum TomeDetails {
+pub enum TomeFocused {
     #[default]
     None,
     Item(Entity),
@@ -127,14 +127,35 @@ fn spawn_tome_root(
             ..default()
         },
         children![
-            tabs(),
-            (widgets::page_left(&asset_server), children![entry_list()],),
-            (
-                widgets::page_right(&asset_server),
-                children![entry_details()],
-            )
+            (widgets::tabs(), observe(on_tab_selection)),
+            widgets::page_left(&asset_server),
+            widgets::page_right(&asset_server),
         ],
     ));
+}
+
+fn on_tab_selection(
+    value_change: On<ValueChange<Entity>>,
+    q_tabs: Query<&TomeTab, With<RadioButton>>,
+    mut next_tab: ResMut<NextState<TomeTab>>,
+) {
+    if let Ok(tab) = q_tabs.get(value_change.value) {
+        next_tab.set(*tab);
+    }
+}
+
+fn refresh_tab_style(
+    q_tabs: Query<(Entity, &TomeTab, Has<Checked>), With<RadioButton>>,
+    current_tab: Res<State<TomeTab>>,
+    mut commands: Commands,
+) {
+    for (entity, tab, is_checked) in q_tabs {
+        if *current_tab == *tab {
+            commands.entity(entity).insert(Checked);
+        } else if is_checked {
+            commands.entity(entity).remove::<Checked>();
+        }
+    }
 }
 
 fn toggle_tome_open(state: Res<State<TomeOpen>>, mut next_state: ResMut<NextState<TomeOpen>>) {
@@ -152,39 +173,6 @@ fn set_tome_visibility(
     };
 }
 
-fn tabs() -> impl Bundle {
-    (
-        Name::new("Tabs"),
-        Node {
-            position_type: PositionType::Absolute,
-            top: px(64.0),
-            right: px(PAGE_WIDTH * 2.0 - 32.0),
-            flex_direction: FlexDirection::Column,
-            row_gap: px(8.0),
-            ..default()
-        },
-        ZIndex(10),
-        RadioGroup,
-        observe(on_tab_selection),
-        children![
-            (tab("Items", TomeTab::Items), Checked),
-            tab("People", TomeTab::People),
-            tab("Recipes", TomeTab::Recipes),
-        ],
-    )
-}
-
-fn tab(name: &'static str, tab: TomeTab) -> impl Bundle {
-    (
-        Name::new(name),
-        Node::default(),
-        BackgroundColor(TAB_COLOR_DEFAULT),
-        RadioButton,
-        tab,
-        children![Text::new(name),],
-    )
-}
-
 fn update_tab_color(q_tabs: Query<(&mut BackgroundColor, Has<Checked>), With<TomeTab>>) {
     for (mut background_color, checked) in q_tabs {
         background_color.0 = if checked {
@@ -195,66 +183,11 @@ fn update_tab_color(q_tabs: Query<(&mut BackgroundColor, Has<Checked>), With<Tom
     }
 }
 
-fn update_entry_color(q_entries: Query<(&mut BackgroundColor, Has<Checked>), With<UIEntry>>) {
-    for (mut background_color, checked) in q_entries {
-        background_color.0 = if checked {
-            ENTRY_COLOR_CHECKED
-        } else {
-            ENTRY_COLOR_DEFAULT
-        };
-    }
-}
-
-fn on_tab_selection(
-    value_change: On<ValueChange<Entity>>,
-    q_checked: Query<Entity, (With<RadioButton>, With<TomeTab>, With<Checked>)>,
+pub fn clear_pages(
     mut commands: Commands,
+    q_page_left: Single<Entity, With<UITomeLeftPageRoot>>,
+    q_page_right: Single<Entity, With<UITomeRightPageRoot>>,
 ) {
-    for radio in q_checked {
-        commands.entity(radio).remove::<Checked>();
-    }
-
-    commands.entity(value_change.value).insert(Checked);
-}
-
-fn entry_list() -> impl Bundle {
-    (
-        Name::new("Entry List"),
-        UIEntryList,
-        Node {
-            flex_direction: FlexDirection::Column,
-            row_gap: px(8.0),
-            width: percent(100.0),
-            height: percent(100.0),
-            overflow: Overflow::scroll_y(),
-            ..default()
-        },
-        RadioGroup,
-        observe(on_entry_selection),
-    )
-}
-
-fn on_entry_selection(
-    value_change: On<ValueChange<Entity>>,
-    q_checked: Query<Entity, (With<RadioButton>, With<UIEntry>, With<Checked>)>,
-    mut commands: Commands,
-) {
-    for entry in q_checked {
-        commands.entity(entry).remove::<Checked>();
-    }
-
-    commands.entity(value_change.value).insert(Checked);
-}
-
-fn entry_details() -> impl Bundle {
-    (
-        Name::new("Entry Details"),
-        UIEntryDetails,
-        Node {
-            width: percent(100.0),
-            height: percent(100.0),
-            overflow: Overflow::scroll_y(),
-            ..default()
-        },
-    )
+    commands.entity(*q_page_left).despawn_children();
+    commands.entity(*q_page_right).despawn_children();
 }
