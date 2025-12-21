@@ -9,9 +9,6 @@ use crate::gameplay::hud::tome::{TomeTab, UIEntryList, UITomeLeftPageRoot, UITom
 pub const TAB_COLOR_DEFAULT: Color = Color::hsl(300.0, 0.25, 0.5);
 pub const TAB_COLOR_CHECKED: Color = Color::hsl(160.0, 0.25, 0.5);
 
-pub const ENTRY_COLOR_DEFAULT: Color = Color::NONE;
-pub const ENTRY_COLOR_CHECKED: Color = Color::hsla(0.0, 0.0, 0.0, 0.1);
-
 pub const PAGE_WIDTH: f32 = 512.0;
 pub const PAGE_HEIGHT: f32 = PAGE_WIDTH * 1.6;
 
@@ -94,15 +91,5 @@ pub fn list_page() -> impl Bundle {
             ..default()
         },
         RadioGroup,
-    )
-}
-
-pub fn list_entry() -> impl Bundle {
-    (
-        Node {
-            column_gap: px(4.0),
-            ..default()
-        },
-        RadioButton,
     )
 }

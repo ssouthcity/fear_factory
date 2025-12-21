@@ -182,12 +182,3 @@ fn update_tab_color(q_tabs: Query<(&mut BackgroundColor, Has<Checked>), With<Tom
         };
     }
 }
-
-pub fn clear_pages(
-    mut commands: Commands,
-    q_page_left: Single<Entity, With<UITomeLeftPageRoot>>,
-    q_page_right: Single<Entity, With<UITomeRightPageRoot>>,
-) {
-    commands.entity(*q_page_left).despawn_children();
-    commands.entity(*q_page_right).despawn_children();
-}
