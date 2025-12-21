@@ -5,7 +5,9 @@ use crate::screens::Screen;
 pub mod hud;
 pub mod item;
 pub mod logistics;
+pub mod people;
 pub mod player;
+pub mod random;
 pub mod recipe;
 pub mod sprite_sort;
 pub mod storage;
@@ -30,7 +32,9 @@ pub fn plugin(app: &mut App) {
         hud::plugin,
         item::plugin,
         logistics::plugin,
+        people::plugin,
         player::plugin,
+        random::plugin,
         recipe::plugin,
         sprite_sort::plugin,
         structure::plugin,
