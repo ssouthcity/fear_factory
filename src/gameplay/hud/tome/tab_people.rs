@@ -1,10 +1,8 @@
 use bevy::prelude::*;
 
 use crate::gameplay::{
-    hud::tome::{TomeTab, UIEntryList, UITomeLeftPageRoot, widgets},
+    hud::tome::{TomeTab, UITomeLeftPageRoot, widgets},
     people::Person,
-    player::Player,
-    storage::{Storage, StoredBy},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -12,7 +10,7 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        (backfill_people_grid, refresh_person_badges).run_if(in_state(TomeTab::People)),
+        (refresh_person_badges).run_if(in_state(TomeTab::People)),
     );
 }
 
@@ -54,8 +52,6 @@ fn refresh_person_badges(
 fn spawn_people_grid(
     mut commands: Commands,
     left_page: Single<Entity, With<UITomeLeftPageRoot>>,
-    player: Single<Entity, With<Player>>,
-    storage: Query<&Storage>,
     people: Query<Entity, With<Person>>,
 ) {
     let people_grid = commands
@@ -66,25 +62,7 @@ fn spawn_people_grid(
         ))
         .id();
 
-    for person in storage
-        .iter_descendants(*player)
-        .filter(|s| people.contains(*s))
-    {
+    for person in people {
         commands.spawn((person_badge(person), ChildOf(people_grid)));
-    }
-}
-
-fn backfill_people_grid(
-    mut commands: Commands,
-    people_grid: Single<Entity, With<UIEntryList>>,
-    player: Single<Entity, With<Player>>,
-    new_people: Query<(Entity, &StoredBy), (With<Person>, Added<StoredBy>)>,
-) {
-    for (person, stored_by) in new_people {
-        if stored_by.0 != *player {
-            continue;
-        }
-
-        commands.spawn((person_badge(person), ChildOf(*people_grid)));
     }
 }

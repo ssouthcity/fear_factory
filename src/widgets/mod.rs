@@ -1,11 +1,19 @@
 use bevy::prelude::*;
 
 pub mod item;
+pub mod resource;
 pub mod slot;
 pub mod tooltip;
 
+pub use resource::resource_plate;
+
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((item::plugin, slot::plugin, tooltip::plugin));
+    app.add_plugins((
+        item::plugin,
+        resource::plugin,
+        slot::plugin,
+        tooltip::plugin,
+    ));
 }
 
 pub fn container() -> impl Bundle {

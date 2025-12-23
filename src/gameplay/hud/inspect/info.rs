@@ -4,8 +4,8 @@ use crate::{
     assets::indexing::IndexMap,
     gameplay::{
         hud::inspect::{InspectedEntity, InspectionMenuState},
-        recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
-        storage::Storage,
+        recipe::{assets::RecipeDef, select::SelectedRecipe},
+        storage::{InputStorage, OutputStorage},
     },
     widgets::{
         self,
@@ -28,14 +28,14 @@ pub struct HeldRelic(Entity);
 pub fn open_recipe_menu(
     mut commands: Commands,
     inspected_entity: Res<InspectedEntity>,
-    structure_query: Query<(&SelectedRecipe, &Storage)>,
-    input_query: Query<(), With<Input>>,
-    output_query: Query<(), With<Output>>,
+    structure_query: Query<(Entity, &SelectedRecipe, &InputStorage, &OutputStorage)>,
     recipes: Res<Assets<RecipeDef>>,
     recipe_index: Res<IndexMap<RecipeDef>>,
     held_relics: Query<&HeldRelic>,
 ) {
-    let Ok((selected_recipe, storage)) = structure_query.get(inspected_entity.0) else {
+    let Ok((structure, selected_recipe, input_storage, output_storage)) =
+        structure_query.get(inspected_entity.0)
+    else {
         return;
     };
 
@@ -119,11 +119,11 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for input in storage.iter().filter(|s| input_query.contains(*s)) {
-        let slot = commands
-            .spawn((ChildOf(input_list_id), widgets::slot::slot_container()))
-            .id();
-        commands.spawn(widgets::slot::slotted_stack(slot, input));
+    for input in input_storage.resources.iter() {
+        commands.spawn((
+            widgets::resource_plate(structure, input.0.clone()),
+            ChildOf(input_list_id),
+        ));
     }
 
     let middle_column_id = commands
@@ -192,11 +192,11 @@ pub fn open_recipe_menu(
         ))
         .id();
 
-    for output in storage.iter().filter(|s| output_query.contains(*s)) {
-        let slot = commands
-            .spawn((ChildOf(output_list_id), widgets::slot::slot_container()))
-            .id();
-        commands.spawn(widgets::slot::slotted_stack(slot, output));
+    for output in output_storage.resources.iter() {
+        commands.spawn((
+            widgets::resource_plate(structure, output.0.clone()),
+            ChildOf(output_list_id),
+        ));
     }
 }
 

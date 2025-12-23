@@ -6,7 +6,7 @@ use crate::{
         FactorySystems,
         item::stack::Stack,
         recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
-        storage::Storage,
+        storage::OutputStorage,
     },
 };
 
@@ -92,7 +92,7 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
 }
 
 fn produce_output(
-    query: Query<(&mut ProcessState, &Storage)>,
+    query: Query<(&mut ProcessState, &OutputStorage)>,
     mut output_query: Query<(&mut Stack, &Output)>,
 ) {
     for (mut state, storage) in query {

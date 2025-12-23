@@ -1,16 +1,20 @@
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
+use rand::seq::IteratorRandom;
 
-use crate::gameplay::{
-    FactorySystems,
-    item::{
-        assets::{ItemDef, Transport},
-        stack::Stack,
+use crate::{
+    assets::indexing::IndexMap,
+    gameplay::{
+        FactorySystems,
+        item::{
+            assets::{ItemDef, Transport},
+            stack::Stack,
+        },
+        logistics::pathfinding::{PorterPaths, WalkPath},
+        random::Seed,
+        sprite_sort::{YSortSprite, ZIndexSprite},
+        storage::OutputStorage,
     },
-    logistics::pathfinding::{PorterPaths, WalkPath},
-    recipe::Output,
-    sprite_sort::{YSortSprite, ZIndexSprite},
-    storage::Storage,
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -25,12 +29,7 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Deref, DerefMut)]
 #[reflect(Component)]
-#[require(PorterSpawnOutputIndex)]
 pub struct PorterSpawnTimer(pub Timer);
-
-#[derive(Component, Reflect, Deref, DerefMut, Default)]
-#[reflect(Component)]
-struct PorterSpawnOutputIndex(usize);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
@@ -60,35 +59,19 @@ fn spawn_porter(
     structure_query: Query<(
         Entity,
         &Transform,
+        &mut PorterPaths,
         &mut PorterSpawnTimer,
-        &mut PorterSpawnOutputIndex,
-        &Storage,
+        &mut OutputStorage,
     )>,
-    mut output_query: Query<(&mut Stack, &mut PorterPaths), With<Output>>,
     mut commands: Commands,
     item_definitions: Res<Assets<ItemDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
+    mut seed: ResMut<Seed>,
 ) {
-    for (structure, transform, mut timer, mut index, storage) in structure_query {
+    for (structure, transform, mut porter_paths, mut timer, mut output_storage) in structure_query {
         if !timer.tick(time.delta()).is_finished() {
-            continue;
-        }
-
-        let outputs = storage
-            .iter()
-            .filter(|stored| output_query.contains(*stored))
-            .collect::<Vec<Entity>>();
-
-        let Some(output) = outputs.get(index.0) else {
-            continue;
-        };
-
-        let Ok((mut stack, mut porter_paths)) = output_query.get_mut(*output) else {
-            continue;
-        };
-
-        if stack.quantity == 0 {
             continue;
         }
 
@@ -96,7 +79,16 @@ fn spawn_porter(
             continue;
         };
 
-        let Some(item_def) = item_definitions.get(&stack.item) else {
+        let Some((resource, ref mut quantity)) =
+            output_storage.resources.iter_mut().choose(&mut *seed)
+        else {
+            continue;
+        };
+
+        let Some(item_def) = item_index
+            .get(&resource.0)
+            .and_then(|id| item_definitions.get(*id))
+        else {
             continue;
         };
 
@@ -114,15 +106,13 @@ fn spawn_porter(
             },
             YSortSprite,
             ZIndexSprite(10),
-            stack.clone(),
             PorterOf(structure),
-            PorterFromOutput(*output),
+            PorterFromOutput(structure),
             PorterToInput(*input),
             WalkPath(path.clone()),
         ));
 
-        stack.quantity -= 1;
-        index.0 = (index.0 + 1) % outputs.len();
+        **quantity -= 1;
         porter_paths.0.rotate_left(1);
         timer.reset();
     }

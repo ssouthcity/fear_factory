@@ -7,11 +7,9 @@ use serde::Deserialize;
 use crate::{
     assets::{indexing::IndexMap, loaders::toml::TomlAssetPlugin, tracking::LoadResource},
     gameplay::{
-        item::{
-            assets::{ItemDef, Taxonomy},
-            stack::Stack,
-        },
+        item::assets::{ItemDef, Taxonomy},
         sprite_sort::{YSortSprite, ZIndexSprite},
+        storage::ResourceID,
         world::{
             construction::Constructions,
             tilemap::{
@@ -46,7 +44,10 @@ pub struct DepositDef {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-pub struct Deposit;
+pub struct Deposit {
+    pub resource_id: ResourceID,
+    pub quantity: u32,
+}
 
 #[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
@@ -92,6 +93,7 @@ fn spawn_deposits(
     mut commands: Commands,
     deposit_definitions: Res<Assets<DepositDef>>,
     item_index: Res<IndexMap<ItemDef>>,
+    item_defs: Res<Assets<ItemDef>>,
     asset_server: Res<AssetServer>,
     deposit_noise: Res<DepositNoise>,
     mut constructions: ResMut<Constructions>,
@@ -107,7 +109,7 @@ fn spawn_deposits(
 
         let Some(item) = item_index
             .get(&deposit_def.item_id)
-            .and_then(|id| asset_server.get_id_handle(*id))
+            .and_then(|id| item_defs.get(*id))
         else {
             return;
         };
@@ -128,12 +130,11 @@ fn spawn_deposits(
                 let entity = commands
                     .spawn((
                         Name::new(deposit_def.name.clone()),
-                        Deposit,
-                        deposit_def.taxonomy.clone(),
-                        Stack {
-                            item: item.clone(),
+                        Deposit {
+                            resource_id: ResourceID(item.id.clone()),
                             quantity: 100,
                         },
+                        deposit_def.taxonomy.clone(),
                         Coord(absolute_tile_pos),
                         Anchor(Vec2::new(0.0, -0.25)),
                         YSortSprite,

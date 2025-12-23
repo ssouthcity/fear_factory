@@ -4,9 +4,9 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 
 use crate::{
     gameplay::{
-        item::{assets::ItemDef, stack::Stack},
+        item::assets::ItemDef,
         people::{Person, naming::NameManager},
-        storage::StoredBy,
+        storage::{ResourceID, ResourceStorage},
     },
     screens::Screen,
 };
@@ -25,23 +25,13 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Player;
 
-fn spawn_player(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    assets: Res<Assets<ItemDef>>,
-) {
-    let player = commands.spawn((Name::new("Player"), Player)).id();
-
-    for (item_id, _) in assets.iter() {
-        commands.spawn((
-            Stack {
-                item: asset_server.get_id_handle(item_id).unwrap(),
-                quantity: 0,
-            },
-            ChildOf(player),
-            StoredBy(player),
-        ));
+fn spawn_player(mut commands: Commands, assets: Res<Assets<ItemDef>>) {
+    let mut storage = ResourceStorage::default();
+    for (_, item_def) in assets.iter() {
+        storage.resources.insert(ResourceID(item_def.id.clone()), 0);
     }
+
+    commands.spawn((Name::new("Player"), Player, storage));
 }
 
 fn give_player_a_person(
@@ -51,10 +41,5 @@ fn give_player_a_person(
 ) {
     let name = name_manager.next();
 
-    commands.spawn((
-        Name::new(name.clone()),
-        Person,
-        StoredBy(*player),
-        ChildOf(*player),
-    ));
+    commands.spawn((Name::new(name.clone()), Person, ChildOf(*player)));
 }

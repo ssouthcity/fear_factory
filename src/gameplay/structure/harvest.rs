@@ -5,7 +5,7 @@ use crate::gameplay::{
     FactorySystems,
     item::{assets::Taxonomy, stack::Stack},
     recipe::Output,
-    storage::{Storage, StoredBy},
+    storage::OutputStorage,
     structure::range::Range,
     world::{
         construction::{Constructions, StructureConstructed},
@@ -158,8 +158,8 @@ fn assign_harvester_deposit(
 
 fn harvest_deposit(
     q_people: Query<(&Harvests, &mut HarvestTimer, &HousedIn), With<Person>>,
-    q_harvesters: Query<&Storage, With<Harvester>>,
-    mut q_stacks: Query<&mut Stack>,
+    mut q_harvesters: Query<&mut OutputStorage, With<Harvester>>,
+    mut q_deposits: Query<&mut Deposit>,
     time: Res<Time>,
 ) {
     for (harvests, mut harvest_timer, housed_in) in q_people {
@@ -167,23 +167,21 @@ fn harvest_deposit(
             continue;
         }
 
-        let Some(harvester_stored) = q_harvesters
-            .iter_descendants(housed_in.0)
-            .find(|stored| q_stacks.contains(*stored))
-        else {
+        let Ok(mut harvester_storage) = q_harvesters.get_mut(housed_in.0) else {
             continue;
         };
 
-        let Ok([mut deposit_stack, mut harvester_stack]) =
-            q_stacks.get_many_mut([harvests.0, harvester_stored])
-        else {
+        let Ok(mut deposit) = q_deposits.get_mut(harvests.0) else {
             continue;
         };
 
-        let to_take = deposit_stack.quantity.min(1);
-
-        deposit_stack.quantity = deposit_stack.quantity.saturating_sub(to_take);
-        harvester_stack.quantity = harvester_stack.quantity.saturating_add(to_take);
+        let to_take = deposit.quantity.min(1);
+        deposit.quantity = deposit.quantity.saturating_sub(to_take);
+        harvester_storage
+            .resources
+            .entry(deposit.resource_id.clone())
+            .and_modify(|v| *v = v.saturating_add(to_take))
+            .or_insert(to_take);
     }
 }
 
