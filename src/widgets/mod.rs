@@ -1,20 +1,19 @@
 use bevy::prelude::*;
 
-pub mod item;
-pub mod slot;
+pub mod person_badge;
+pub mod recipe_plate;
+pub mod resource_plate;
 pub mod tooltip;
 
-pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((item::plugin, slot::plugin, tooltip::plugin));
-}
+pub use person_badge::person_badge;
+pub use recipe_plate::recipe_plate;
+pub use resource_plate::resource_plate;
 
-pub fn container() -> impl Bundle {
-    Node {
-        width: percent(100.0),
-        height: percent(100.0),
-        display: Display::Flex,
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        ..default()
-    }
+pub(super) fn plugin(app: &mut App) {
+    app.add_plugins((
+        person_badge::plugin,
+        recipe_plate::plugin,
+        resource_plate::plugin,
+        tooltip::plugin,
+    ));
 }

@@ -13,13 +13,19 @@ use crate::{
     screens::Screen,
 };
 
+pub mod tab_inspect;
 pub mod tab_items;
 pub mod tab_people;
 pub mod tab_recipes;
 pub mod widgets;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((tab_items::plugin, tab_people::plugin, tab_recipes::plugin));
+    app.add_plugins((
+        tab_inspect::plugin,
+        tab_items::plugin,
+        tab_people::plugin,
+        tab_recipes::plugin,
+    ));
 
     app.add_sub_state::<TomeOpen>();
     app.add_sub_state::<TomeTab>();
@@ -59,6 +65,7 @@ pub enum TomeTab {
     Items,
     People,
     Recipes,
+    Inspect,
 }
 
 #[derive(Resource, Reflect, Debug, Default)]

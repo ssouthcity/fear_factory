@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::gameplay::{
-    hud::inspect::Inspect,
+    hud::tome::tab_inspect::Inspect,
     recipe::select::SelectRecipe,
     structure::{Structure, assets::StructureDef, interactable::Interact},
     world::construction::StructureConstructed,
