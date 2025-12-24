@@ -1,13 +1,10 @@
 use bevy::prelude::*;
 
-use crate::{
-    assets::indexing::IndexMap,
-    gameplay::{
-        FactorySystems,
-        item::stack::Stack,
-        recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
-        storage::Storage,
-    },
+use crate::gameplay::{
+    FactorySystems,
+    item::stack::Stack,
+    recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
+    storage::Storage,
 };
 
 use super::progress::on_progress_state_add;
@@ -45,7 +42,6 @@ fn consume_input(
     query: Query<(&mut ProcessState, &Storage, &SelectedRecipe)>,
     mut input_query: Query<(&mut Stack, &Input)>,
     recipes: Res<Assets<RecipeDef>>,
-    recipe_index: Res<IndexMap<RecipeDef>>,
 ) {
     for (mut state, storage, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
@@ -66,10 +62,9 @@ fn consume_input(
             }
         }
 
-        let recipe = recipe_index
-            .get(selected_recipe.0.as_str())
-            .and_then(|asset_id| recipes.get(*asset_id))
-            .expect("Selected recipe refers to non-existent recipe");
+        let Some(recipe) = recipes.get(&selected_recipe.0) else {
+            continue;
+        };
 
         let timer = Timer::new(recipe.duration, TimerMode::Once);
 

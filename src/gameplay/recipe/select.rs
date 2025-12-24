@@ -19,12 +19,12 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Default, Deref, DerefMut)]
 #[reflect(Component)]
 #[require(ProcessState)]
-pub struct SelectedRecipe(pub String);
+pub struct SelectedRecipe(pub Handle<RecipeDef>);
 
 #[derive(EntityEvent, Reflect)]
 pub struct SelectRecipe {
     pub entity: Entity,
-    pub recipe_id: String,
+    pub recipe: AssetId<RecipeDef>,
 }
 
 #[derive(Message, Reflect)]
@@ -32,17 +32,15 @@ pub struct RecipeChanged(pub Entity);
 
 fn on_select_recipe(
     select_recipe: On<SelectRecipe>,
-    recipes: Res<Assets<RecipeDef>>,
-    recipe_index: Res<IndexMap<RecipeDef>>,
+    mut recipes: ResMut<Assets<RecipeDef>>,
     mut items: ResMut<Assets<ItemDef>>,
     item_index: Res<IndexMap<ItemDef>>,
     mut commands: Commands,
     mut recipe_changes: MessageWriter<RecipeChanged>,
 ) {
-    let recipe_def = recipe_index
-        .get(&select_recipe.recipe_id)
-        .and_then(|asset_id| recipes.get(*asset_id))
-        .expect("Attempted to select invalid recipe");
+    let Some(recipe_def) = recipes.get(select_recipe.recipe) else {
+        return;
+    };
 
     commands
         .entity(select_recipe.entity)
@@ -82,9 +80,13 @@ fn on_select_recipe(
         ));
     }
 
+    let Some(handle) = recipes.get_strong_handle(select_recipe.recipe) else {
+        return;
+    };
+
     commands
         .entity(select_recipe.entity)
-        .insert(SelectedRecipe(select_recipe.recipe_id.to_owned()));
+        .insert(SelectedRecipe(handle));
 
     recipe_changes.write(RecipeChanged(select_recipe.entity));
 }
