@@ -78,21 +78,15 @@ fn on_recipe_select(
     click: On<Pointer<Click>>,
     mut commands: Commands,
     inspected: Res<Inspected>,
-    recipes: Res<Assets<RecipeDef>>,
-    query: Query<&Recipe>,
+    recipe_badges: Query<&Recipe>,
 ) {
-    let Some(recipe_id) = query
-        .get(click.entity)
-        .ok()
-        .and_then(|r| recipes.get(r.0))
-        .map(|r| r.id.clone())
-    else {
+    let Ok(recipe) = recipe_badges.get(click.entity) else {
         return;
     };
 
     commands.trigger(SelectRecipe {
         entity: inspected.0,
-        recipe_id,
+        recipe: recipe.0,
     });
 }
 
