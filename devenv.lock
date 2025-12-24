@@ -87,27 +87,11 @@
         "type": "github"
       }
     },
-    "nixpkgs-tracy": {
-      "locked": {
-        "lastModified": 1758359088,
-        "owner": "MonaMayrhofer",
-        "repo": "nixpkgs",
-        "rev": "f71db25afbbef6a89e2e3fcabc6d7fb18459f67a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "MonaMayrhofer",
-        "ref": "tracy-upgrade",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "devenv": "devenv",
         "git-hooks": "git-hooks",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-tracy": "nixpkgs-tracy",
         "pre-commit-hooks": [
           "git-hooks"
         ],

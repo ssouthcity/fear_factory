@@ -1,8 +1,6 @@
 inputs:
   nixpkgs:
     url: github:nixos/nixpkgs?ref=nixos-unstable
-  nixpkgs-tracy:
-    url: github:MonaMayrhofer/nixpkgs?ref=tracy-upgrade
   rust-overlay:
     url: github:oxalica/rust-overlay
     inputs:
