@@ -3,26 +3,26 @@ use bevy::{prelude::*, ui_widgets::RadioButton};
 use crate::gameplay::item::{assets::ItemDef, stack::Stack};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(Update, refresh_resource_plates);
+    app.add_systems(Update, refresh_item_plates);
 }
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct ResourcePlate(pub Entity);
+struct ItemPlate(pub Entity);
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct ResourcePortrait;
+struct ItemPortrait;
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct ResourceName;
+struct ItemName;
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct ResourceQuantity;
+struct ItemQuantity;
 
-pub fn resource_plate(resource: Entity) -> impl Bundle {
+pub fn item_plate(item: Entity) -> impl Bundle {
     (
         Node {
             column_gap: px(4.0),
@@ -31,7 +31,7 @@ pub fn resource_plate(resource: Entity) -> impl Bundle {
             ..default()
         },
         RadioButton,
-        ResourcePlate(resource),
+        ItemPlate(item),
         children![
             (
                 Node {
@@ -40,7 +40,7 @@ pub fn resource_plate(resource: Entity) -> impl Bundle {
                 },
                 children![
                     (
-                        ResourcePortrait,
+                        ItemPortrait,
                         ImageNode::default(),
                         Node {
                             width: px(64.0),
@@ -49,7 +49,7 @@ pub fn resource_plate(resource: Entity) -> impl Bundle {
                         }
                     ),
                     (
-                        ResourceName,
+                        ItemName,
                         Text::default(),
                         TextFont::default().with_font_size(32.0),
                     ),
@@ -61,7 +61,7 @@ pub fn resource_plate(resource: Entity) -> impl Bundle {
                     ..default()
                 },
                 children![(
-                    ResourceQuantity,
+                    ItemQuantity,
                     Text::default(),
                     TextFont::default().with_font_size(24.0),
                 ),],
@@ -70,19 +70,19 @@ pub fn resource_plate(resource: Entity) -> impl Bundle {
     )
 }
 
-fn refresh_resource_plates(
-    q_item_plates: Query<(Entity, &ResourcePlate)>,
+fn refresh_item_plates(
+    q_item_plates: Query<(Entity, &ItemPlate)>,
     q_item_stacks: Query<&Stack>,
     item_defs: Res<Assets<ItemDef>>,
     children: Query<&Children>,
     mut q_item_plate_components: ParamSet<(
-        Query<&mut ImageNode, With<ResourcePortrait>>,
-        Query<&mut Text, With<ResourceName>>,
-        Query<&mut Text, With<ResourceQuantity>>,
+        Query<&mut ImageNode, With<ItemPortrait>>,
+        Query<&mut Text, With<ItemName>>,
+        Query<&mut Text, With<ItemQuantity>>,
     )>,
     asset_server: Res<AssetServer>,
 ) {
-    for (item_plate, ResourcePlate(stack_entity)) in q_item_plates {
+    for (item_plate, ItemPlate(stack_entity)) in q_item_plates {
         let Ok(stack) = q_item_stacks.get(*stack_entity) else {
             continue;
         };

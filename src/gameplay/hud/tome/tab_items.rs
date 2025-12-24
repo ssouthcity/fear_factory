@@ -29,6 +29,6 @@ fn spawn_item_list(
         .id();
 
     for stack in q_player.iter().flat_map(|e| q_items.get(e)) {
-        commands.spawn((widgets::resource_plate(stack), UIEntry, ChildOf(item_list)));
+        commands.spawn((widgets::item_plate(stack), UIEntry, ChildOf(item_list)));
     }
 }

@@ -135,6 +135,6 @@ fn render_right_page(commands: &mut Commands, right_page: Entity, storage: &Stor
         .id();
 
     for stored in storage.iter() {
-        commands.spawn((widgets::resource_plate(stored), ChildOf(id)));
+        commands.spawn((widgets::item_plate(stored), ChildOf(id)));
     }
 }
