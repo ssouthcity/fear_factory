@@ -10,7 +10,6 @@ pub mod player;
 pub mod random;
 pub mod recipe;
 pub mod sprite_sort;
-pub mod storage;
 pub mod structure;
 pub mod world;
 

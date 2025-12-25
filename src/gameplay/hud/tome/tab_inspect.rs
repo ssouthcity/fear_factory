@@ -3,11 +3,11 @@ use bevy::{prelude::*, ui_widgets::observe};
 use crate::{
     gameplay::{
         hud::tome::{TomeOpen, TomeTab, UITomeLeftPageRoot, UITomeRightPageRoot},
+        item::inventory::Inventory,
         recipe::{
             assets::RecipeDef,
             select::{RecipeChanged, SelectRecipe},
         },
-        storage::Storage,
     },
     widgets,
 };
@@ -20,8 +20,10 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        update_right_page_on_recipe_changed
-            .run_if(in_state(TomeTab::Inspect).and(on_message::<RecipeChanged>)),
+        spawn_right_page.run_if(
+            in_state(TomeTab::Inspect)
+                .and(on_message::<RecipeChanged>.or(resource_changed::<Inspected>)),
+        ),
     );
 
     app.add_observer(on_inspect);
@@ -92,49 +94,25 @@ fn on_recipe_select(
 
 fn spawn_right_page(
     inspected: Res<Inspected>,
-    storage: Query<&Storage>,
+    inventories: Query<&Inventory>,
     right_page: Single<Entity, With<UITomeRightPageRoot>>,
     mut commands: Commands,
 ) {
-    let Ok(storage) = storage.get(inspected.0) else {
+    let Ok(inventory) = inventories.get(inspected.0) else {
         return;
     };
 
-    render_right_page(&mut commands, *right_page, storage);
-}
+    commands.entity(*right_page).despawn_children();
 
-fn update_right_page_on_recipe_changed(
-    mut events: MessageReader<RecipeChanged>,
-    inspected: Res<Inspected>,
-    storage: Query<&Storage>,
-    right_page: Single<Entity, With<UITomeRightPageRoot>>,
-    mut commands: Commands,
-) {
-    for event in events.read() {
-        if event.0 != inspected.0 {
-            continue;
-        }
-
-        let Ok(storage) = storage.get(event.0) else {
-            continue;
-        };
-
-        render_right_page(&mut commands, *right_page, storage);
-    }
-}
-
-fn render_right_page(commands: &mut Commands, right_page: Entity, storage: &Storage) {
-    commands.entity(right_page).despawn_children();
-
-    let id = commands
+    let list = commands
         .spawn((
             super::widgets::list_page(),
             DespawnOnExit(TomeTab::Inspect),
-            ChildOf(right_page),
+            ChildOf(*right_page),
         ))
         .id();
 
-    for stored in storage.iter() {
-        commands.spawn((widgets::item_plate(stored), ChildOf(id)));
+    for (id, _) in inventory.items.iter() {
+        commands.spawn((widgets::item_plate(inspected.0, *id), ChildOf(list)));
     }
 }

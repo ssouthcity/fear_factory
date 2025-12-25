@@ -1,16 +1,18 @@
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
-use crate::gameplay::{
-    FactorySystems,
-    item::{
-        assets::{ItemDef, Transport},
-        stack::Stack,
+use crate::{
+    assets::indexing::IndexMap,
+    gameplay::{
+        FactorySystems,
+        item::{
+            assets::{ItemDef, Transport},
+            inventory::Inventory,
+        },
+        logistics::pathfinding::{PorterPaths, WalkPath},
+        recipe::{assets::RecipeDef, select::SelectedRecipe},
+        sprite_sort::{YSortSprite, ZIndexSprite},
     },
-    logistics::pathfinding::{PorterPaths, WalkPath},
-    recipe::Output,
-    sprite_sort::{YSortSprite, ZIndexSprite},
-    storage::Storage,
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -44,11 +46,11 @@ pub struct PorterOf(pub Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct PorterFromOutput(pub Entity);
+pub struct PorterTo(pub Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct PorterToInput(pub Entity);
+pub struct PortingItem(pub AssetId<ItemDef>);
 
 #[derive(Message, Reflect, Debug)]
 pub struct PorterArrival(pub Entity);
@@ -62,33 +64,49 @@ fn spawn_porter(
         &Transform,
         &mut PorterSpawnTimer,
         &mut PorterSpawnOutputIndex,
-        &Storage,
+        &SelectedRecipe,
+        &mut Inventory,
+        &mut PorterPaths,
     )>,
-    mut output_query: Query<(&mut Stack, &mut PorterPaths), With<Output>>,
     mut commands: Commands,
     item_definitions: Res<Assets<ItemDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
+    recipe_defs: Res<Assets<RecipeDef>>,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
-    for (structure, transform, mut timer, mut index, storage) in structure_query {
+    for (
+        structure,
+        transform,
+        mut timer,
+        mut index,
+        selected_recipe,
+        mut inventory,
+        mut porter_paths,
+    ) in structure_query
+    {
         if !timer.tick(time.delta()).is_finished() {
             continue;
         }
 
-        let outputs = storage
+        let Some(recipe) = recipe_defs.get(&selected_recipe.0) else {
+            continue;
+        };
+
+        let Some(item_id) = recipe
+            .output
             .iter()
-            .filter(|stored| output_query.contains(*stored))
-            .collect::<Vec<Entity>>();
-
-        let Some(output) = outputs.get(index.0) else {
+            .nth(index.0)
+            .and_then(|(raw_item_id, _)| item_index.get(raw_item_id))
+        else {
             continue;
         };
 
-        let Ok((mut stack, mut porter_paths)) = output_query.get_mut(*output) else {
+        let Some(quantity) = inventory.items.get_mut(item_id) else {
             continue;
         };
 
-        if stack.quantity == 0 {
+        if *quantity == 0 {
             continue;
         }
 
@@ -96,7 +114,7 @@ fn spawn_porter(
             continue;
         };
 
-        let Some(item_def) = item_definitions.get(&stack.item) else {
+        let Some(item_def) = item_definitions.get(*item_id) else {
             continue;
         };
 
@@ -112,17 +130,17 @@ fn spawn_porter(
                     Transport::Bag => Animation::tag("walk_bag"),
                 },
             },
+            Inventory::with_single(*item_id, 1),
             YSortSprite,
             ZIndexSprite(10),
-            stack.clone(),
             PorterOf(structure),
-            PorterFromOutput(*output),
-            PorterToInput(*input),
+            PorterTo(*input),
+            PortingItem(*item_id),
             WalkPath(path.clone()),
         ));
 
-        stack.quantity -= 1;
-        index.0 = (index.0 + 1) % outputs.len();
+        *quantity -= 1;
+        index.0 = (index.0 + 1) % recipe.output.len();
         porter_paths.0.rotate_left(1);
         timer.reset();
     }
@@ -136,17 +154,21 @@ fn despawn_lost_porters(mut porter_losses: MessageReader<PorterLost>, mut comman
 
 fn drop_of_items(
     mut poter_arrivals: MessageReader<PorterArrival>,
-    porter_query: Query<&PorterToInput>,
-    mut input_query: Query<&mut Stack>,
+    porters: Query<(&PortingItem, &PorterTo)>,
+    mut structures: Query<&mut Inventory>,
     mut commands: Commands,
 ) {
     for PorterArrival(porter) in poter_arrivals.read() {
         commands.entity(*porter).despawn();
 
-        let PorterToInput(input) = porter_query.get(*porter).unwrap();
+        let (PortingItem(item_id), PorterTo(structure)) = porters.get(*porter).unwrap();
 
-        if let Ok(mut stack) = input_query.get_mut(*input) {
-            stack.quantity += 1;
+        if let Ok(mut inventory) = structures.get_mut(*structure) {
+            inventory
+                .items
+                .entry(*item_id)
+                .and_modify(|q| *q += 1)
+                .or_insert(1);
         }
     }
 }

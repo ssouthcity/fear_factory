@@ -1,12 +1,13 @@
 use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
+use rand::Rng;
 
 use crate::{
     gameplay::{
-        item::{assets::ItemDef, stack::Stack},
+        item::{assets::ItemDef, inventory::Inventory},
         people::{Person, naming::NameManager},
-        storage::StoredBy,
+        random::Seed,
     },
     screens::Screen,
 };
@@ -25,23 +26,14 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Player;
 
-fn spawn_player(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    assets: Res<Assets<ItemDef>>,
-) {
-    let player = commands.spawn((Name::new("Player"), Player)).id();
+fn spawn_player(mut commands: Commands, assets: Res<Assets<ItemDef>>, mut seed: ResMut<Seed>) {
+    let mut inventory = Inventory::default();
 
     for (item_id, _) in assets.iter() {
-        commands.spawn((
-            Stack {
-                item: asset_server.get_id_handle(item_id).unwrap(),
-                quantity: 0,
-            },
-            ChildOf(player),
-            StoredBy(player),
-        ));
+        inventory.items.insert(item_id, seed.random_range(0..100));
     }
+
+    commands.spawn((Name::new("Player"), Player, inventory));
 }
 
 fn give_player_a_person(
@@ -51,10 +43,5 @@ fn give_player_a_person(
 ) {
     let name = name_manager.next();
 
-    commands.spawn((
-        Name::new(name.clone()),
-        Person,
-        StoredBy(*player),
-        ChildOf(*player),
-    ));
+    commands.spawn((Name::new(name.clone()), Person, ChildOf(*player)));
 }

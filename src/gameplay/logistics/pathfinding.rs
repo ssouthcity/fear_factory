@@ -7,13 +7,14 @@ use bevy::{
 
 use crate::gameplay::{
     FactorySystems,
-    item::stack::Stack,
     logistics::{
         path::Pathable,
         porter::{PorterArrival, PorterLost},
     },
-    recipe::{Input, Output, select::RecipeChanged},
-    storage::{Storage, StoredBy},
+    recipe::{
+        assets::RecipeDef,
+        select::{RecipeChanged, SelectedRecipe},
+    },
     world::{
         construction::{Constructions, StructureConstructed},
         tilemap::coord::Coord,
@@ -39,22 +40,25 @@ pub(super) fn plugin(app: &mut App) {
 pub struct WalkPath(pub Vec<Entity>);
 
 fn pathfind(
-    output_query: Query<(Entity, &Stack, &StoredBy), With<Output>>,
-    storage_query: Query<&Storage>,
-    input_query: Query<&Stack, With<Input>>,
+    structures: Query<(Entity, &SelectedRecipe)>,
+    recipes: Res<Assets<RecipeDef>>,
     pathable_query: Query<&Pathable>,
     coordinates: Query<&Coord>,
     mut commands: Commands,
     constructions: Res<Constructions>,
 ) {
-    for (entity, stack, StoredBy(start)) in output_query {
+    for (structure, selected_recipe) in structures {
+        let Some(recipe) = recipes.get(&selected_recipe.0) else {
+            continue;
+        };
+
         let mut queue = VecDeque::new();
         let mut visited = HashSet::new();
         let mut parent = HashMap::new();
         let mut solutions = VecDeque::new();
 
-        queue.push_back(*start);
-        visited.insert(*start);
+        queue.push_back(structure);
+        visited.insert(structure);
 
         while let Some(current) = queue.pop_front() {
             let coord = coordinates.get(current).unwrap();
@@ -76,31 +80,38 @@ fn pathfind(
                 visited.insert(*neighbor);
                 parent.insert(neighbor, current);
 
-                let input_entity = storage_query.get(*neighbor).ok().and_then(|storage| {
-                    storage
-                        .iter()
-                        .find(|stored| input_query.get(*stored).is_ok_and(|i| i.item == stack.item))
-                });
-
-                if let Some(goal) = input_entity {
-                    let mut path = Vec::new();
-                    let mut cur = *neighbor;
-                    while cur != *start {
-                        path.push(cur);
-                        cur = *parent.get(&cur).unwrap();
-                    }
-                    solutions.push_back((goal, path));
-                }
-
                 if let Ok(pathable) = pathable_query.get(*neighbor)
                     && pathable.walkable
                 {
                     queue.push_back(*neighbor);
                 }
+
+                let Ok((_, other_selected_recipe)) = structures.get(*neighbor) else {
+                    continue;
+                };
+
+                let Some(other_recipe) = recipes.get(&other_selected_recipe.0) else {
+                    continue;
+                };
+
+                let is_goal = recipe
+                    .output
+                    .iter()
+                    .any(|output| other_recipe.input.contains_key(output.0));
+
+                if is_goal {
+                    let mut path = Vec::new();
+                    let mut cur = *neighbor;
+                    while cur != structure {
+                        path.push(cur);
+                        cur = *parent.get(&cur).unwrap();
+                    }
+                    solutions.push_back((*neighbor, path));
+                }
             }
         }
 
-        commands.entity(entity).insert(PorterPaths(solutions));
+        commands.entity(structure).insert(PorterPaths(solutions));
     }
 }
 

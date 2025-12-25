@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 
-use crate::gameplay::{
-    FactorySystems,
-    item::stack::Stack,
-    recipe::{Input, Output, assets::RecipeDef, select::SelectedRecipe},
-    storage::Storage,
+use crate::{
+    assets::indexing::IndexMap,
+    gameplay::{
+        FactorySystems,
+        item::{assets::ItemDef, inventory::Inventory},
+        recipe::{assets::RecipeDef, select::SelectedRecipe},
+    },
 };
 
 use super::progress::on_progress_state_add;
@@ -39,27 +41,34 @@ impl ProcessState {
 }
 
 fn consume_input(
-    query: Query<(&mut ProcessState, &Storage, &SelectedRecipe)>,
-    mut input_query: Query<(&mut Stack, &Input)>,
+    query: Query<(&mut ProcessState, &mut Inventory, &SelectedRecipe)>,
     recipes: Res<Assets<RecipeDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
 ) {
-    for (mut state, storage, selected_recipe) in query {
+    for (mut state, mut inventory, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
             continue;
         }
 
-        if !storage
-            .iter()
-            .filter_map(|stored| input_query.get(stored).ok())
-            .all(|(stack, input)| stack.quantity >= input.quantity)
-        {
+        let Some(recipe) = recipes.get(&selected_recipe.0) else {
+            continue;
+        };
+
+        if !recipe.input.iter().all(|(item_id, required_amount)| {
+            inventory
+                .items
+                .get(item_index.get(item_id).unwrap())
+                .is_some_and(|quantity| quantity >= required_amount)
+        }) {
             continue;
         }
 
-        for stored in storage.iter() {
-            if let Ok((mut stack, input)) = input_query.get_mut(stored) {
-                stack.quantity = stack.quantity.saturating_sub(input.quantity);
-            }
+        for (raw_item_id, required_amount) in recipe.input.iter() {
+            let item_id = item_index.get(raw_item_id).unwrap();
+            inventory
+                .items
+                .entry(*item_id)
+                .and_modify(|quantity| *quantity -= required_amount);
         }
 
         let Some(recipe) = recipes.get(&selected_recipe.0) else {
@@ -87,20 +96,29 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
 }
 
 fn produce_output(
-    query: Query<(&mut ProcessState, &Storage)>,
-    mut output_query: Query<(&mut Stack, &Output)>,
+    query: Query<(&mut ProcessState, &mut Inventory, &SelectedRecipe)>,
+    recipes: Res<Assets<RecipeDef>>,
+    item_index: Res<IndexMap<ItemDef>>,
 ) {
-    for (mut state, storage) in query {
+    for (mut state, mut inventory, selected_recipe) in query {
         if !matches!(*state, ProcessState::Completed) {
             continue;
         }
 
-        for stored in storage.iter() {
-            let Ok((mut stack, output)) = output_query.get_mut(stored) else {
+        let Some(recipe) = recipes.get(&selected_recipe.0) else {
+            continue;
+        };
+
+        for (raw_item_id, amount) in recipe.output.iter() {
+            let Some(item_id) = item_index.get(raw_item_id) else {
                 continue;
             };
 
-            stack.quantity = stack.quantity.saturating_add(output.quantity);
+            inventory
+                .items
+                .entry(*item_id)
+                .and_modify(|quantity| *quantity += amount)
+                .or_insert(*amount);
         }
 
         *state = ProcessState::InsufficientInput;

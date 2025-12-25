@@ -1,16 +1,19 @@
 use bevy::prelude::*;
 use bevy_aseprite_ultra::prelude::*;
 
-use crate::gameplay::{
-    FactorySystems,
-    item::{assets::Taxonomy, stack::Stack},
-    recipe::Output,
-    storage::{Storage, StoredBy},
-    structure::range::Range,
-    world::{
-        construction::{Constructions, StructureConstructed},
-        deposit::Deposit,
-        tilemap::coord::Coord,
+use crate::{
+    assets::indexing::IndexMap,
+    gameplay::{
+        FactorySystems,
+        item::{assets::Taxonomy, inventory::Inventory},
+        people::{HousedIn, Houses, Person},
+        recipe::{assets::RecipeDef, select::SelectedRecipe},
+        structure::range::Range,
+        world::{
+            construction::{Constructions, StructureConstructed},
+            deposit::Deposit,
+            tilemap::coord::Coord,
+        },
     },
 };
 
@@ -33,20 +36,6 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct Harvester;
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct Person;
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-#[relationship_target(relationship = HousedIn, linked_spawn)]
-pub struct Houses(Vec<Entity>);
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-#[relationship(relationship_target = Houses)]
-pub struct HousedIn(pub Entity);
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
@@ -82,17 +71,19 @@ fn add_people_to_harvester(
 fn assign_harvester_taxonomy(
     mut structures_constructed: MessageReader<StructureConstructed>,
     mut harvester_query: Query<(&Coord, &Range, &mut AseAnimation), With<Harvester>>,
-    deposit_query: Query<(&Stack, &Taxonomy), With<Deposit>>,
+    deposit_query: Query<(&Inventory, &Taxonomy), With<Deposit>>,
     constructions: Res<Constructions>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    mut recipes: ResMut<Assets<RecipeDef>>,
+    recipe_index: Res<IndexMap<RecipeDef>>,
 ) {
     for StructureConstructed(structure) in structures_constructed.read() {
         let Ok((coord, range, mut ase_animation)) = harvester_query.get_mut(*structure) else {
             continue;
         };
 
-        let Some((stack, taxonomy)) = range.iter(coord.0).find_map(|pos| {
+        let Some((inventory, taxonomy)) = range.iter(coord.0).find_map(|pos| {
             constructions
                 .get(&pos)
                 .and_then(|d| deposit_query.get(*d).ok())
@@ -100,24 +91,28 @@ fn assign_harvester_taxonomy(
             continue;
         };
 
-        commands.entity(*structure).insert(taxonomy.clone());
-
-        commands.spawn((
-            Name::new("Slot"),
-            ChildOf(*structure),
-            StoredBy(*structure),
-            Stack {
-                item: stack.item.clone(),
-                quantity: 0,
-            },
-            Output { quantity: 1 },
-        ));
+        let Some(item_id) = inventory.items.iter().next().map(|(id, _)| id) else {
+            continue;
+        };
 
         let variant = match taxonomy {
             Taxonomy::Flora => "flora",
             Taxonomy::Fauna => "fauna",
             Taxonomy::Minerale => "minerale",
         };
+
+        let Some(recipe) = recipe_index
+            .get(&format!("{variant}_a"))
+            .and_then(|id| recipes.get_strong_handle(*id))
+        else {
+            continue;
+        };
+
+        commands.entity(*structure).insert((
+            SelectedRecipe(recipe),
+            Inventory::with_single(*item_id, 0),
+            taxonomy.clone(),
+        ));
 
         ase_animation.aseprite =
             asset_server.load(format!("sprites/structures/harvester_{variant}.aseprite"));
@@ -158,8 +153,7 @@ fn assign_harvester_deposit(
 
 fn harvest_deposit(
     q_people: Query<(&Harvests, &mut HarvestTimer, &HousedIn), With<Person>>,
-    q_harvesters: Query<&Storage, With<Harvester>>,
-    mut q_stacks: Query<&mut Stack>,
+    mut q_inventories: Query<&mut Inventory>,
     time: Res<Time>,
 ) {
     for (harvests, mut harvest_timer, housed_in) in q_people {
@@ -167,33 +161,37 @@ fn harvest_deposit(
             continue;
         }
 
-        let Some(harvester_stored) = q_harvesters
-            .iter_descendants(housed_in.0)
-            .find(|stored| q_stacks.contains(*stored))
+        let Ok([mut deposit_inventory, mut harvester_inventory]) =
+            q_inventories.get_many_mut([harvests.0, housed_in.0])
         else {
             continue;
         };
 
-        let Ok([mut deposit_stack, mut harvester_stack]) =
-            q_stacks.get_many_mut([harvests.0, harvester_stored])
-        else {
+        let Some((resource_id, quantity)) = deposit_inventory.items.iter_mut().next() else {
             continue;
         };
 
-        let to_take = deposit_stack.quantity.min(1);
+        if *quantity == 0 {
+            continue;
+        }
 
-        deposit_stack.quantity = deposit_stack.quantity.saturating_sub(to_take);
-        harvester_stack.quantity = harvester_stack.quantity.saturating_add(to_take);
+        *quantity -= 1;
+
+        harvester_inventory
+            .items
+            .entry(*resource_id)
+            .and_modify(|v| *v += 1)
+            .or_insert(1);
     }
 }
 
 fn cleanup_empty_deposits(
-    q_deposits: Query<(Entity, &Stack, &Coord), With<Deposit>>,
+    q_deposits: Query<(Entity, &Inventory, &Coord), With<Deposit>>,
     mut constructions: ResMut<Constructions>,
     mut commands: Commands,
 ) {
-    for (deposit, stack, coord) in q_deposits {
-        if stack.quantity == 0 {
+    for (deposit, inventory, coord) in q_deposits {
+        if inventory.items.is_empty() {
             constructions.remove(coord);
             commands.entity(deposit).despawn();
         }
