@@ -1,6 +1,6 @@
 use bevy::{prelude::*, ui_widgets::RadioButton};
 
-use crate::gameplay::item::{assets::ItemDef, stack::Stack};
+use crate::gameplay::item::{assets::ItemDef, inventory::Inventory};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, refresh_item_plates);
@@ -8,7 +8,7 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct ItemPlate(pub Entity);
+struct ItemPlate(Entity, AssetId<ItemDef>);
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
@@ -22,7 +22,7 @@ struct ItemName;
 #[reflect(Component)]
 struct ItemQuantity;
 
-pub fn item_plate(item: Entity) -> impl Bundle {
+pub fn item_plate(owner: Entity, item_id: AssetId<ItemDef>) -> impl Bundle {
     (
         Node {
             column_gap: px(4.0),
@@ -31,7 +31,7 @@ pub fn item_plate(item: Entity) -> impl Bundle {
             ..default()
         },
         RadioButton,
-        ItemPlate(item),
+        ItemPlate(owner, item_id),
         children![
             (
                 Node {
@@ -71,37 +71,39 @@ pub fn item_plate(item: Entity) -> impl Bundle {
 }
 
 fn refresh_item_plates(
-    q_item_plates: Query<(Entity, &ItemPlate)>,
-    q_item_stacks: Query<&Stack>,
+    item_plates: Query<(Entity, &ItemPlate)>,
+    inventories: Query<&Inventory>,
     item_defs: Res<Assets<ItemDef>>,
     children: Query<&Children>,
-    mut q_item_plate_components: ParamSet<(
+    mut item_plate_components: ParamSet<(
         Query<&mut ImageNode, With<ItemPortrait>>,
         Query<&mut Text, With<ItemName>>,
         Query<&mut Text, With<ItemQuantity>>,
     )>,
     asset_server: Res<AssetServer>,
 ) {
-    for (item_plate, ItemPlate(stack_entity)) in q_item_plates {
-        let Ok(stack) = q_item_stacks.get(*stack_entity) else {
+    for (item_plate, ItemPlate(owner, item_id)) in item_plates {
+        let Ok(inventory) = inventories.get(*owner) else {
             continue;
         };
 
-        let Some(item_def) = item_defs.get(&stack.item) else {
+        let quantity = inventory.items.get(item_id).unwrap_or(&0);
+
+        let Some(item_def) = item_defs.get(*item_id) else {
             return;
         };
 
         for child in children.iter_descendants(item_plate) {
-            if let Ok(mut image) = q_item_plate_components.p0().get_mut(child) {
+            if let Ok(mut image) = item_plate_components.p0().get_mut(child) {
                 image.image = asset_server.load(item_def.sprite.clone());
             }
 
-            if let Ok(mut text) = q_item_plate_components.p1().get_mut(child) {
+            if let Ok(mut text) = item_plate_components.p1().get_mut(child) {
                 text.0 = item_def.name.clone();
             }
 
-            if let Ok(mut text) = q_item_plate_components.p2().get_mut(child) {
-                text.0 = stack.quantity.to_string();
+            if let Ok(mut text) = item_plate_components.p2().get_mut(child) {
+                text.0 = quantity.to_string();
             }
         }
     }

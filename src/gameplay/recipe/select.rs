@@ -4,9 +4,8 @@ use super::process::ProcessState;
 use crate::{
     assets::indexing::IndexMap,
     gameplay::{
-        item::{assets::ItemDef, stack::Stack},
-        recipe::{Input, Output, assets::RecipeDef},
-        storage::{Storage, StoredBy},
+        item::{assets::ItemDef, inventory::Inventory},
+        recipe::assets::RecipeDef,
     },
 };
 
@@ -33,7 +32,6 @@ pub struct RecipeChanged(pub Entity);
 fn on_select_recipe(
     select_recipe: On<SelectRecipe>,
     mut recipes: ResMut<Assets<RecipeDef>>,
-    mut items: ResMut<Assets<ItemDef>>,
     item_index: Res<IndexMap<ItemDef>>,
     mut commands: Commands,
     mut recipe_changes: MessageWriter<RecipeChanged>,
@@ -42,42 +40,15 @@ fn on_select_recipe(
         return;
     };
 
-    commands
-        .entity(select_recipe.entity)
-        .despawn_related::<Storage>();
+    let mut inventory = Inventory::default();
 
-    for (item_id, quantity) in recipe_def.input.iter() {
-        let item_handle = item_index
-            .get(item_id)
-            .and_then(|asset_id| items.get_strong_handle(*asset_id))
-            .expect("Recipe refers to non-existent item");
-
-        commands.spawn((
-            Name::new("Input"),
-            ChildOf(select_recipe.entity),
-            StoredBy(select_recipe.entity),
-            Stack::empty(item_handle),
-            Input {
-                quantity: *quantity,
-            },
-        ));
-    }
-
-    for (item_id, quantity) in recipe_def.output.iter() {
-        let item_handle = item_index
-            .get(item_id)
-            .and_then(|asset_id| items.get_strong_handle(*asset_id))
-            .expect("Recipe refers to non-existent item");
-
-        commands.spawn((
-            Name::new("Output"),
-            ChildOf(select_recipe.entity),
-            StoredBy(select_recipe.entity),
-            Stack::empty(item_handle),
-            Output {
-                quantity: *quantity,
-            },
-        ));
+    for item_id in recipe_def
+        .input
+        .iter()
+        .chain(recipe_def.output.iter())
+        .flat_map(|(id, _)| item_index.get(id))
+    {
+        inventory.items.insert(*item_id, 0);
     }
 
     let Some(handle) = recipes.get_strong_handle(select_recipe.recipe) else {
@@ -86,7 +57,7 @@ fn on_select_recipe(
 
     commands
         .entity(select_recipe.entity)
-        .insert(SelectedRecipe(handle));
+        .insert((SelectedRecipe(handle), inventory));
 
     recipe_changes.write(RecipeChanged(select_recipe.entity));
 }

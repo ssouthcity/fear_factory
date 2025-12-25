@@ -9,7 +9,7 @@ use crate::{
     gameplay::{
         item::{
             assets::{ItemDef, Taxonomy},
-            stack::Stack,
+            inventory::Inventory,
         },
         sprite_sort::{YSortSprite, ZIndexSprite},
         world::{
@@ -105,10 +105,7 @@ fn spawn_deposits(
             return;
         };
 
-        let Some(item) = item_index
-            .get(&deposit_def.item_id)
-            .and_then(|id| asset_server.get_id_handle(*id))
-        else {
+        let Some(item_id) = item_index.get(&deposit_def.item_id) else {
             return;
         };
 
@@ -125,15 +122,15 @@ fn spawn_deposits(
                     continue;
                 }
 
+                let mut inventory = Inventory::default();
+                inventory.items.insert(*item_id, 100);
+
                 let entity = commands
                     .spawn((
                         Name::new(deposit_def.name.clone()),
                         Deposit,
                         deposit_def.taxonomy.clone(),
-                        Stack {
-                            item: item.clone(),
-                            quantity: 100,
-                        },
+                        inventory,
                         Coord(absolute_tile_pos),
                         Anchor(Vec2::new(0.0, -0.25)),
                         YSortSprite,

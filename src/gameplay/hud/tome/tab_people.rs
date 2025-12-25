@@ -3,9 +3,7 @@ use bevy::prelude::*;
 use crate::{
     gameplay::{
         hud::tome::{TomeTab, UIEntryList, UITomeLeftPageRoot},
-        people::Person,
-        player::Player,
-        storage::{Storage, StoredBy},
+        people::{HousedIn, Person},
     },
     widgets,
 };
@@ -22,9 +20,7 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_people_grid(
     mut commands: Commands,
     left_page: Single<Entity, With<UITomeLeftPageRoot>>,
-    player: Single<Entity, With<Player>>,
-    storage: Query<&Storage>,
-    people: Query<Entity, With<Person>>,
+    people: Query<Entity, (With<Person>, Without<HousedIn>)>,
 ) {
     let people_grid = commands
         .spawn((
@@ -34,10 +30,7 @@ fn spawn_people_grid(
         ))
         .id();
 
-    for person in storage
-        .iter_descendants(*player)
-        .filter(|s| people.contains(*s))
-    {
+    for person in people {
         commands.spawn((widgets::person_badge(person), ChildOf(people_grid)));
     }
 }
@@ -45,14 +38,9 @@ fn spawn_people_grid(
 fn backfill_people_grid(
     mut commands: Commands,
     people_grid: Single<Entity, With<UIEntryList>>,
-    player: Single<Entity, With<Player>>,
-    new_people: Query<(Entity, &StoredBy), (With<Person>, Added<StoredBy>)>,
+    new_people: Query<Entity, (Added<Person>, Without<HousedIn>)>,
 ) {
-    for (person, stored_by) in new_people {
-        if stored_by.0 != *player {
-            continue;
-        }
-
+    for person in new_people {
         commands.spawn((widgets::person_badge(person), ChildOf(*people_grid)));
     }
 }
