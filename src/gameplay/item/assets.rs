@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use crate::assets::{
     indexing::{AssetIndexPlugin, Indexable},
-    loaders::toml::TomlAssetPlugin,
+    loaders::toml::{FromToml, TomlAssetPlugin},
     tracking::LoadResource,
 };
 
@@ -17,7 +17,7 @@ pub fn plugin(app: &mut App) {
 }
 
 #[derive(Asset, Clone, Debug, Deserialize, Reflect)]
-pub struct ItemDef {
+pub struct ItemRaw {
     pub id: String,
     pub name: String,
     pub description: String,
@@ -26,6 +26,43 @@ pub struct ItemDef {
     pub stack_size: u32,
     pub taxonomy: Taxonomy,
     pub transport: Transport,
+}
+
+fn placeholder_sprite() -> String {
+    String::from("sprites/items/placeholder.png")
+}
+
+#[derive(Asset, Reflect, Debug)]
+pub struct ItemDef {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub sprite: AssetId<Image>,
+    pub stack_size: u32,
+    pub taxonomy: Taxonomy,
+    pub transport: Transport,
+}
+
+impl FromToml for ItemDef {
+    type Raw = ItemRaw;
+
+    fn from_toml(raw: Self::Raw, load_context: &mut bevy::asset::LoadContext) -> Self {
+        Self {
+            id: raw.id,
+            name: raw.name,
+            description: raw.description,
+            sprite: load_context.load(raw.sprite).id(),
+            stack_size: raw.stack_size,
+            taxonomy: raw.taxonomy,
+            transport: raw.transport,
+        }
+    }
+}
+
+impl Indexable for ItemDef {
+    fn index(&self) -> &String {
+        &self.id
+    }
 }
 
 #[derive(Component, Clone, Debug, Deserialize, Reflect, PartialEq, Eq)]
@@ -40,16 +77,6 @@ pub enum Taxonomy {
 pub enum Transport {
     Box,
     Bag,
-}
-
-fn placeholder_sprite() -> String {
-    String::from("sprites/items/placeholder.png")
-}
-
-impl Indexable for ItemDef {
-    fn index(&self) -> &String {
-        &self.id
-    }
 }
 
 #[derive(Asset, Clone, Resource, Reflect)]

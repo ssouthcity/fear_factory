@@ -3,7 +3,10 @@ use rand::seq::SliceRandom;
 use serde::Deserialize;
 
 use crate::{
-    assets::{loaders::toml::TomlAssetPlugin, tracking::LoadResource},
+    assets::{
+        loaders::toml::{FromToml, TomlAssetPlugin},
+        tracking::LoadResource,
+    },
     gameplay::random::Seed,
     screens::Screen,
 };
@@ -25,9 +28,24 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Asset, Reflect, Deserialize)]
+#[derive(Deserialize)]
+pub struct NamesRaw {
+    pub neutral_names: Vec<String>,
+}
+
+#[derive(Asset, Reflect, Debug)]
 pub struct Names {
     pub neutral_names: Vec<String>,
+}
+
+impl FromToml for Names {
+    type Raw = NamesRaw;
+
+    fn from_toml(raw: Self::Raw, _load_context: &mut bevy::asset::LoadContext) -> Self {
+        Self {
+            neutral_names: raw.neutral_names,
+        }
+    }
 }
 
 #[derive(Asset, Resource, Reflect, Debug, Clone)]

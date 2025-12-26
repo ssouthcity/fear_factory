@@ -1,25 +1,31 @@
 use std::{collections::HashMap, time::Duration};
 
-use bevy::{asset::LoadedFolder, prelude::*};
+use bevy::{
+    asset::{LoadContext, LoadedFolder},
+    prelude::*,
+};
 use serde::Deserialize;
 
-use crate::assets::{
-    indexing::{AssetIndexPlugin, Indexable},
-    loaders::toml::TomlAssetPlugin,
-    tracking::LoadResource,
+use crate::{
+    assets::{
+        indexing::{AssetIndexPlugin, Indexable},
+        loaders::toml::{FromToml, TomlAssetPlugin},
+        tracking::LoadResource,
+    },
+    gameplay::item::assets::ItemDef,
 };
 
 pub fn plugin(app: &mut App) {
     app.add_plugins((
-        TomlAssetPlugin::<RecipeDef>::extensions(&["recipe.toml"]),
-        AssetIndexPlugin::<RecipeDef>::default(),
+        TomlAssetPlugin::<Recipe>::extensions(&["recipe.toml"]),
+        AssetIndexPlugin::<Recipe>::default(),
     ));
 
     app.load_resource::<RecipeAssets>();
 }
 
-#[derive(Asset, Reflect, Deserialize)]
-pub struct RecipeDef {
+#[derive(Deserialize)]
+pub struct RecipeRaw {
     pub id: String,
     pub name: String,
     #[serde(default)]
@@ -28,20 +34,51 @@ pub struct RecipeDef {
     pub output: HashMap<String, u32>,
     #[serde(with = "humantime_serde")]
     pub duration: Duration,
-    #[serde(default)]
-    pub tags: Vec<RecipeTags>,
 }
 
-impl Indexable for RecipeDef {
-    fn index(&self) -> &String {
-        &self.id
+#[derive(Asset, Reflect, Debug)]
+pub struct Recipe {
+    pub id: String,
+    pub name: String,
+    pub input: HashMap<AssetId<ItemDef>, u32>,
+    pub output: HashMap<AssetId<ItemDef>, u32>,
+    pub duration: Duration,
+}
+
+impl FromToml for Recipe {
+    type Raw = RecipeRaw;
+
+    fn from_toml(raw: Self::Raw, load_context: &mut LoadContext) -> Self {
+        Self {
+            id: raw.id,
+            name: raw.name,
+            duration: raw.duration,
+            input: raw
+                .input
+                .iter()
+                .map(|(key, &value)| {
+                    let handle: Handle<ItemDef> =
+                        load_context.load(format!("manifests/items/{key}.item.toml"));
+                    (handle.id(), value)
+                })
+                .collect(),
+            output: raw
+                .output
+                .iter()
+                .map(|(key, &value)| {
+                    let handle: Handle<ItemDef> =
+                        load_context.load(format!("manifests/items/{key}.item.toml"));
+                    (handle.id(), value)
+                })
+                .collect(),
+        }
     }
 }
 
-#[derive(Debug, Reflect, Deserialize, PartialEq, Eq)]
-#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
-pub enum RecipeTags {
-    StructureId(String),
+impl Indexable for Recipe {
+    fn index(&self) -> &String {
+        &self.id
+    }
 }
 
 #[derive(Asset, Resource, Reflect, Clone)]

@@ -7,7 +7,7 @@ use crate::{
         FactorySystems,
         item::{assets::Taxonomy, inventory::Inventory},
         people::{HousedIn, Houses, Person},
-        recipe::{assets::RecipeDef, select::SelectedRecipe},
+        recipe::{assets::Recipe, select::SelectedRecipe},
         structure::range::Range,
         world::{
             construction::{Constructions, StructureConstructed},
@@ -75,8 +75,8 @@ fn assign_harvester_taxonomy(
     constructions: Res<Constructions>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut recipes: ResMut<Assets<RecipeDef>>,
-    recipe_index: Res<IndexMap<RecipeDef>>,
+    mut recipes: ResMut<Assets<Recipe>>,
+    recipe_index: Res<IndexMap<Recipe>>,
 ) {
     for StructureConstructed(structure) in structures_constructed.read() {
         let Ok((coord, range, mut ase_animation)) = harvester_query.get_mut(*structure) else {

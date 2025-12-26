@@ -26,10 +26,10 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Player;
 
-fn spawn_player(mut commands: Commands, assets: Res<Assets<ItemDef>>, mut seed: ResMut<Seed>) {
+fn spawn_player(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, mut seed: ResMut<Seed>) {
     let mut inventory = Inventory::default();
 
-    for (item_id, _) in assets.iter() {
+    for (item_id, _) in item_defs.iter() {
         inventory.items.insert(item_id, seed.random_range(0..100));
     }
 

@@ -159,7 +159,7 @@ fn construct(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     hotbar_selection: HotbarSelection,
-    structure_definitions: ResMut<Assets<StructureDef>>,
+    structure_defs: ResMut<Assets<StructureDef>>,
     mut constructions: ResMut<Constructions>,
     mut structures_constructed: MessageWriter<StructureConstructed>,
 ) {
@@ -167,7 +167,7 @@ fn construct(
         return;
     };
 
-    let structure = structure_definitions
+    let structure = structure_defs
         .get(handle)
         .expect("Attempted to spawn non-existent structure");
 

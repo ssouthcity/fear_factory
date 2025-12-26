@@ -12,7 +12,7 @@ use crate::gameplay::{
         porter::{PorterArrival, PorterLost},
     },
     recipe::{
-        assets::RecipeDef,
+        assets::Recipe,
         select::{RecipeChanged, SelectedRecipe},
     },
     world::{
@@ -41,7 +41,7 @@ pub struct WalkPath(pub Vec<Entity>);
 
 fn pathfind(
     structures: Query<(Entity, &SelectedRecipe)>,
-    recipes: Res<Assets<RecipeDef>>,
+    recipes: Res<Assets<Recipe>>,
     pathable_query: Query<&Pathable>,
     coordinates: Query<&Coord>,
     mut commands: Commands,

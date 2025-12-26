@@ -5,7 +5,10 @@ use noise::{Fbm, MultiFractal, NoiseFn, Perlin};
 use serde::Deserialize;
 
 use crate::{
-    assets::{indexing::IndexMap, loaders::toml::TomlAssetPlugin, tracking::LoadResource},
+    assets::{
+        loaders::toml::{FromToml, TomlAssetPlugin},
+        tracking::LoadResource,
+    },
     gameplay::{
         item::{
             assets::{ItemDef, Taxonomy},
@@ -35,13 +38,38 @@ pub fn plugin(app: &mut App) {
     app.add_observer(unload_deposits);
 }
 
-#[derive(Asset, Deserialize, Reflect)]
-pub struct DepositDef {
+#[derive(Deserialize)]
+pub struct DepositRaw {
     pub id: String,
     pub name: String,
     pub item_id: String,
     pub taxonomy: Taxonomy,
     pub seed: u32,
+}
+
+#[derive(Asset, Reflect, Debug)]
+pub struct DepositDef {
+    pub id: String,
+    pub name: String,
+    pub item_id: AssetId<ItemDef>,
+    pub taxonomy: Taxonomy,
+    pub seed: u32,
+}
+
+impl FromToml for DepositDef {
+    type Raw = DepositRaw;
+
+    fn from_toml(raw: Self::Raw, load_context: &mut bevy::asset::LoadContext) -> Self {
+        Self {
+            id: raw.id,
+            name: raw.name,
+            item_id: load_context
+                .load(format!("manifests/items/{}.item.toml", raw.item_id))
+                .id(),
+            taxonomy: raw.taxonomy,
+            seed: raw.seed,
+        }
+    }
 }
 
 #[derive(Component, Reflect, Debug)]
@@ -71,11 +99,8 @@ pub struct DepositNoise {
     pub noises: HashMap<AssetId<DepositDef>, Fbm<Perlin>>,
 }
 
-fn create_noise(
-    mut deposit_noise: ResMut<DepositNoise>,
-    deposit_definitions: Res<Assets<DepositDef>>,
-) {
-    for (deposit_id, deposit_def) in deposit_definitions.iter() {
+fn create_noise(mut deposit_noise: ResMut<DepositNoise>, deposit_defs: Res<Assets<DepositDef>>) {
+    for (deposit_id, deposit_def) in deposit_defs.iter() {
         let fbm = Fbm::<Perlin>::new(deposit_def.seed)
             .set_octaves(5)
             .set_frequency(1.0 / 70.0)
@@ -90,8 +115,7 @@ fn spawn_deposits(
     chunk_loaded: On<ChunkLoaded>,
     chunk_query: Query<&Chunk>,
     mut commands: Commands,
-    deposit_definitions: Res<Assets<DepositDef>>,
-    item_index: Res<IndexMap<ItemDef>>,
+    deposit_defs: Res<Assets<DepositDef>>,
     asset_server: Res<AssetServer>,
     deposit_noise: Res<DepositNoise>,
     mut constructions: ResMut<Constructions>,
@@ -100,12 +124,8 @@ fn spawn_deposits(
 
     let absolute_chunk_position = chunk.0 * CHUNK_SIZE.as_ivec2();
 
-    for (deposit_id, deposit_def) in deposit_definitions.iter() {
+    for (deposit_id, deposit_def) in deposit_defs.iter() {
         let Some(fbm) = deposit_noise.noises.get(&deposit_id) else {
-            return;
-        };
-
-        let Some(item_id) = item_index.get(&deposit_def.item_id) else {
             return;
         };
 
@@ -123,7 +143,7 @@ fn spawn_deposits(
                 }
 
                 let mut inventory = Inventory::default();
-                inventory.items.insert(*item_id, 100);
+                inventory.items.insert(deposit_def.item_id, 100);
 
                 let entity = commands
                     .spawn((
