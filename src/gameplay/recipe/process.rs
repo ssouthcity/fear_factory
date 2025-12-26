@@ -1,12 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{
-    assets::indexing::IndexMap,
-    gameplay::{
-        FactorySystems,
-        item::{assets::ItemDef, inventory::Inventory},
-        recipe::{assets::RecipeDef, select::SelectedRecipe},
-    },
+use crate::gameplay::{
+    FactorySystems,
+    item::inventory::Inventory,
+    recipe::{assets::Recipe, select::SelectedRecipe},
 };
 
 use super::progress::on_progress_state_add;
@@ -42,8 +39,7 @@ impl ProcessState {
 
 fn consume_input(
     query: Query<(&mut ProcessState, &mut Inventory, &SelectedRecipe)>,
-    recipes: Res<Assets<RecipeDef>>,
-    item_index: Res<IndexMap<ItemDef>>,
+    recipes: Res<Assets<Recipe>>,
 ) {
     for (mut state, mut inventory, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
@@ -57,14 +53,13 @@ fn consume_input(
         if !recipe.input.iter().all(|(item_id, required_amount)| {
             inventory
                 .items
-                .get(item_index.get(item_id).unwrap())
+                .get(item_id)
                 .is_some_and(|quantity| quantity >= required_amount)
         }) {
             continue;
         }
 
-        for (raw_item_id, required_amount) in recipe.input.iter() {
-            let item_id = item_index.get(raw_item_id).unwrap();
+        for (item_id, required_amount) in recipe.input.iter() {
             inventory
                 .items
                 .entry(*item_id)
@@ -97,8 +92,7 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
 
 fn produce_output(
     query: Query<(&mut ProcessState, &mut Inventory, &SelectedRecipe)>,
-    recipes: Res<Assets<RecipeDef>>,
-    item_index: Res<IndexMap<ItemDef>>,
+    recipes: Res<Assets<Recipe>>,
 ) {
     for (mut state, mut inventory, selected_recipe) in query {
         if !matches!(*state, ProcessState::Completed) {
@@ -109,11 +103,7 @@ fn produce_output(
             continue;
         };
 
-        for (raw_item_id, amount) in recipe.output.iter() {
-            let Some(item_id) = item_index.get(raw_item_id) else {
-                continue;
-            };
-
+        for (item_id, amount) in recipe.output.iter() {
             inventory
                 .items
                 .entry(*item_id)

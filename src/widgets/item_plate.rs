@@ -74,13 +74,13 @@ fn refresh_item_plates(
     item_plates: Query<(Entity, &ItemPlate)>,
     inventories: Query<&Inventory>,
     item_defs: Res<Assets<ItemDef>>,
+    mut images: ResMut<Assets<Image>>,
     children: Query<&Children>,
     mut item_plate_components: ParamSet<(
         Query<&mut ImageNode, With<ItemPortrait>>,
         Query<&mut Text, With<ItemName>>,
         Query<&mut Text, With<ItemQuantity>>,
     )>,
-    asset_server: Res<AssetServer>,
 ) {
     for (item_plate, ItemPlate(owner, item_id)) in item_plates {
         let Ok(inventory) = inventories.get(*owner) else {
@@ -94,8 +94,10 @@ fn refresh_item_plates(
         };
 
         for child in children.iter_descendants(item_plate) {
-            if let Ok(mut image) = item_plate_components.p0().get_mut(child) {
-                image.image = asset_server.load(item_def.sprite.clone());
+            if let Ok(mut image_node) = item_plate_components.p0().get_mut(child)
+                && let Some(image) = images.get_strong_handle(item_def.sprite)
+            {
+                image_node.image = image;
             }
 
             if let Ok(mut text) = item_plate_components.p1().get_mut(child) {

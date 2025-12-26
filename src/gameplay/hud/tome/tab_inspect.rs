@@ -5,7 +5,7 @@ use crate::{
         hud::tome::{TomeOpen, TomeTab, UITomeLeftPageRoot, UITomeRightPageRoot},
         item::inventory::Inventory,
         recipe::{
-            assets::RecipeDef,
+            assets::Recipe,
             select::{RecipeChanged, SelectRecipe},
         },
     },
@@ -40,7 +40,7 @@ pub struct Inspect {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-pub struct Recipe(pub AssetId<RecipeDef>);
+pub struct RecipeButton(pub AssetId<Recipe>);
 
 fn on_inspect(
     inspect: On<Inspect>,
@@ -56,7 +56,7 @@ fn on_inspect(
 fn spawn_inspect_recipes(
     mut commands: Commands,
     left_page: Single<Entity, With<UITomeLeftPageRoot>>,
-    recipes: Res<Assets<RecipeDef>>,
+    recipes: Res<Assets<Recipe>>,
 ) {
     let id = commands
         .spawn((
@@ -70,7 +70,7 @@ fn spawn_inspect_recipes(
         commands.spawn((
             widgets::recipe_plate(asset_id),
             ChildOf(id),
-            Recipe(asset_id),
+            RecipeButton(asset_id),
             observe(on_recipe_select),
         ));
     }
@@ -80,7 +80,7 @@ fn on_recipe_select(
     click: On<Pointer<Click>>,
     mut commands: Commands,
     inspected: Res<Inspected>,
-    recipe_badges: Query<&Recipe>,
+    recipe_badges: Query<&RecipeButton>,
 ) {
     let Ok(recipe) = recipe_badges.get(click.entity) else {
         return;

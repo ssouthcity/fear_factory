@@ -1,8 +1,25 @@
 use std::marker::PhantomData;
 
-use bevy::{asset::AssetLoader, prelude::*};
+use bevy::{
+    asset::{AssetLoader, LoadContext},
+    prelude::*,
+};
 use serde::Deserialize;
 use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum TomlLoaderError {
+    #[error("Could not load asset: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Could not parse TOML: {0}")]
+    TomlError(#[from] toml::de::Error),
+}
+
+pub trait FromToml {
+    type Raw: for<'de> Deserialize<'de>;
+
+    fn from_toml(raw: Self::Raw, load_context: &mut LoadContext) -> Self;
+}
 
 pub struct TomlAssetPlugin<T> {
     extensions: Vec<&'static str>,
@@ -20,7 +37,7 @@ impl<T> TomlAssetPlugin<T> {
 
 impl<T> Plugin for TomlAssetPlugin<T>
 where
-    T: Asset + for<'de> Deserialize<'de>,
+    T: Asset + FromToml,
 {
     fn build(&self, app: &mut App) {
         app.init_asset::<T>();
@@ -37,17 +54,9 @@ pub struct TomlAssetLoader<T> {
     _marker: PhantomData<T>,
 }
 
-#[derive(Debug, Error)]
-pub enum TomlLoaderError {
-    #[error("Could not load asset: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("Could not parse TOML: {0}")]
-    TomlError(#[from] toml::de::Error),
-}
-
 impl<T> AssetLoader for TomlAssetLoader<T>
 where
-    T: Asset + for<'de> Deserialize<'de>,
+    T: Asset + FromToml,
 {
     type Asset = T;
     type Settings = ();
@@ -57,12 +66,12 @@ where
         &self,
         reader: &mut dyn bevy::asset::io::Reader,
         _settings: &Self::Settings,
-        _load_context: &mut bevy::asset::LoadContext<'_>,
+        load_context: &mut bevy::asset::LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let asset: T = toml::from_slice(&bytes)?;
-        Ok(asset)
+        let raw: T::Raw = toml::from_slice(&bytes)?;
+        Ok(T::from_toml(raw, load_context))
     }
 
     fn extensions(&self) -> &[&str] {

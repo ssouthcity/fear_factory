@@ -1,18 +1,15 @@
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
-use crate::{
-    assets::indexing::IndexMap,
-    gameplay::{
-        FactorySystems,
-        item::{
-            assets::{ItemDef, Transport},
-            inventory::Inventory,
-        },
-        logistics::pathfinding::{PorterPaths, WalkPath},
-        recipe::{assets::RecipeDef, select::SelectedRecipe},
-        sprite_sort::{YSortSprite, ZIndexSprite},
+use crate::gameplay::{
+    FactorySystems,
+    item::{
+        assets::{ItemDef, Transport},
+        inventory::Inventory,
     },
+    logistics::pathfinding::{PorterPaths, WalkPath},
+    recipe::{assets::Recipe, select::SelectedRecipe},
+    sprite_sort::{YSortSprite, ZIndexSprite},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -69,9 +66,8 @@ fn spawn_porter(
         &mut PorterPaths,
     )>,
     mut commands: Commands,
-    item_definitions: Res<Assets<ItemDef>>,
-    item_index: Res<IndexMap<ItemDef>>,
-    recipe_defs: Res<Assets<RecipeDef>>,
+    item_defs: Res<Assets<ItemDef>>,
+    recipes: Res<Assets<Recipe>>,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
@@ -89,16 +85,11 @@ fn spawn_porter(
             continue;
         }
 
-        let Some(recipe) = recipe_defs.get(&selected_recipe.0) else {
+        let Some(recipe) = recipes.get(&selected_recipe.0) else {
             continue;
         };
 
-        let Some(item_id) = recipe
-            .output
-            .iter()
-            .nth(index.0)
-            .and_then(|(raw_item_id, _)| item_index.get(raw_item_id))
-        else {
+        let Some((item_id, _)) = recipe.output.iter().nth(index.0) else {
             continue;
         };
 
@@ -114,7 +105,7 @@ fn spawn_porter(
             continue;
         };
 
-        let Some(item_def) = item_definitions.get(*item_id) else {
+        let Some(item_def) = item_defs.get(*item_id) else {
             continue;
         };
 

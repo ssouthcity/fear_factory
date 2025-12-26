@@ -1,10 +1,13 @@
 use bevy::{asset::LoadedFolder, prelude::*};
 use serde::Deserialize;
 
-use crate::assets::{
-    indexing::{AssetIndexPlugin, Indexable},
-    loaders::toml::TomlAssetPlugin,
-    tracking::LoadResource,
+use crate::{
+    assets::{
+        indexing::{AssetIndexPlugin, Indexable},
+        loaders::toml::{FromToml, TomlAssetPlugin},
+        tracking::LoadResource,
+    },
+    gameplay::recipe::assets::Recipe,
 };
 
 pub fn plugin(app: &mut App) {
@@ -34,11 +37,34 @@ impl FromWorld for StructureAssets {
     }
 }
 
-#[derive(Asset, Deserialize, Reflect)]
-pub struct StructureDef {
+#[derive(Deserialize)]
+pub struct StructureRaw {
     pub id: String,
     pub name: String,
     pub default_recipe: Option<String>,
+}
+
+#[derive(Asset, Reflect, Debug)]
+pub struct StructureDef {
+    pub id: String,
+    pub name: String,
+    pub default_recipe: Option<AssetId<Recipe>>,
+}
+
+impl FromToml for StructureDef {
+    type Raw = StructureRaw;
+
+    fn from_toml(raw: Self::Raw, load_context: &mut bevy::asset::LoadContext) -> Self {
+        Self {
+            id: raw.id,
+            name: raw.name,
+            default_recipe: raw.default_recipe.map(|recipe_id| {
+                load_context
+                    .load(format!("manifests/recipes/{recipe_id}.recipe.toml"))
+                    .id()
+            }),
+        }
+    }
 }
 
 impl Indexable for StructureDef {

@@ -7,7 +7,7 @@ use bevy::{
 use crate::{
     gameplay::{
         hud::tome::widgets::{TAB_COLOR_CHECKED, TAB_COLOR_DEFAULT},
-        recipe::assets::RecipeDef,
+        recipe::assets::Recipe,
     },
     input::input_map::{Action, action_just_pressed},
     screens::Screen,
@@ -74,7 +74,7 @@ pub enum TomeFocused {
     None,
     Item(Entity),
     People(Entity),
-    Recipes(AssetId<RecipeDef>),
+    Recipes(AssetId<Recipe>),
 }
 
 #[derive(Component, Reflect, Debug, Default)]

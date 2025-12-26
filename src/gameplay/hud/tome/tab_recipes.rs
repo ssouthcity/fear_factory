@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     gameplay::{
         hud::tome::{TomeTab, UITomeLeftPageRoot},
-        recipe::assets::RecipeDef,
+        recipe::assets::Recipe,
     },
     widgets,
 };
@@ -15,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_recipe_list(
     mut commands: Commands,
     left_page: Single<Entity, With<UITomeLeftPageRoot>>,
-    recipe_defs: Res<Assets<RecipeDef>>,
+    recipes: Res<Assets<Recipe>>,
 ) {
     let recipe_list = commands
         .spawn((
@@ -25,7 +25,7 @@ fn spawn_recipe_list(
         ))
         .id();
 
-    for (asset_id, _) in recipe_defs.iter() {
+    for (asset_id, _) in recipes.iter() {
         commands.spawn((widgets::recipe_plate(asset_id), ChildOf(recipe_list)));
     }
 }
