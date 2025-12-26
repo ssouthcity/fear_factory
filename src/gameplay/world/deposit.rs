@@ -74,7 +74,7 @@ impl FromToml for DepositDef {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-pub struct Deposit;
+pub struct Deposit(pub Handle<DepositDef>);
 
 #[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
@@ -148,7 +148,7 @@ fn spawn_deposits(
                 let entity = commands
                     .spawn((
                         Name::new(deposit_def.name.clone()),
-                        Deposit,
+                        Deposit(asset_server.get_id_handle(deposit_id).unwrap()),
                         deposit_def.taxonomy.clone(),
                         inventory,
                         Coord(absolute_tile_pos),
