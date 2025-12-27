@@ -13,15 +13,3 @@ pub fn plugin(app: &mut App) {
         select::plugin,
     ));
 }
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct Input {
-    pub quantity: u32,
-}
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-pub struct Output {
-    pub quantity: u32,
-}
