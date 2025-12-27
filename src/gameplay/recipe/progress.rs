@@ -1,34 +1,32 @@
-use bevy::{
-    ecs::{lifecycle::HookContext, world::DeferredWorld},
-    prelude::*,
-    sprite::Anchor,
-};
+use bevy::{prelude::*, sprite::Anchor};
 
 use super::process::ProcessState;
 
 pub fn plugin(app: &mut App) {
+    app.add_observer(on_proess_state_add);
+
     app.add_systems(Update, update_progress_bars);
 }
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[relationship_target(relationship = ProgressBarFillOf, linked_spawn)]
-pub struct ProgressBarFill(Entity);
+struct ProgressBarFill(Entity);
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[relationship(relationship_target = ProgressBarFill)]
-pub struct ProgressBarFillOf(Entity);
+struct ProgressBarFillOf(Entity);
 
-pub fn on_progress_state_add(mut world: DeferredWorld, HookContext { entity, .. }: HookContext) {
-    world.commands().spawn((
+fn on_proess_state_add(add: On<Add, ProcessState>, mut commands: Commands) {
+    commands.spawn((
         Name::new("Progress Bar"),
-        ChildOf(entity),
+        ChildOf(add.entity),
         Transform::from_xyz(0.0, 48.0, 100.0),
         Sprite::from_color(Color::BLACK, Vec2::new(64.0, 16.0)),
         children![(
             Name::new("Progress Bar Fill"),
-            ProgressBarFillOf(entity),
+            ProgressBarFillOf(add.entity),
             Transform::from_xyz(-32.0, 0.0, 1.0),
             Sprite {
                 color: Color::linear_rgb(0.0, 0.8, 0.1),
@@ -41,8 +39,8 @@ pub fn on_progress_state_add(mut world: DeferredWorld, HookContext { entity, .. 
 }
 
 fn update_progress_bars(
-    work_states: Query<&ProcessState>,
     progress_bars: Query<(&mut Sprite, &ProgressBarFillOf)>,
+    work_states: Query<&ProcessState>,
 ) {
     for (mut sprite, progress_bar_of) in progress_bars {
         let Ok(state) = work_states.get(progress_bar_of.0) else {
@@ -53,6 +51,12 @@ fn update_progress_bars(
             continue;
         };
 
-        sprite.custom_size = Some(Vec2::new(rect.width() * state.progress(), rect.height()));
+        let progress = match state {
+            ProcessState::InsufficientInput => 0.0,
+            ProcessState::Working(timer) => timer.fraction(),
+            ProcessState::Completed => 1.0,
+        };
+
+        sprite.custom_size = Some(Vec2::new(rect.width() * progress, rect.height()));
     }
 }
