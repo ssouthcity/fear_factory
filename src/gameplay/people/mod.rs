@@ -1,9 +1,18 @@
 use bevy::prelude::*;
 
+use crate::gameplay::world::construction::StructureConstructed;
+
 pub mod naming;
+pub mod pathfinding;
+pub mod porting;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((naming::plugin,));
+    app.add_plugins((naming::plugin, pathfinding::plugin, porting::plugin));
+
+    app.add_systems(
+        FixedUpdate,
+        add_housed_people_to_new_structures.run_if(on_message::<StructureConstructed>),
+    );
 }
 
 #[derive(Component, Reflect, Debug, Default)]
@@ -19,3 +28,14 @@ pub struct Houses(Vec<Entity>);
 #[reflect(Component)]
 #[relationship(relationship_target = Houses)]
 pub struct HousedIn(pub Entity);
+
+fn add_housed_people_to_new_structures(
+    mut structures_constructed: MessageReader<StructureConstructed>,
+    mut commands: Commands,
+) {
+    for StructureConstructed(structure) in structures_constructed.read() {
+        for _ in 0..3 {
+            commands.spawn((Name::new("Person"), Person, HousedIn(*structure)));
+        }
+    }
+}

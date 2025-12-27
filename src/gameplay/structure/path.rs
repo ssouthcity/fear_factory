@@ -4,6 +4,7 @@ use bevy_aseprite_ultra::prelude::*;
 use crate::gameplay::{
     FactorySystems,
     hud::hotbar::{HotbarActionKind, HotbarSelection},
+    people::pathfinding::Pathable,
     sprite_sort::{YSortSprite, ZIndexSprite},
     world::{
         construction::{Constructions, StructureConstructed},
@@ -23,18 +24,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (pick_path_sprite, update_path_segments_on_destroy));
 
     app.add_observer(compute_sprite);
-}
-
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
-pub struct Pathable {
-    pub walkable: bool,
-}
-
-impl Pathable {
-    pub fn walkable() -> Self {
-        Self { walkable: true }
-    }
 }
 
 fn spawn_path(

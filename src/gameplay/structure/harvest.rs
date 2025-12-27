@@ -21,8 +21,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(
         FixedUpdate,
         (
-            (add_people_to_harvester, assign_harvester_taxonomy)
-                .run_if(on_message::<StructureConstructed>),
+            assign_harvester_taxonomy.run_if(on_message::<StructureConstructed>),
             sync_harvester_range,
             assign_harvester_deposit,
             harvest_deposit,
@@ -51,22 +50,6 @@ pub struct Harvests(pub Entity);
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct HarvestTimer(pub Timer);
-
-fn add_people_to_harvester(
-    mut structures_constructed: MessageReader<StructureConstructed>,
-    harvester_query: Query<Entity, With<Harvester>>,
-    mut commands: Commands,
-) {
-    for StructureConstructed(structure) in structures_constructed.read() {
-        if !harvester_query.contains(*structure) {
-            continue;
-        }
-
-        for _ in 0..3 {
-            commands.spawn((Name::new("Person"), Person, HousedIn(*structure)));
-        }
-    }
-}
 
 fn assign_harvester_taxonomy(
     mut structures_constructed: MessageReader<StructureConstructed>,
