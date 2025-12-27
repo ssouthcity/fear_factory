@@ -11,7 +11,7 @@ use crate::{
         structure::range::Range,
         world::{
             construction::{Constructions, StructureConstructed},
-            deposit::Deposit,
+            deposit::{Deposit, DepositDef},
             tilemap::coord::Coord,
         },
     },
@@ -71,7 +71,8 @@ fn add_people_to_harvester(
 fn assign_harvester_taxonomy(
     mut structures_constructed: MessageReader<StructureConstructed>,
     mut harvester_query: Query<(&Coord, &Range, &mut AseAnimation), With<Harvester>>,
-    deposit_query: Query<(&Inventory, &Taxonomy), With<Deposit>>,
+    deposit_query: Query<(&Deposit, &Inventory)>,
+    deposit_defs: Res<Assets<DepositDef>>,
     constructions: Res<Constructions>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -83,7 +84,7 @@ fn assign_harvester_taxonomy(
             continue;
         };
 
-        let Some((inventory, taxonomy)) = range.iter(coord.0).find_map(|pos| {
+        let Some((deposit, inventory)) = range.iter(coord.0).find_map(|pos| {
             constructions
                 .get(&pos)
                 .and_then(|d| deposit_query.get(*d).ok())
@@ -91,11 +92,15 @@ fn assign_harvester_taxonomy(
             continue;
         };
 
+        let Some(deposit_def) = deposit_defs.get(&deposit.0) else {
+            continue;
+        };
+
         let Some(item_id) = inventory.items.iter().next().map(|(id, _)| id) else {
             continue;
         };
 
-        let variant = match taxonomy {
+        let variant = match deposit_def.taxonomy {
             Taxonomy::Flora => "flora",
             Taxonomy::Fauna => "fauna",
             Taxonomy::Minerale => "minerale",
@@ -108,11 +113,9 @@ fn assign_harvester_taxonomy(
             continue;
         };
 
-        commands.entity(*structure).insert((
-            SelectedRecipe(recipe),
-            Inventory::with_single(*item_id, 0),
-            taxonomy.clone(),
-        ));
+        commands
+            .entity(*structure)
+            .insert((SelectedRecipe(recipe), Inventory::with_single(*item_id, 0)));
 
         ase_animation.aseprite =
             asset_server.load(format!("sprites/structures/harvester_{variant}.aseprite"));
