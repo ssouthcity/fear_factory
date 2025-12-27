@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.0](https://github.com/ssouthcity/fear_factory/compare/v0.2.0...v0.3.0) (2025-12-27)
+
+
+### Features
+
+* add dynamic item page to tome ([#78](https://github.com/ssouthcity/fear_factory/issues/78)) ([b71c14d](https://github.com/ssouthcity/fear_factory/commit/b71c14d5778f01a7fed1113c8849116edb1e37d3))
+* add harvesting and rework inputs/outputs ([#71](https://github.com/ssouthcity/fear_factory/issues/71)) ([f4b4f52](https://github.com/ssouthcity/fear_factory/commit/f4b4f52c8c3cbdb7250bf7630192f1a1f566debc))
+* add people and naming logic ([#79](https://github.com/ssouthcity/fear_factory/issues/79)) ([66c0e28](https://github.com/ssouthcity/fear_factory/commit/66c0e28bcee5c59c1237f9328171e32fc4cdc6f3))
+* add recipe list to tome ([#80](https://github.com/ssouthcity/fear_factory/issues/80)) ([2098400](https://github.com/ssouthcity/fear_factory/commit/2098400ee45293c3f1a788264d6c0a3df6f59bbe))
+* add tome menu and textures ([#75](https://github.com/ssouthcity/fear_factory/issues/75)) ([c389933](https://github.com/ssouthcity/fear_factory/commit/c389933b5542dbe5c9a0d0b8a631909cf5d5d6e6))
+* move input logic to standalone plugin ([#77](https://github.com/ssouthcity/fear_factory/issues/77)) ([dfac385](https://github.com/ssouthcity/fear_factory/commit/dfac385d7baa68894e79f31f3304b88218131650))
+* rework porters to be a task of people ([#90](https://github.com/ssouthcity/fear_factory/issues/90)) ([832c523](https://github.com/ssouthcity/fear_factory/commit/832c523f48e954c9952938ceb58fe042c60864b9))
+
+
+### Bug Fixes
+
+* remove nixpkgs shim from devenv ([#82](https://github.com/ssouthcity/fear_factory/issues/82)) ([edfc6e2](https://github.com/ssouthcity/fear_factory/commit/edfc6e2cfb063cb7efd3228e630bce760e6d0013))
+* use item as term instead of resource ([#85](https://github.com/ssouthcity/fear_factory/issues/85)) ([8baa054](https://github.com/ssouthcity/fear_factory/commit/8baa05484a04086c31e3402f76366fd62cbe9d37))
+
 ## [0.2.0](https://github.com/ssouthcity/fear_factory/compare/v0.1.0...v0.2.0) (2025-11-01)
 
 
