@@ -7,16 +7,14 @@ use bevy::{
 
 use crate::gameplay::{
     FactorySystems,
-    logistics::{
-        path::Pathable,
-        porter::{PorterArrival, PorterLost},
-    },
+    people::porting::{PorterArrival, PorterLost, Porting},
     recipe::{
         assets::Recipe,
         select::{RecipeChanged, SelectedRecipe},
     },
     world::{
         construction::{Constructions, StructureConstructed},
+        demolition::Demolished,
         tilemap::coord::Coord,
     },
 };
@@ -24,9 +22,10 @@ use crate::gameplay::{
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         FixedUpdate,
-        pathfind
-            .in_set(FactorySystems::Logistics)
-            .run_if(on_message::<RecipeChanged>.or(on_message::<StructureConstructed>)),
+        pathfind.in_set(FactorySystems::Logistics).run_if(
+            on_message::<RecipeChanged>
+                .or(on_message::<StructureConstructed>.or(on_message::<Demolished>)),
+        ),
     );
 
     app.add_systems(
@@ -35,9 +34,17 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct WalkPath(pub Vec<Entity>);
+pub struct Pathable {
+    pub walkable: bool,
+}
+
+impl Pathable {
+    pub fn walkable() -> Self {
+        Self { walkable: true }
+    }
+}
 
 fn pathfind(
     structures: Query<(Entity, &SelectedRecipe)>,
@@ -120,8 +127,8 @@ fn pathfind(
 pub struct PorterPaths(pub VecDeque<(Entity, Vec<Entity>)>);
 
 fn walk_along_path(
-    query: Query<(Entity, &mut Transform, &mut WalkPath, &mut Sprite)>,
-    transforms: Query<&Transform, Without<WalkPath>>,
+    porters: Query<(Entity, &mut Transform, &mut Porting, &mut Sprite)>,
+    transforms: Query<&Transform, Without<Porting>>,
     time: Res<Time>,
     mut porter_arrivals: MessageWriter<PorterArrival>,
     mut porter_losses: MessageWriter<PorterLost>,
@@ -129,8 +136,8 @@ fn walk_along_path(
     const SPEED: f32 = 64.0;
     const ARRIVAL_THRESHHOLD: f32 = 16.0;
 
-    for (entity, mut transform, mut walk_path, mut sprite) in query {
-        let Some(goal) = walk_path.0.last() else {
+    for (entity, mut transform, mut porting, mut sprite) in porters {
+        let Some(goal) = porting.path.last() else {
             continue;
         };
 
@@ -146,9 +153,9 @@ fn walk_along_path(
             .move_towards(goal_transform.translation, SPEED * time.delta_secs());
 
         if transform.translation.distance(goal_transform.translation) <= ARRIVAL_THRESHHOLD {
-            walk_path.0.pop();
+            porting.path.pop();
 
-            if walk_path.0.is_empty() {
+            if porting.path.is_empty() {
                 porter_arrivals.write(PorterArrival(entity));
             }
         }

@@ -7,7 +7,8 @@ use crate::gameplay::{
         assets::{ItemDef, Transport},
         inventory::Inventory,
     },
-    logistics::pathfinding::{PorterPaths, WalkPath},
+    people::pathfinding::PorterPaths,
+    people::{Houses, Person},
     recipe::{assets::Recipe, select::SelectedRecipe},
     sprite_sort::{YSortSprite, ZIndexSprite},
 };
@@ -25,29 +26,11 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component, Reflect, Deref, DerefMut)]
 #[reflect(Component)]
 #[require(PorterSpawnOutputIndex)]
-pub struct PorterSpawnTimer(pub Timer);
+pub struct PorterCooldown(pub Timer);
 
 #[derive(Component, Reflect, Deref, DerefMut, Default)]
 #[reflect(Component)]
 struct PorterSpawnOutputIndex(usize);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-#[relationship_target(relationship = PorterOf)]
-pub struct Porters(Vec<Entity>);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-#[relationship(relationship_target = Porters)]
-pub struct PorterOf(pub Entity);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct PorterTo(pub Entity);
-
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct PortingItem(pub AssetId<ItemDef>);
 
 #[derive(Message, Reflect, Debug)]
 pub struct PorterArrival(pub Entity);
@@ -55,16 +38,27 @@ pub struct PorterArrival(pub Entity);
 #[derive(Message, Reflect, Debug)]
 pub struct PorterLost(pub Entity);
 
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
+pub struct Porting {
+    pub item: AssetId<ItemDef>,
+    pub source: Entity,
+    pub destination: Entity,
+    pub path: Vec<Entity>,
+}
+
 fn spawn_porter(
     structure_query: Query<(
         Entity,
         &Transform,
-        &mut PorterSpawnTimer,
+        &mut PorterCooldown,
         &mut PorterSpawnOutputIndex,
         &SelectedRecipe,
         &mut Inventory,
         &mut PorterPaths,
+        &Houses,
     )>,
+    person_query: Query<(), (With<Person>, Without<Porting>)>,
     mut commands: Commands,
     item_defs: Res<Assets<ItemDef>>,
     recipes: Res<Assets<Recipe>>,
@@ -79,11 +73,16 @@ fn spawn_porter(
         selected_recipe,
         mut inventory,
         mut porter_paths,
+        houses,
     ) in structure_query
     {
         if !timer.tick(time.delta()).is_finished() {
             continue;
         }
+
+        let Some(person) = houses.iter().find(|e| person_query.contains(*e)) else {
+            continue;
+        };
 
         let Some(recipe) = recipes.get(&selected_recipe.0) else {
             continue;
@@ -101,7 +100,7 @@ fn spawn_porter(
             continue;
         }
 
-        let Some((input, path)) = porter_paths.0.front() else {
+        let Some((destination, path)) = porter_paths.0.front() else {
             continue;
         };
 
@@ -109,8 +108,7 @@ fn spawn_porter(
             continue;
         };
 
-        commands.spawn((
-            Name::new("Porter"),
+        commands.entity(person).insert((
             *transform,
             Sprite::default(),
             Anchor(Vec2::new(0.0, -0.25)),
@@ -121,13 +119,14 @@ fn spawn_porter(
                     Transport::Bag => Animation::tag("walk_bag"),
                 },
             },
-            Inventory::with_single(*item_id, 1),
             YSortSprite,
             ZIndexSprite(10),
-            PorterOf(structure),
-            PorterTo(*input),
-            PortingItem(*item_id),
-            WalkPath(path.clone()),
+            Porting {
+                item: *item_id,
+                source: structure,
+                destination: *destination,
+                path: path.clone(),
+            },
         ));
 
         *quantity -= 1;
@@ -139,25 +138,27 @@ fn spawn_porter(
 
 fn despawn_lost_porters(mut porter_losses: MessageReader<PorterLost>, mut commands: Commands) {
     for PorterLost(entity) in porter_losses.read() {
-        commands.entity(*entity).despawn();
+        commands.entity(*entity).remove::<(Sprite, Porting)>();
     }
 }
 
 fn drop_of_items(
     mut poter_arrivals: MessageReader<PorterArrival>,
-    porters: Query<(&PortingItem, &PorterTo)>,
+    porters: Query<&Porting>,
     mut structures: Query<&mut Inventory>,
     mut commands: Commands,
 ) {
     for PorterArrival(porter) in poter_arrivals.read() {
-        commands.entity(*porter).despawn();
+        commands.entity(*porter).remove::<(Sprite, Porting)>();
 
-        let (PortingItem(item_id), PorterTo(structure)) = porters.get(*porter).unwrap();
+        let Ok(porting) = porters.get(*porter) else {
+            continue;
+        };
 
-        if let Ok(mut inventory) = structures.get_mut(*structure) {
+        if let Ok(mut inventory) = structures.get_mut(porting.destination) {
             inventory
                 .items
-                .entry(*item_id)
+                .entry(porting.item)
                 .and_modify(|q| *q += 1)
                 .or_insert(1);
         }
