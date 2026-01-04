@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::gameplay::tome::{TomeMenu, tome::TomePlugin};
+use crate::gameplay::tome::{TomeMenu, tome_plugin::TomePlugin};
 
 pub mod items;
 pub mod people;

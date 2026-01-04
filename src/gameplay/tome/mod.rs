@@ -9,7 +9,7 @@ pub mod constants;
 pub mod inspect;
 pub mod inventory;
 pub mod tabs;
-pub mod tome;
+pub mod tome_plugin;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins((inventory::plugin, inspect::plugin, tabs::plugin));

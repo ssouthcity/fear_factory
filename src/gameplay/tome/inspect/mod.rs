@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::gameplay::tome::{TomeMenu, tome::TomePlugin};
+use crate::gameplay::tome::{TomeMenu, tome_plugin::TomePlugin};
 
 pub mod porter_management;
 pub mod recipe_select;
@@ -9,8 +9,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins(TomePlugin::<InspectTabs> {
         menu: TomeMenu::Inspect,
         tabs: vec![
-            ("Recipe".into(), InspectTabs::RecipeSelect),
-            ("Porters".into(), InspectTabs::PorterManagement),
+            ("Recipe", InspectTabs::RecipeSelect),
+            ("Porters", InspectTabs::PorterManagement),
         ],
     });
 
