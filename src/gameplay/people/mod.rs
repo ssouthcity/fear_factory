@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::gameplay::world::construction::StructureConstructed;
+use crate::gameplay::{people::naming::NameManager, world::construction::StructureConstructed};
 
 pub mod naming;
 pub mod pathfinding;
@@ -32,10 +32,11 @@ pub struct HousedIn(pub Entity);
 fn add_housed_people_to_new_structures(
     mut structures_constructed: MessageReader<StructureConstructed>,
     mut commands: Commands,
+    mut name_manager: ResMut<NameManager>,
 ) {
     for StructureConstructed(structure) in structures_constructed.read() {
         for _ in 0..3 {
-            commands.spawn((Name::new("Person"), Person, HousedIn(*structure)));
+            commands.spawn((Name::new(name_manager.next()), Person, HousedIn(*structure)));
         }
     }
 }

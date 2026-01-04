@@ -8,7 +8,7 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct PersonBadge(pub Entity);
+pub struct PersonBadge(pub Entity);
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
@@ -18,7 +18,7 @@ pub fn person_badge(person: Entity) -> impl Bundle {
     (
         PersonBadge(person),
         Node::default(),
-        children![(Text::default(), PersonName,)],
+        children![(Text::default(), PersonName, Pickable::IGNORE)],
     )
 }
 

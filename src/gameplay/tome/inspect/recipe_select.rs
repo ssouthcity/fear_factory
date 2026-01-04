@@ -2,11 +2,15 @@ use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
     gameplay::{
-        hud::tome::{TomeOpen, TomeTab, UITomeLeftPageRoot, UITomeRightPageRoot},
         item::inventory::Inventory,
         recipe::{
             assets::Recipe,
             select::{RecipeChanged, SelectRecipe},
+        },
+        tome::{
+            UITomeLeftPageRoot, UITomeRightPageRoot,
+            inspect::{InspectTabs, Inspected},
+            list_page,
         },
     },
     widgets,
@@ -14,54 +18,35 @@ use crate::{
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        OnEnter(TomeTab::Inspect),
-        (spawn_inspect_recipes, spawn_right_page),
+        OnEnter(InspectTabs::RecipeSelect),
+        (
+            spawn_recipe_list,
+            (spawn_recipe_details, refresh_recipe_details).chain(),
+        ),
     );
 
     app.add_systems(
         Update,
-        spawn_right_page.run_if(
-            in_state(TomeTab::Inspect)
+        refresh_recipe_details.run_if(
+            in_state(InspectTabs::RecipeSelect)
                 .and(on_message::<RecipeChanged>.or(resource_changed::<Inspected>)),
         ),
     );
-
-    app.add_observer(on_inspect);
-}
-
-#[derive(Resource, Reflect, Debug)]
-#[reflect(Resource)]
-pub struct Inspected(pub Entity);
-
-#[derive(EntityEvent, Reflect)]
-pub struct Inspect {
-    pub entity: Entity,
 }
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct RecipeButton(pub AssetId<Recipe>);
 
-fn on_inspect(
-    inspect: On<Inspect>,
-    mut commands: Commands,
-    mut next_tome_open: ResMut<NextState<TomeOpen>>,
-    mut next_tome_tab: ResMut<NextState<TomeTab>>,
-) {
-    commands.insert_resource(Inspected(inspect.entity));
-    next_tome_open.set(TomeOpen(true));
-    next_tome_tab.set(TomeTab::Inspect);
-}
-
-fn spawn_inspect_recipes(
+fn spawn_recipe_list(
     mut commands: Commands,
     left_page: Single<Entity, With<UITomeLeftPageRoot>>,
     recipes: Res<Assets<Recipe>>,
 ) {
     let id = commands
         .spawn((
-            super::widgets::list_page(),
-            DespawnOnExit(TomeTab::Inspect),
+            list_page(),
+            DespawnOnExit(InspectTabs::RecipeSelect),
             ChildOf(*left_page),
         ))
         .id();
@@ -92,27 +77,38 @@ fn on_recipe_select(
     });
 }
 
-fn spawn_right_page(
-    inspected: Res<Inspected>,
-    inventories: Query<&Inventory>,
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+struct RecipeDetails;
+
+fn spawn_recipe_details(
     right_page: Single<Entity, With<UITomeRightPageRoot>>,
     mut commands: Commands,
 ) {
+    commands.spawn((
+        list_page(),
+        RecipeDetails,
+        DespawnOnExit(InspectTabs::RecipeSelect),
+        ChildOf(*right_page),
+    ));
+}
+
+fn refresh_recipe_details(
+    inspected: Res<Inspected>,
+    inventories: Query<&Inventory>,
+    recipe_details: Single<Entity, With<RecipeDetails>>,
+    mut commands: Commands,
+) {
+    commands.entity(*recipe_details).despawn_children();
+
     let Ok(inventory) = inventories.get(inspected.0) else {
         return;
     };
 
-    commands.entity(*right_page).despawn_children();
-
-    let list = commands
-        .spawn((
-            super::widgets::list_page(),
-            DespawnOnExit(TomeTab::Inspect),
-            ChildOf(*right_page),
-        ))
-        .id();
-
     for (id, _) in inventory.items.iter() {
-        commands.spawn((widgets::item_plate(inspected.0, *id), ChildOf(list)));
+        commands.spawn((
+            widgets::item_plate(inspected.0, *id),
+            ChildOf(*recipe_details),
+        ));
     }
 }
