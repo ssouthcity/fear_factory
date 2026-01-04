@@ -1,4 +1,8 @@
-use bevy::prelude::*;
+use bevy::{
+    input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
+    prelude::*,
+    ui_widgets::UiWidgetsPlugins,
+};
 
 use crate::screens::Screen;
 
@@ -10,9 +14,12 @@ pub mod random;
 pub mod recipe;
 pub mod sprite_sort;
 pub mod structure;
+pub mod tome;
 pub mod world;
 
 pub fn plugin(app: &mut App) {
+    app.add_plugins((UiWidgetsPlugins, InputDispatchPlugin, TabNavigationPlugin));
+
     app.configure_sets(
         FixedUpdate,
         (
@@ -35,6 +42,7 @@ pub fn plugin(app: &mut App) {
         recipe::plugin,
         sprite_sort::plugin,
         structure::plugin,
+        tome::plugin,
         world::plugin,
     ));
 }

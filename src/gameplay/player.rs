@@ -36,12 +36,8 @@ fn spawn_player(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, mut see
     commands.spawn((Name::new("Player"), Player, inventory));
 }
 
-fn give_player_a_person(
-    player: Single<Entity, With<Player>>,
-    mut commands: Commands,
-    mut name_manager: ResMut<NameManager>,
-) {
+fn give_player_a_person(mut commands: Commands, mut name_manager: ResMut<NameManager>) {
     let name = name_manager.next();
 
-    commands.spawn((Name::new(name.clone()), Person, ChildOf(*player)));
+    commands.spawn((Name::new(name.clone()), Person));
 }

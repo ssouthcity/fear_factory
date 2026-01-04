@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 
 use crate::gameplay::{
-    hud::tome::tab_inspect::Inspect,
     recipe::select::SelectRecipe,
     structure::{Structure, assets::StructureDef, interactable::Interact},
+    tome::inspect::Inspect,
     world::construction::StructureConstructed,
 };
 

@@ -29,7 +29,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[require(
-    PorterCooldown(Timer::new(Duration::from_secs(5), TimerMode::Once)),
+    PorterCooldown(Timer::new(Duration::from_secs(1), TimerMode::Once)),
     Demolishable
 )]
 pub struct Structure(pub Handle<StructureDef>);
