@@ -4,7 +4,7 @@ use bevy_aseprite_ultra::prelude::*;
 use crate::gameplay::{
     FactorySystems,
     hud::hotbar::{HotbarActionKind, HotbarSelection},
-    people::pathfinding::Pathable,
+    people::pathfinding::Walkable,
     sprite_sort::{YSortSprite, ZIndexSprite},
     world::{
         construction::{Constructions, StructureConstructed},
@@ -46,7 +46,7 @@ fn spawn_path(
         let entity = commands
             .spawn((
                 Name::new("Path"),
-                Pathable::walkable(),
+                Walkable::default(),
                 Coord(IVec2::new(coord.x, coord.y)),
                 Sprite::sized(TILE_OFFSET),
                 AseSlice {
@@ -115,7 +115,7 @@ pub struct ComputePathSegmentSprite {
 
 fn compute_sprite(
     compute_path_segment_sprite: On<ComputePathSegmentSprite>,
-    mut path_query: Query<(&Coord, &mut AseSlice), With<Pathable>>,
+    mut path_query: Query<(&Coord, &mut AseSlice), With<Walkable>>,
     constructions: Res<Constructions>,
 ) {
     let Ok((coord, mut aseslice)) = path_query.get_mut(compute_path_segment_sprite.entity) else {

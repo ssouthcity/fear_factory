@@ -1,3 +1,5 @@
+use std::{collections::HashSet, time::Duration};
+
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
@@ -7,7 +9,6 @@ use crate::gameplay::{
         assets::{ItemDef, Transport},
         inventory::Inventory,
     },
-    people::pathfinding::PorterPaths,
     people::{Assignees, Person},
     recipe::{assets::Recipe, select::SelectedRecipe},
     sprite_sort::{YSortSprite, ZIndexSprite},
@@ -19,7 +20,12 @@ pub(super) fn plugin(app: &mut App) {
 
     app.add_systems(
         FixedUpdate,
-        (spawn_porter, despawn_lost_porters, drop_of_items).in_set(FactorySystems::Logistics),
+        (
+            spawn_porter,
+            drop_of_items,
+            (decrement_ttl, despawn_lost_porters).chain(),
+        )
+            .in_set(FactorySystems::Logistics),
     );
 }
 
@@ -33,7 +39,10 @@ pub struct PorterCooldown(pub Timer);
 struct PorterSpawnOutputIndex(usize);
 
 #[derive(Message, Reflect, Debug)]
-pub struct PorterArrival(pub Entity);
+pub struct PorterArrival {
+    pub porter: Entity,
+    pub destination: Entity,
+}
 
 #[derive(Message, Reflect, Debug)]
 pub struct PorterLost(pub Entity);
@@ -42,8 +51,14 @@ pub struct PorterLost(pub Entity);
 #[reflect(Component)]
 pub struct Porting {
     pub item: AssetId<ItemDef>,
-    pub source: Entity,
-    pub destination: Entity,
+    pub origin: Entity,
+
+    pub speed: f32,
+    pub ttl: Duration,
+
+    pub target: Entity,
+    pub backtracking: bool,
+    pub visited: HashSet<Entity>,
     pub path: Vec<Entity>,
 }
 
@@ -55,7 +70,6 @@ fn spawn_porter(
         &mut PorterSpawnOutputIndex,
         &SelectedRecipe,
         &mut Inventory,
-        &mut PorterPaths,
         &Assignees,
     )>,
     person_query: Query<(), (With<Person>, Without<Porting>)>,
@@ -65,16 +79,8 @@ fn spawn_porter(
     asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
-    for (
-        structure,
-        transform,
-        mut timer,
-        mut index,
-        selected_recipe,
-        mut inventory,
-        mut porter_paths,
-        assignees,
-    ) in structure_query
+    for (structure, transform, mut timer, mut index, selected_recipe, mut inventory, assignees) in
+        structure_query
     {
         if !timer.tick(time.delta()).is_finished() {
             continue;
@@ -100,10 +106,6 @@ fn spawn_porter(
             continue;
         }
 
-        let Some((destination, path)) = porter_paths.0.front() else {
-            continue;
-        };
-
         let Some(item_def) = item_defs.get(*item_id) else {
             continue;
         };
@@ -123,21 +125,41 @@ fn spawn_porter(
             ZIndexSprite(10),
             Porting {
                 item: *item_id,
-                source: structure,
-                destination: *destination,
-                path: path.clone(),
+                origin: structure,
+
+                speed: 64.0,
+                ttl: Duration::from_secs(30),
+
+                target: structure,
+                backtracking: false,
+                visited: HashSet::default(),
+                path: Vec::default(),
             },
         ));
 
         *quantity -= 1;
         index.0 = (index.0 + 1) % recipe.output.len();
-        porter_paths.0.rotate_left(1);
         timer.reset();
     }
 }
 
-fn despawn_lost_porters(mut porter_losses: MessageReader<PorterLost>, mut commands: Commands) {
+fn despawn_lost_porters(
+    mut porter_losses: MessageReader<PorterLost>,
+    mut commands: Commands,
+    porters: Query<&Porting>,
+    mut structures: Query<&mut Inventory>,
+) {
     for PorterLost(entity) in porter_losses.read() {
+        if let Ok(porting) = porters.get(*entity) {
+            if let Ok(mut inventory) = structures.get_mut(porting.origin) {
+                inventory
+                    .items
+                    .entry(porting.item)
+                    .and_modify(|v| *v += 1)
+                    .or_insert(1);
+            }
+        }
+
         commands.entity(*entity).remove::<(Sprite, Porting)>();
     }
 }
@@ -148,19 +170,37 @@ fn drop_of_items(
     mut structures: Query<&mut Inventory>,
     mut commands: Commands,
 ) {
-    for PorterArrival(porter) in poter_arrivals.read() {
+    for PorterArrival {
+        porter,
+        destination,
+    } in poter_arrivals.read()
+    {
         commands.entity(*porter).remove::<(Sprite, Porting)>();
 
         let Ok(porting) = porters.get(*porter) else {
             continue;
         };
 
-        if let Ok(mut inventory) = structures.get_mut(porting.destination) {
+        if let Ok(mut inventory) = structures.get_mut(*destination) {
             inventory
                 .items
                 .entry(porting.item)
                 .and_modify(|q| *q += 1)
                 .or_insert(1);
+        }
+    }
+}
+
+fn decrement_ttl(
+    porters: Query<(Entity, &mut Porting)>,
+    time: Res<Time>,
+    mut porter_losses: MessageWriter<PorterLost>,
+) {
+    for (porter, mut porting) in porters {
+        porting.ttl = porting.ttl.saturating_sub(time.delta());
+
+        if porting.ttl.is_zero() {
+            porter_losses.write(PorterLost(porter));
         }
     }
 }

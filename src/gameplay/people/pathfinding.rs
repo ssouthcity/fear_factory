@@ -1,163 +1,128 @@
-use std::collections::VecDeque;
-
-use bevy::{
-    platform::collections::{HashMap, HashSet},
-    prelude::*,
-};
+use bevy::prelude::*;
+use rand::seq::IndexedRandom;
 
 use crate::gameplay::{
     FactorySystems,
-    people::porting::{PorterArrival, PorterLost, Porting},
-    recipe::{
-        assets::Recipe,
-        select::{RecipeChanged, SelectedRecipe},
-    },
+    people::porting::{PorterArrival, Porting},
+    random::Seed,
+    recipe::{assets::Recipe, select::SelectedRecipe},
     world::{
-        construction::{Constructions, StructureConstructed},
-        demolition::Demolished,
-        tilemap::coord::Coord,
+        construction::Constructions,
+        tilemap::{CARDINALS, coord::Coord},
     },
 };
 
+pub const ARRIVAL_THRESHOLD: f32 = 8.0;
+
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        FixedUpdate,
-        pathfind.in_set(FactorySystems::Logistics).run_if(
-            on_message::<RecipeChanged>
-                .or(on_message::<StructureConstructed>.or(on_message::<Demolished>)),
-        ),
-    );
+    app.add_message::<PathfindingTargetReached>();
 
     app.add_systems(
         FixedUpdate,
-        walk_along_path.in_set(FactorySystems::Logistics),
+        (move_towards_target, calculate_next_target)
+            .chain()
+            .in_set(FactorySystems::Logistics),
     );
 }
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct Pathable {
-    pub walkable: bool,
-}
+pub struct Walkable;
 
-impl Pathable {
-    pub fn walkable() -> Self {
-        Self { walkable: true }
-    }
-}
+#[derive(Message)]
+struct PathfindingTargetReached(Entity);
 
-fn pathfind(
-    structures: Query<(Entity, &SelectedRecipe)>,
-    recipes: Res<Assets<Recipe>>,
-    pathable_query: Query<&Pathable>,
-    coordinates: Query<&Coord>,
-    mut commands: Commands,
-    constructions: Res<Constructions>,
+fn move_towards_target(
+    porters: Query<(Entity, &mut Transform, &mut Sprite, &Porting)>,
+    tiles: Query<&Transform, Without<Porting>>,
+    mut target_reached: MessageWriter<PathfindingTargetReached>,
+    time: Res<Time>,
 ) {
-    for (structure, selected_recipe) in structures {
-        let Some(recipe) = recipes.get(&selected_recipe.0) else {
+    for (porter, mut transform, mut sprite, porting) in porters {
+        let Ok(target_transform) = tiles.get(porting.target) else {
             continue;
         };
 
-        let mut queue = VecDeque::new();
-        let mut visited = HashSet::new();
-        let mut parent = HashMap::new();
-        let mut solutions = VecDeque::new();
+        sprite.flip_x = target_transform.translation.x < transform.translation.x;
 
-        queue.push_back(structure);
-        visited.insert(structure);
+        transform.translation = transform.translation.move_towards(
+            target_transform.translation,
+            porting.speed * time.delta_secs(),
+        );
 
-        while let Some(current) = queue.pop_front() {
-            let coord = coordinates.get(current).unwrap();
+        if transform
+            .translation
+            .xy()
+            .distance(target_transform.translation.xy())
+            <= ARRIVAL_THRESHOLD
+        {
+            target_reached.write(PathfindingTargetReached(porter));
+        }
+    }
+}
 
-            let neighbors: Vec<IVec2> = [IVec2::X, IVec2::NEG_X, IVec2::Y, IVec2::NEG_Y]
-                .into_iter()
-                .map(|c| c + coord.0)
-                .collect();
+fn calculate_next_target(
+    mut targets_reached: MessageReader<PathfindingTargetReached>,
+    mut porters: Query<&mut Porting>,
+    coords: Query<&Coord>,
+    walkables: Query<(), With<Walkable>>,
+    constructions: Res<Constructions>,
+    structures: Query<&SelectedRecipe>,
+    recipes: Res<Assets<Recipe>>,
+    mut porter_arrived: MessageWriter<PorterArrival>,
+    mut seed: ResMut<Seed>,
+) {
+    for PathfindingTargetReached(porter) in targets_reached.read() {
+        let Ok(mut porting) = porters.get_mut(*porter) else {
+            continue;
+        };
 
-            for neighbor_coord in neighbors {
-                let Some(neighbor) = constructions.get(&neighbor_coord) else {
-                    continue;
-                };
+        let target = porting.target;
 
-                if visited.contains(neighbor) {
-                    continue;
-                }
+        porting.visited.insert(target);
+        porting.path.push(target);
 
-                visited.insert(*neighbor);
-                parent.insert(neighbor, current);
+        let Ok(coord) = coords.get(target) else {
+            continue;
+        };
 
-                if let Ok(pathable) = pathable_query.get(*neighbor)
-                    && pathable.walkable
-                {
-                    queue.push_back(*neighbor);
-                }
+        let neighbors: Vec<Entity> = CARDINALS
+            .into_iter()
+            .map(|c| c + coord.0)
+            .filter_map(|c| constructions.get(&c).cloned())
+            .collect();
 
-                let Ok((_, other_selected_recipe)) = structures.get(*neighbor) else {
-                    continue;
-                };
+        if let Some(structure) = neighbors.iter().find(|&&entity| {
+            let Ok(selected_recipe) = structures.get(entity) else {
+                return false;
+            };
 
-                let Some(other_recipe) = recipes.get(&other_selected_recipe.0) else {
-                    continue;
-                };
+            let Some(recipe) = recipes.get(&selected_recipe.0) else {
+                return false;
+            };
 
-                let is_goal = recipe
-                    .output
-                    .iter()
-                    .any(|output| other_recipe.input.contains_key(output.0));
-
-                if is_goal {
-                    let mut path = Vec::new();
-                    let mut cur = *neighbor;
-                    while cur != structure {
-                        path.push(cur);
-                        cur = *parent.get(&cur).unwrap();
-                    }
-                    solutions.push_back((*neighbor, path));
-                }
-            }
+            recipe.input.contains_key(&porting.item)
+        }) {
+            porter_arrived.write(PorterArrival {
+                porter: *porter,
+                destination: *structure,
+            });
         }
 
-        commands.entity(structure).insert(PorterPaths(solutions));
-    }
-}
+        let paths: Vec<Entity> = neighbors
+            .iter()
+            .cloned()
+            .filter(|e| {
+                walkables.contains(*e) && (porting.backtracking || !porting.visited.contains(e))
+            })
+            .collect();
 
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-pub struct PorterPaths(pub VecDeque<(Entity, Vec<Entity>)>);
-
-fn walk_along_path(
-    porters: Query<(Entity, &mut Transform, &mut Porting, &mut Sprite)>,
-    transforms: Query<&Transform, Without<Porting>>,
-    time: Res<Time>,
-    mut porter_arrivals: MessageWriter<PorterArrival>,
-    mut porter_losses: MessageWriter<PorterLost>,
-) {
-    const SPEED: f32 = 64.0;
-    const ARRIVAL_THRESHHOLD: f32 = 16.0;
-
-    for (entity, mut transform, mut porting, mut sprite) in porters {
-        let Some(goal) = porting.path.last() else {
-            continue;
-        };
-
-        let Ok(goal_transform) = transforms.get(*goal) else {
-            porter_losses.write(PorterLost(entity));
-            continue;
-        };
-
-        sprite.flip_x = goal_transform.translation.x < transform.translation.x;
-
-        transform.translation = transform
-            .translation
-            .move_towards(goal_transform.translation, SPEED * time.delta_secs());
-
-        if transform.translation.distance(goal_transform.translation) <= ARRIVAL_THRESHHOLD {
-            porting.path.pop();
-
-            if porting.path.is_empty() {
-                porter_arrivals.write(PorterArrival(entity));
-            }
+        if let Some(t) = paths.choose(&mut seed) {
+            porting.target = *t;
+            porting.backtracking = false;
+        } else if let Some(t) = porting.path.pop() {
+            porting.target = t;
+            porting.backtracking = true;
         }
     }
 }
