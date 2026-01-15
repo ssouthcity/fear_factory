@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use crate::gameplay::tome::{TomeMenu, tome_plugin::TomePlugin};
 
+pub mod forager_management;
 pub mod porter_management;
 pub mod recipe_select;
 
@@ -11,10 +12,15 @@ pub(super) fn plugin(app: &mut App) {
         tabs: vec![
             ("Recipe", InspectTabs::RecipeSelect),
             ("Porters", InspectTabs::PorterManagement),
+            ("Foragers", InspectTabs::ForagerManagement),
         ],
     });
 
-    app.add_plugins((porter_management::plugin, recipe_select::plugin));
+    app.add_plugins((
+        forager_management::plugin,
+        porter_management::plugin,
+        recipe_select::plugin,
+    ));
 
     app.add_observer(on_inspect);
 }
@@ -31,6 +37,7 @@ pub enum InspectTabs {
     #[default]
     RecipeSelect,
     PorterManagement,
+    ForagerManagement,
 }
 
 #[derive(Resource, Reflect, Debug)]

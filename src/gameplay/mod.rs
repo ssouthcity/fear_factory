@@ -24,7 +24,7 @@ pub fn plugin(app: &mut App) {
         FixedUpdate,
         (
             FactorySystems::Construction,
-            FactorySystems::Harvest,
+            FactorySystems::Forage,
             FactorySystems::Logistics,
             FactorySystems::Work,
             FactorySystems::Demolish,
@@ -50,7 +50,7 @@ pub fn plugin(app: &mut App) {
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum FactorySystems {
     Construction,
-    Harvest,
+    Forage,
     Logistics,
     Work,
     Demolish,

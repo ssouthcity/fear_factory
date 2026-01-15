@@ -9,8 +9,8 @@ use crate::{
         hud::hotbar::{HotbarActionKind, HotbarSelection, HotbarSelectionChanged},
         sprite_sort::{YSortSprite, ZIndexSprite},
         structure::{
-            Structure, assets::StructureDef, harvest::Harvester, interactable::Interactable,
-            range::Range,
+            Structure, assets::StructureDef, foragers_outpost::ForagersOutpost,
+            interactable::Interactable, range::Range,
         },
         world::{
             demolition::Demolished,
@@ -190,10 +190,10 @@ fn construct(
             ))
             .id();
 
-        if structure.id == "harvester" {
+        if structure.id == "foragers_outpost" {
             commands
                 .entity(entity)
-                .insert((Harvester, Range::Diamond(4)));
+                .insert((ForagersOutpost, Range::Diamond(4)));
         }
 
         constructions.insert(tile_click.0.xy(), entity);

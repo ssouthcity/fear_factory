@@ -3,8 +3,8 @@ use bevy::{prelude::*, ui_widgets::observe};
 use crate::{
     gameplay::{
         people::{
-            AssignPerson, Assignees, Assignment, Person, PersonAssignmentChanged, Porter,
-            Profession, UnassignPerson,
+            Assignees, Assignment, Person, Profession,
+            profession::{AssignPerson, Forager, PersonAssignmentChanged, UnassignPerson},
         },
         tome::{
             UITomeLeftPageRoot, UITomeRightPageRoot,
@@ -17,33 +17,33 @@ use crate::{
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
-        OnEnter(InspectTabs::PorterManagement),
+        OnEnter(InspectTabs::ForagerManagement),
         (
-            (spawn_porter_list, refresh_porter_list).chain(),
+            (spawn_forager_list, refresh_forager_list).chain(),
             (spawn_unassigned_list, refresh_unassigned_list).chain(),
         ),
     );
 
     app.add_systems(
         Update,
-        (refresh_porter_list, refresh_unassigned_list)
-            .run_if(in_state(InspectTabs::PorterManagement))
+        (refresh_forager_list, refresh_unassigned_list)
+            .run_if(in_state(InspectTabs::ForagerManagement))
             .run_if(on_message::<PersonAssignmentChanged>),
     );
 }
 
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-struct PorterList;
+struct ForagerList;
 
-fn spawn_porter_list(
+fn spawn_forager_list(
     mut commands: Commands,
     right_page: Single<Entity, With<UITomeRightPageRoot>>,
 ) {
     commands.spawn((
         list_page(),
-        PorterList,
-        DespawnOnExit(InspectTabs::PorterManagement),
+        ForagerList,
+        DespawnOnExit(InspectTabs::ForagerManagement),
         ChildOf(*right_page),
         observe(
             |drag_drop: On<Pointer<DragDrop>>,
@@ -54,7 +54,7 @@ fn spawn_porter_list(
                     commands.trigger(AssignPerson {
                         person: *person,
                         structure: inspected.0,
-                        profession: Profession::Porter,
+                        profession: Profession::Forager,
                     });
                 }
             },
@@ -62,21 +62,25 @@ fn spawn_porter_list(
     ));
 }
 
-fn refresh_porter_list(
+fn refresh_forager_list(
     mut commands: Commands,
     inspected: Res<Inspected>,
-    porter_list: Single<Entity, With<PorterList>>,
-    assignees: Query<&Assignees>,
-    porters: Query<(), With<Porter>>,
+    forager_list: Single<Entity, With<ForagerList>>,
+    q_assignees: Query<&Assignees>,
+    foragers: Query<(), With<Forager>>,
 ) {
-    commands.entity(*porter_list).despawn_children();
+    commands.entity(*forager_list).despawn_children();
 
-    let Ok(housed) = assignees.get(inspected.0) else {
+    let Ok(assignees) = q_assignees.get(inspected.0) else {
         return;
     };
 
-    for person in housed.iter().filter(|e| porters.contains(*e)) {
-        commands.spawn((widgets::person_badge(person), drag(), ChildOf(*porter_list)));
+    for person in assignees.iter().filter(|e| foragers.contains(*e)) {
+        commands.spawn((
+            widgets::person_badge(person),
+            drag(),
+            ChildOf(*forager_list),
+        ));
     }
 }
 
@@ -91,7 +95,7 @@ fn spawn_unassigned_list(
     commands.spawn((
         list_page(),
         UnassignedPeopleList,
-        DespawnOnExit(InspectTabs::PorterManagement),
+        DespawnOnExit(InspectTabs::ForagerManagement),
         ChildOf(*left_page),
         observe(
             |drag_drop: On<Pointer<DragDrop>>,

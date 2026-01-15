@@ -9,7 +9,8 @@ use crate::gameplay::{
 
 pub mod assets;
 pub mod default_recipe;
-pub mod harvest;
+pub mod deposit;
+pub mod foragers_outpost;
 pub mod highlight;
 pub mod interactable;
 pub mod path;
@@ -19,7 +20,8 @@ pub fn plugin(app: &mut App) {
     app.add_plugins((
         assets::plugin,
         default_recipe::plugin,
-        harvest::plugin,
+        deposit::plugin,
+        foragers_outpost::plugin,
         highlight::plugin,
         interactable::plugin,
         path::plugin,

@@ -2,12 +2,25 @@ use bevy::prelude::*;
 
 use crate::gameplay::{people::naming::NameManager, world::construction::StructureConstructed};
 
+pub mod foraging;
 pub mod naming;
 pub mod pathfinding;
 pub mod porting;
+pub mod profession;
+
+pub use profession::{
+    AssignPerson, Assignees, Assignment, Forager, PersonAssignmentChanged, Porter, Profession,
+    UnassignPerson,
+};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((naming::plugin, pathfinding::plugin, porting::plugin));
+    app.add_plugins((
+        foraging::plugin,
+        naming::plugin,
+        pathfinding::plugin,
+        porting::plugin,
+        profession::plugin,
+    ));
 
     app.add_systems(
         FixedUpdate,
@@ -19,16 +32,6 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Person;
 
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-#[relationship_target(relationship = HousedIn, linked_spawn)]
-pub struct Houses(Vec<Entity>);
-
-#[derive(Component, Reflect, Debug)]
-#[reflect(Component)]
-#[relationship(relationship_target = Houses)]
-pub struct HousedIn(pub Entity);
-
 fn add_housed_people_to_new_structures(
     mut structures_constructed: MessageReader<StructureConstructed>,
     mut commands: Commands,
@@ -36,7 +39,15 @@ fn add_housed_people_to_new_structures(
 ) {
     for StructureConstructed(structure) in structures_constructed.read() {
         for _ in 0..3 {
-            commands.spawn((Name::new(name_manager.next()), Person, HousedIn(*structure)));
+            let id = commands
+                .spawn((Name::new(name_manager.next()), Person))
+                .id();
+
+            commands.trigger(AssignPerson {
+                person: id,
+                structure: *structure,
+                profession: Profession::Porter,
+            });
         }
     }
 }

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     gameplay::{
-        people::{HousedIn, Person},
+        people::{Assignment, Person},
         tome::{UITomeLeftPageRoot, inventory::InventoryTabs, list_page},
     },
     widgets,
@@ -15,7 +15,7 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_people_grid(
     mut commands: Commands,
     left_page: Single<Entity, With<UITomeLeftPageRoot>>,
-    people: Query<Entity, (With<Person>, Without<HousedIn>)>,
+    people: Query<Entity, (With<Person>, Without<Assignment>)>,
 ) {
     let people_grid = commands
         .spawn((

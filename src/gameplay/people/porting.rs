@@ -8,7 +8,7 @@ use crate::gameplay::{
         inventory::Inventory,
     },
     people::pathfinding::PorterPaths,
-    people::{Houses, Person},
+    people::{Assignees, Person},
     recipe::{assets::Recipe, select::SelectedRecipe},
     sprite_sort::{YSortSprite, ZIndexSprite},
 };
@@ -56,7 +56,7 @@ fn spawn_porter(
         &SelectedRecipe,
         &mut Inventory,
         &mut PorterPaths,
-        &Houses,
+        &Assignees,
     )>,
     person_query: Query<(), (With<Person>, Without<Porting>)>,
     mut commands: Commands,
@@ -73,14 +73,14 @@ fn spawn_porter(
         selected_recipe,
         mut inventory,
         mut porter_paths,
-        houses,
+        assignees,
     ) in structure_query
     {
         if !timer.tick(time.delta()).is_finished() {
             continue;
         }
 
-        let Some(person) = houses.iter().find(|e| person_query.contains(*e)) else {
+        let Some(person) = assignees.iter().find(|e| person_query.contains(*e)) else {
             continue;
         };
 
