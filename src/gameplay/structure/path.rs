@@ -46,7 +46,7 @@ fn spawn_path(
         let entity = commands
             .spawn((
                 Name::new("Path"),
-                Walkable::default(),
+                Walkable,
                 Coord(IVec2::new(coord.x, coord.y)),
                 Sprite::sized(TILE_OFFSET),
                 AseSlice {

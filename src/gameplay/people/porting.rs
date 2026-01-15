@@ -150,14 +150,14 @@ fn despawn_lost_porters(
     mut structures: Query<&mut Inventory>,
 ) {
     for PorterLost(entity) in porter_losses.read() {
-        if let Ok(porting) = porters.get(*entity) {
-            if let Ok(mut inventory) = structures.get_mut(porting.origin) {
-                inventory
-                    .items
-                    .entry(porting.item)
-                    .and_modify(|v| *v += 1)
-                    .or_insert(1);
-            }
+        if let Ok(porting) = porters.get(*entity)
+            && let Ok(mut inventory) = structures.get_mut(porting.origin)
+        {
+            inventory
+                .items
+                .entry(porting.item)
+                .and_modify(|v| *v += 1)
+                .or_insert(1);
         }
 
         commands.entity(*entity).remove::<(Sprite, Porting)>();
