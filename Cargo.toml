@@ -4,7 +4,7 @@ version = "0.2.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.17.2", features = ["wayland", "experimental_bevy_ui_widgets"] }
+bevy = { version = "0.18.0", features = ["wayland", "experimental_bevy_ui_widgets"] }
 bevy-inspector-egui = "0.35.0"
 bevy_aseprite_ultra = "0.7.0"
 bevy_ecs_tilemap = { version = "0.17.0" }
