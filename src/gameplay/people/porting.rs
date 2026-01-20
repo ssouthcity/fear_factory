@@ -119,7 +119,7 @@ fn spawn_porter(
             Porting {
                 item: stack.item.clone(),
                 origin: structure,
-                slot: slot,
+                slot,
 
                 speed: 64.0,
                 ttl: Duration::from_secs(30),
