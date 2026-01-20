@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::gameplay::{
     FactorySystems,
-    item::inventory::Inventory,
+    inventory::prelude::*,
     recipe::{assets::Recipe, select::SelectedRecipe},
 };
 
@@ -25,10 +25,12 @@ pub enum ProcessState {
 }
 
 fn consume_input(
-    query: Query<(&mut ProcessState, &mut Inventory, &SelectedRecipe)>,
+    query: Query<(Entity, &mut ProcessState, &SelectedRecipe)>,
     recipes: Res<Assets<Recipe>>,
+    inventory: Query<&Inventory>,
+    mut input_stacks: Query<(&mut ItemStack, &Input)>,
 ) {
-    for (mut state, mut inventory, selected_recipe) in query {
+    for (entity, mut state, selected_recipe) in query {
         if !matches!(*state, ProcessState::InsufficientInput) {
             continue;
         }
@@ -37,11 +39,11 @@ fn consume_input(
             continue;
         };
 
-        if !can_afford_recipe(recipe, &inventory) {
+        if !can_afford_recipe(entity, &inventory, &input_stacks) {
             continue;
         }
 
-        consume_recipe_input(recipe, &mut inventory);
+        consume_recipe_input(entity, &inventory, &mut input_stacks);
 
         let timer = Timer::new(recipe.duration, TimerMode::Once);
 
@@ -64,48 +66,52 @@ fn progress_work(query: Query<&mut ProcessState>, time: Res<Time>) {
 }
 
 fn produce_output(
-    query: Query<(&mut ProcessState, &mut Inventory, &SelectedRecipe)>,
-    recipes: Res<Assets<Recipe>>,
+    query: Query<(Entity, &mut ProcessState)>,
+    inventory: Query<&Inventory>,
+    mut output_stacks: Query<(&mut ItemStack, &Output)>,
 ) {
-    for (mut state, mut inventory, selected_recipe) in query {
+    for (entity, mut state) in query {
         if !matches!(*state, ProcessState::Completed) {
             continue;
         }
 
-        let Some(recipe) = recipes.get(&selected_recipe.0) else {
-            continue;
-        };
-
-        produce_recipe_output(recipe, &mut inventory);
+        produce_recipe_output(entity, &inventory, &mut output_stacks);
 
         *state = ProcessState::InsufficientInput;
     }
 }
 
-fn can_afford_recipe(recipe: &Recipe, inventory: &Inventory) -> bool {
-    recipe.input.iter().all(|(item_id, required_amount)| {
-        inventory
-            .items
-            .get(item_id)
-            .is_some_and(|quantity| quantity >= required_amount)
-    })
+fn can_afford_recipe(
+    entity: Entity,
+    inventory: &Query<&Inventory>,
+    stacks: &Query<(&mut ItemStack, &Input)>,
+) -> bool {
+    inventory
+        .iter_descendants(entity)
+        .filter_map(|e| stacks.get(e).ok())
+        .all(|(stack, input)| stack.quantity >= input.requirement)
 }
 
-fn consume_recipe_input(recipe: &Recipe, inventory: &mut Inventory) {
-    for (item_id, required_amount) in recipe.input.iter() {
-        inventory
-            .items
-            .entry(*item_id)
-            .and_modify(|quantity| *quantity -= required_amount);
+fn consume_recipe_input(
+    entity: Entity,
+    inventory: &Query<&Inventory>,
+    stacks: &mut Query<(&mut ItemStack, &Input)>,
+) {
+    for slot in inventory.iter_descendants(entity) {
+        if let Ok((mut stack, input)) = stacks.get_mut(slot) {
+            stack.quantity -= input.requirement;
+        }
     }
 }
 
-fn produce_recipe_output(recipe: &Recipe, inventory: &mut Inventory) {
-    for (item_id, amount) in recipe.output.iter() {
-        inventory
-            .items
-            .entry(*item_id)
-            .and_modify(|quantity| *quantity += amount)
-            .or_insert(*amount);
+fn produce_recipe_output(
+    entity: Entity,
+    inventory: &Query<&Inventory>,
+    stacks: &mut Query<(&mut ItemStack, &Output)>,
+) {
+    for slot in inventory.iter_descendants(entity) {
+        if let Ok((mut stack, output)) = stacks.get_mut(slot) {
+            stack.quantity += output.production;
+        }
     }
 }

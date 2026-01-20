@@ -5,7 +5,7 @@ use rand::Rng;
 
 use crate::{
     gameplay::{
-        item::{assets::ItemDef, inventory::Inventory},
+        inventory::prelude::*,
         people::{Person, naming::NameManager},
         random::Seed,
     },
@@ -26,14 +26,19 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Player;
 
-fn spawn_player(mut commands: Commands, item_defs: Res<Assets<ItemDef>>, mut seed: ResMut<Seed>) {
-    let mut inventory = Inventory::default();
+fn spawn_player(
+    mut commands: Commands,
+    item_defs: Res<Assets<ItemDef>>,
+    mut seed: ResMut<Seed>,
+    asset_server: Res<AssetServer>,
+) {
+    let player = commands.spawn((Name::new("Player"), Player)).id();
 
     for (item_id, _) in item_defs.iter() {
-        inventory.items.insert(item_id, seed.random_range(0..100));
+        let item_handle = asset_server.get_id_handle(item_id).unwrap();
+        let quantity = seed.random_range(0..100);
+        commands.spawn(item_stack_slot(player, item_handle, quantity));
     }
-
-    commands.spawn((Name::new("Player"), Player, inventory));
 }
 
 fn give_player_a_person(mut commands: Commands, mut name_manager: ResMut<NameManager>) {

@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{
     gameplay::{
-        item::assets::ItemDef,
+        inventory::prelude::*,
         recipe::assets::Recipe,
         tome::{UITomeLeftPageRoot, UITomeRightPageRoot, inventory::InventoryTabs, list_page},
     },

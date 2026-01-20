@@ -12,7 +12,7 @@ use crate::{
         loaders::toml::{FromToml, TomlAssetPlugin},
         tracking::LoadResource,
     },
-    gameplay::item::assets::ItemDef,
+    gameplay::inventory::prelude::*,
 };
 
 pub fn plugin(app: &mut App) {

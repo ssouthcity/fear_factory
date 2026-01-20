@@ -3,7 +3,7 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::gameplay::{
     FactorySystems,
-    item::{assets::Taxonomy, inventory::Inventory},
+    inventory::prelude::*,
     people::{Assignees, Forager},
     structure::{
         deposit::{Deposit, DepositDef},
@@ -39,6 +39,7 @@ fn assign_outpost_taxonomy(
     deposit_defs: Res<Assets<DepositDef>>,
     constructions: Res<Constructions>,
     asset_server: Res<AssetServer>,
+    mut commands: Commands,
 ) {
     for StructureConstructed(structure) in structures_constructed.read() {
         let Ok((coord, range, mut ase_animation)) = foragers_outposts.get_mut(*structure) else {
@@ -53,7 +54,7 @@ fn assign_outpost_taxonomy(
             continue;
         };
 
-        let Some(deposit_def) = deposit_defs.get(&deposit.handle) else {
+        let Some(deposit_def) = deposit_defs.get(&deposit.0) else {
             continue;
         };
 
@@ -66,6 +67,10 @@ fn assign_outpost_taxonomy(
         ase_animation.aseprite = asset_server.load(format!(
             "sprites/structures/foragers_outpost_{variant}.aseprite"
         ));
+
+        if let Some(handle) = asset_server.get_id_handle(deposit_def.item_id) {
+            commands.spawn(pickup_slot(*structure, handle));
+        }
     }
 }
 

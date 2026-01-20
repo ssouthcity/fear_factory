@@ -101,7 +101,7 @@ fn calculate_next_target(
                 return false;
             };
 
-            recipe.input.contains_key(&porting.item)
+            recipe.input.contains_key(&porting.item.id())
         }) {
             porter_arrived.write(PorterArrival {
                 porter: *porter,

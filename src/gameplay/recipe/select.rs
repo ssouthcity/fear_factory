@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::process::ProcessState;
-use crate::gameplay::{item::inventory::Inventory, recipe::assets::Recipe};
+use crate::gameplay::{inventory::prelude::*, recipe::assets::Recipe};
 
 pub fn plugin(app: &mut App) {
     app.add_message::<RecipeChanged>();
@@ -26,6 +26,7 @@ pub struct RecipeChanged(pub Entity);
 fn on_select_recipe(
     select_recipe: On<SelectRecipe>,
     mut recipes: ResMut<Assets<Recipe>>,
+    mut item_definitions: ResMut<Assets<ItemDef>>,
     mut commands: Commands,
     mut recipe_changes: MessageWriter<RecipeChanged>,
 ) {
@@ -33,10 +34,24 @@ fn on_select_recipe(
         return;
     };
 
-    let mut inventory = Inventory::default();
+    commands
+        .entity(select_recipe.entity)
+        .despawn_related::<Inventory>();
 
-    for (item_id, _) in recipe.input.iter().chain(recipe.output.iter()) {
-        inventory.items.insert(*item_id, 0);
+    for (item_id, requirement) in recipe.input.iter() {
+        commands.spawn(input_slot(
+            select_recipe.entity,
+            item_definitions.get_strong_handle(*item_id).unwrap(),
+            *requirement,
+        ));
+    }
+
+    for (item_id, production) in recipe.output.iter() {
+        commands.spawn(output_slot(
+            select_recipe.entity,
+            item_definitions.get_strong_handle(*item_id).unwrap(),
+            *production,
+        ));
     }
 
     let Some(handle) = recipes.get_strong_handle(select_recipe.recipe) else {
@@ -45,7 +60,7 @@ fn on_select_recipe(
 
     commands
         .entity(select_recipe.entity)
-        .insert((SelectedRecipe(handle), inventory));
+        .insert(SelectedRecipe(handle));
 
     recipe_changes.write(RecipeChanged(select_recipe.entity));
 }

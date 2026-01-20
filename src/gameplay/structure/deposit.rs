@@ -10,7 +10,7 @@ use crate::{
         tracking::LoadResource,
     },
     gameplay::{
-        item::assets::{ItemDef, Taxonomy},
+        inventory::prelude::*,
         sprite_sort::{YSortSprite, ZIndexSprite},
         world::{
             construction::Constructions,
@@ -71,10 +71,7 @@ impl FromToml for DepositDef {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-pub struct Deposit {
-    pub handle: Handle<DepositDef>,
-    pub quantity: u32,
-}
+pub struct Deposit(pub Handle<DepositDef>);
 
 #[derive(Asset, Resource, Reflect, Clone)]
 #[reflect(Resource)]
@@ -145,10 +142,7 @@ fn spawn_deposits(
                 let entity = commands
                     .spawn((
                         Name::new(deposit_def.name.clone()),
-                        Deposit {
-                            handle: asset_server.get_id_handle(deposit_id).unwrap(),
-                            quantity: 100,
-                        },
+                        Deposit(asset_server.get_id_handle(deposit_id).unwrap()),
                         Coord(absolute_tile_pos),
                         Anchor(Vec2::new(0.0, -0.25)),
                         YSortSprite,
@@ -161,6 +155,12 @@ fn spawn_deposits(
                         },
                     ))
                     .id();
+
+                commands.spawn(item_stack_slot(
+                    entity,
+                    asset_server.get_id_handle(deposit_def.item_id).unwrap(),
+                    100,
+                ));
 
                 constructions.insert(absolute_tile_pos, entity);
             }
