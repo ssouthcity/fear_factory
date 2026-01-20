@@ -1,6 +1,6 @@
 use bevy::{prelude::*, ui_widgets::RadioButton};
 
-use crate::gameplay::item::{assets::ItemDef, inventory::Inventory};
+use crate::gameplay::inventory::prelude::*;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, refresh_item_plates);
@@ -8,7 +8,7 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
-struct ItemPlate(Entity, AssetId<ItemDef>);
+struct ItemPlate(Entity);
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
@@ -22,7 +22,7 @@ struct ItemName;
 #[reflect(Component)]
 struct ItemQuantity;
 
-pub fn item_plate(owner: Entity, item_id: AssetId<ItemDef>) -> impl Bundle {
+pub fn item_plate(entity: Entity) -> impl Bundle {
     (
         Node {
             column_gap: px(4.0),
@@ -31,7 +31,7 @@ pub fn item_plate(owner: Entity, item_id: AssetId<ItemDef>) -> impl Bundle {
             ..default()
         },
         RadioButton,
-        ItemPlate(owner, item_id),
+        ItemPlate(entity),
         children![
             (
                 Node {
@@ -72,8 +72,8 @@ pub fn item_plate(owner: Entity, item_id: AssetId<ItemDef>) -> impl Bundle {
 
 fn refresh_item_plates(
     item_plates: Query<(Entity, &ItemPlate)>,
-    inventories: Query<&Inventory>,
     item_defs: Res<Assets<ItemDef>>,
+    stacks: Query<&ItemStack>,
     mut images: ResMut<Assets<Image>>,
     children: Query<&Children>,
     mut item_plate_components: ParamSet<(
@@ -82,14 +82,12 @@ fn refresh_item_plates(
         Query<&mut Text, With<ItemQuantity>>,
     )>,
 ) {
-    for (item_plate, ItemPlate(owner, item_id)) in item_plates {
-        let Ok(inventory) = inventories.get(*owner) else {
+    for (item_plate, ItemPlate(entity)) in item_plates {
+        let Ok(stack) = stacks.get(*entity) else {
             continue;
         };
 
-        let quantity = inventory.items.get(item_id).unwrap_or(&0);
-
-        let Some(item_def) = item_defs.get(*item_id) else {
+        let Some(item_def) = item_defs.get(&stack.item) else {
             return;
         };
 
@@ -105,7 +103,7 @@ fn refresh_item_plates(
             }
 
             if let Ok(mut text) = item_plate_components.p2().get_mut(child) {
-                text.0 = quantity.to_string();
+                text.0 = stack.quantity.to_string();
             }
         }
     }

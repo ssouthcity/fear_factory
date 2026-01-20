@@ -2,13 +2,9 @@ use bevy::prelude::*;
 
 use crate::gameplay::{
     FactorySystems,
-    item::inventory::Inventory,
+    inventory::prelude::*,
     people::{Assignment, Forager, Person},
-    structure::{
-        deposit::{Deposit, DepositDef},
-        foragers_outpost::ForagersOutpost,
-        range::Range,
-    },
+    structure::{deposit::Deposit, foragers_outpost::ForagersOutpost, range::Range},
     world::{construction::Constructions, tilemap::coord::Coord},
 };
 
@@ -66,50 +62,45 @@ fn assign_deposit_to_forager(
 
 fn forage_deposit(
     foragers: Query<(&Forages, &mut ForagingTimer, &Assignment), With<Person>>,
-    mut foragers_outpost: Query<&mut Inventory>,
-    mut deposits: Query<&mut Deposit>,
-    deposit_definitions: Res<Assets<DepositDef>>,
+    inventory: Query<&Inventory>,
+    stacks: Query<&ItemStack>,
     time: Res<Time>,
+    mut transfer_items: MessageWriter<TransferItems>,
 ) {
     for (forages, mut foraging_timer, assignment) in foragers {
         if !foraging_timer.0.tick(time.delta()).just_finished() {
             continue;
         }
 
-        let Ok(mut foragers_outpost_inventory) = foragers_outpost.get_mut(assignment.structure)
+        let Some(stack) = inventory
+            .iter_descendants(forages.0)
+            .find_map(|e| stacks.get(e).ok())
         else {
             continue;
         };
 
-        let Ok(mut deposit) = deposits.get_mut(forages.0) else {
-            continue;
-        };
-
-        let Some(deposit_def) = deposit_definitions.get(&deposit.handle) else {
-            continue;
-        };
-
-        if deposit.quantity == 0 {
-            continue;
-        }
-
-        deposit.quantity -= 1;
-
-        foragers_outpost_inventory
-            .items
-            .entry(deposit_def.item_id)
-            .and_modify(|v| *v += 1)
-            .or_insert(1);
+        transfer_items.write(TransferItems {
+            from: forages.0,
+            to: assignment.structure,
+            item: stack.item.clone(),
+            quantity: 1,
+        });
     }
 }
 
 fn cleanup_empty_deposits(
-    deposits: Query<(Entity, &Deposit, &Coord)>,
+    deposits: Query<(Entity, &Coord), With<Deposit>>,
+    inventory: Query<&Inventory>,
+    slots: Query<&ItemStack>,
     mut constructions: ResMut<Constructions>,
     mut commands: Commands,
 ) {
-    for (entity, deposit, coord) in deposits {
-        if deposit.quantity == 0 {
+    for (entity, coord) in deposits {
+        let deposit_emptied = inventory
+            .iter_descendants(entity)
+            .all(|slot| slots.get(slot).is_ok_and(|stack| stack.quantity == 0));
+
+        if deposit_emptied {
             constructions.remove(coord);
             commands.entity(entity).despawn();
         }

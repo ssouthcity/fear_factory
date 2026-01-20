@@ -7,7 +7,7 @@ use bevy::{
 use crate::screens::Screen;
 
 pub mod hud;
-pub mod item;
+pub mod inventory;
 pub mod people;
 pub mod player;
 pub mod random;
@@ -28,6 +28,7 @@ pub fn plugin(app: &mut App) {
             FactorySystems::Logistics,
             FactorySystems::Work,
             FactorySystems::Demolish,
+            inventory::prelude::ItemTransferSystems,
         )
             .chain()
             .run_if(in_state(Screen::Gameplay)),
@@ -35,7 +36,7 @@ pub fn plugin(app: &mut App) {
 
     app.add_plugins((
         hud::plugin,
-        item::plugin,
+        inventory::plugin,
         people::plugin,
         player::plugin,
         random::plugin,

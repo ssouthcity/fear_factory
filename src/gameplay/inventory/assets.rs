@@ -7,6 +7,8 @@ use crate::assets::{
     tracking::LoadResource,
 };
 
+use super::prelude::*;
+
 pub fn plugin(app: &mut App) {
     app.add_plugins((
         TomlAssetPlugin::<ItemDef>::extensions(&["item.toml"]),
@@ -63,20 +65,6 @@ impl Indexable for ItemDef {
     fn index(&self) -> &String {
         &self.id
     }
-}
-
-#[derive(Component, Clone, Debug, Deserialize, Reflect, PartialEq, Eq)]
-#[reflect(Component)]
-pub enum Taxonomy {
-    Fauna,
-    Flora,
-    Minerale,
-}
-
-#[derive(Clone, Debug, Deserialize, Reflect)]
-pub enum Transport {
-    Box,
-    Bag,
 }
 
 #[derive(Asset, Clone, Resource, Reflect)]

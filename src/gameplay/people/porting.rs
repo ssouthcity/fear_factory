@@ -5,12 +5,8 @@ use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
 
 use crate::gameplay::{
     FactorySystems,
-    item::{
-        assets::{ItemDef, Transport},
-        inventory::Inventory,
-    },
-    people::{Assignees, Person},
-    recipe::{assets::Recipe, select::SelectedRecipe},
+    inventory::prelude::*,
+    people::{Assignees, Person, Porter},
     sprite_sort::{YSortSprite, ZIndexSprite},
 };
 
@@ -50,8 +46,9 @@ pub struct PorterLost(pub Entity);
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct Porting {
-    pub item: AssetId<ItemDef>,
+    pub item: Handle<ItemDef>,
     pub origin: Entity,
+    pub slot: Entity,
 
     pub speed: f32,
     pub ttl: Duration,
@@ -68,20 +65,17 @@ fn spawn_porter(
         &Transform,
         &mut PorterCooldown,
         &mut PorterSpawnOutputIndex,
-        &SelectedRecipe,
-        &mut Inventory,
         &Assignees,
     )>,
-    person_query: Query<(), (With<Person>, Without<Porting>)>,
+    person_query: Query<(), (With<Person>, With<Porter>, Without<Porting>)>,
     mut commands: Commands,
     item_defs: Res<Assets<ItemDef>>,
-    recipes: Res<Assets<Recipe>>,
     asset_server: Res<AssetServer>,
+    inventory: Query<&Inventory>,
+    mut pickup_stacks: Query<&mut ItemStack, With<Pickup>>,
     time: Res<Time>,
 ) {
-    for (structure, transform, mut timer, mut index, selected_recipe, mut inventory, assignees) in
-        structure_query
-    {
+    for (structure, transform, mut timer, mut index, assignees) in structure_query {
         if !timer.tick(time.delta()).is_finished() {
             continue;
         }
@@ -90,23 +84,22 @@ fn spawn_porter(
             continue;
         };
 
-        let Some(recipe) = recipes.get(&selected_recipe.0) else {
+        let Some(slot) = inventory
+            .iter_descendants(structure)
+            .find(|e| pickup_stacks.contains(*e))
+        else {
             continue;
         };
 
-        let Some((item_id, _)) = recipe.output.iter().nth(index.0) else {
+        let Ok(mut stack) = pickup_stacks.get_mut(slot) else {
             continue;
         };
 
-        let Some(quantity) = inventory.items.get_mut(item_id) else {
-            continue;
-        };
-
-        if *quantity == 0 {
+        if stack.quantity == 0 {
             continue;
         }
 
-        let Some(item_def) = item_defs.get(*item_id) else {
+        let Some(item_def) = item_defs.get(&stack.item) else {
             continue;
         };
 
@@ -124,8 +117,9 @@ fn spawn_porter(
             YSortSprite,
             ZIndexSprite(10),
             Porting {
-                item: *item_id,
+                item: stack.item.clone(),
                 origin: structure,
+                slot: slot,
 
                 speed: 64.0,
                 ttl: Duration::from_secs(30),
@@ -137,8 +131,15 @@ fn spawn_porter(
             },
         ));
 
-        *quantity -= 1;
-        index.0 = (index.0 + 1) % recipe.output.len();
+        stack.quantity -= 1;
+
+        index.0 = (index.0 + 1)
+            % inventory
+                .iter_descendants(structure)
+                .filter(|e| pickup_stacks.contains(*e))
+                .collect::<Vec<_>>()
+                .len();
+
         timer.reset();
     }
 }
@@ -147,17 +148,13 @@ fn despawn_lost_porters(
     mut porter_losses: MessageReader<PorterLost>,
     mut commands: Commands,
     porters: Query<&Porting>,
-    mut structures: Query<&mut Inventory>,
+    mut slots: Query<&mut ItemStack>,
 ) {
     for PorterLost(entity) in porter_losses.read() {
         if let Ok(porting) = porters.get(*entity)
-            && let Ok(mut inventory) = structures.get_mut(porting.origin)
+            && let Ok(mut stack) = slots.get_mut(porting.slot)
         {
-            inventory
-                .items
-                .entry(porting.item)
-                .and_modify(|v| *v += 1)
-                .or_insert(1);
+            stack.quantity = stack.quantity.saturating_add(1);
         }
 
         commands.entity(*entity).remove::<(Sprite, Porting)>();
@@ -165,15 +162,16 @@ fn despawn_lost_porters(
 }
 
 fn drop_of_items(
-    mut poter_arrivals: MessageReader<PorterArrival>,
+    mut porter_arrivals: MessageReader<PorterArrival>,
     porters: Query<&Porting>,
-    mut structures: Query<&mut Inventory>,
+    inventory: Query<&Inventory>,
+    mut slots: Query<&mut ItemStack, With<DropOff>>,
     mut commands: Commands,
 ) {
     for PorterArrival {
         porter,
         destination,
-    } in poter_arrivals.read()
+    } in porter_arrivals.read()
     {
         commands.entity(*porter).remove::<(Sprite, Porting)>();
 
@@ -181,12 +179,15 @@ fn drop_of_items(
             continue;
         };
 
-        if let Ok(mut inventory) = structures.get_mut(*destination) {
-            inventory
-                .items
-                .entry(porting.item)
-                .and_modify(|q| *q += 1)
-                .or_insert(1);
+        let Some(slot) = inventory
+            .iter_descendants(*destination)
+            .find(|e| slots.get(*e).is_ok_and(|stack| stack.item == porting.item))
+        else {
+            continue;
+        };
+
+        if let Ok(mut stack) = slots.get_mut(slot) {
+            stack.quantity = stack.quantity.saturating_add(1);
         }
     }
 }

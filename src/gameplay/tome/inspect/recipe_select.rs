@@ -2,7 +2,7 @@ use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
     gameplay::{
-        item::inventory::Inventory,
+        inventory::prelude::*,
         recipe::{
             assets::Recipe,
             select::{RecipeChanged, SelectRecipe},
@@ -95,20 +95,13 @@ fn spawn_recipe_details(
 
 fn refresh_recipe_details(
     inspected: Res<Inspected>,
-    inventories: Query<&Inventory>,
+    inventory: Query<&Inventory>,
     recipe_details: Single<Entity, With<RecipeDetails>>,
     mut commands: Commands,
 ) {
     commands.entity(*recipe_details).despawn_children();
 
-    let Ok(inventory) = inventories.get(inspected.0) else {
-        return;
-    };
-
-    for (id, _) in inventory.items.iter() {
-        commands.spawn((
-            widgets::item_plate(inspected.0, *id),
-            ChildOf(*recipe_details),
-        ));
+    for slot in inventory.iter_descendants(inspected.0) {
+        commands.spawn((widgets::item_plate(slot), ChildOf(*recipe_details)));
     }
 }

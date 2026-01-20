@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     gameplay::{
-        item::inventory::Inventory,
+        inventory::prelude::*,
         player::Player,
         tome::{UITomeLeftPageRoot, inventory::InventoryTabs, list_page},
     },
@@ -16,10 +16,9 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_item_list(
     mut commands: Commands,
     left_page: Single<Entity, With<UITomeLeftPageRoot>>,
-    q_player: Single<(Entity, &Inventory), With<Player>>,
+    player: Single<Entity, With<Player>>,
+    inventory: Query<&Inventory>,
 ) {
-    let (player, inventory) = *q_player;
-
     let item_list = commands
         .spawn((
             list_page(),
@@ -28,7 +27,7 @@ fn spawn_item_list(
         ))
         .id();
 
-    for (item_id, _) in inventory.items.iter() {
-        commands.spawn((widgets::item_plate(player, *item_id), ChildOf(item_list)));
+    for slot in inventory.iter_descendants(*player) {
+        commands.spawn((widgets::item_plate(slot), ChildOf(item_list)));
     }
 }
