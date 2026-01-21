@@ -104,6 +104,7 @@ fn spawn_porter(
     asset_server: Res<AssetServer>,
     inventory: Query<&Inventory>,
     pickup_stacks: Query<&ItemStack, With<Pickup>>,
+    walkables: Query<&Walkable>,
     time: Res<Time>,
 ) {
     for (structure, transform, coord, mut timer, mut index, assignees) in structure_query {
@@ -138,6 +139,7 @@ fn spawn_porter(
             .iter()
             .map(|c| coord.0 + c)
             .find_map(|c| constructions.get(&c))
+            .filter(|e| walkables.contains(**e))
         else {
             continue;
         };
