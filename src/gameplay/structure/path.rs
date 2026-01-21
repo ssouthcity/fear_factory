@@ -4,7 +4,7 @@ use bevy_aseprite_ultra::prelude::*;
 use crate::gameplay::{
     FactorySystems,
     hud::hotbar::{HotbarActionKind, HotbarSelection},
-    people::pathfinding::Walkable,
+    people::porting::Walkable,
     sprite_sort::{YSortSprite, ZIndexSprite},
     world::{
         construction::{Constructions, StructureConstructed},

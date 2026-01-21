@@ -1,9 +1,8 @@
 use bevy::prelude::*;
 
 use crate::gameplay::{
-    FactorySystems,
     inventory::prelude::*,
-    people::{Assignment, Forager, Person},
+    people::{Assignment, Forager, Person, profession::ProfessionSystems},
     structure::{deposit::Deposit, foragers_outpost::ForagersOutpost, range::Range},
     world::{construction::Constructions, tilemap::coord::Coord},
 };
@@ -17,7 +16,7 @@ pub(super) fn plugin(app: &mut App) {
             cleanup_empty_deposits,
         )
             .chain()
-            .in_set(FactorySystems::Forage),
+            .in_set(ProfessionSystems),
     );
 }
 
@@ -72,17 +71,27 @@ fn forage_deposit(
             continue;
         }
 
-        let Some(stack) = inventory
+        let Some(deposit_slot) = inventory
             .iter_descendants(forages.0)
-            .find_map(|e| stacks.get(e).ok())
+            .find(|e| stacks.contains(*e))
+        else {
+            continue;
+        };
+
+        let Ok(stack) = stacks.get(deposit_slot) else {
+            continue;
+        };
+
+        let Some(structure_slot) = inventory
+            .iter_descendants(assignment.structure)
+            .find(|e| stacks.get(*e).is_ok_and(|s| s.item == stack.item))
         else {
             continue;
         };
 
         transfer_items.write(TransferItems {
-            from: forages.0,
-            to: assignment.structure,
-            item: stack.item.clone(),
+            from_slot: deposit_slot,
+            to_slot: structure_slot,
             quantity: 1,
         });
     }

@@ -7,6 +7,9 @@ pub(super) fn plugin(app: &mut App) {
     app.add_observer(on_unassign_person);
 }
 
+#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
+pub struct ProfessionSystems;
+
 /// Event to trigger when changing a person's assignment
 #[derive(Event)]
 pub struct AssignPerson {
