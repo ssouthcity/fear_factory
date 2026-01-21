@@ -24,10 +24,9 @@ pub fn plugin(app: &mut App) {
         FixedUpdate,
         (
             FactorySystems::Construction,
-            FactorySystems::Forage,
-            FactorySystems::Logistics,
             FactorySystems::Work,
             FactorySystems::Demolish,
+            people::profession::ProfessionSystems,
             inventory::prelude::ItemTransferSystems,
         )
             .chain()
@@ -51,8 +50,6 @@ pub fn plugin(app: &mut App) {
 #[derive(SystemSet, Hash, Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub enum FactorySystems {
     Construction,
-    Forage,
-    Logistics,
     Work,
     Demolish,
 }

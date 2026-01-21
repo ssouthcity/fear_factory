@@ -10,47 +10,46 @@ pub struct ItemTransferSystems;
 /// Handled in batch to produce consistent behavior
 #[derive(Message)]
 pub struct TransferItems {
-    pub from: Entity,
-    pub to: Entity,
-    pub item: Handle<ItemDef>,
+    pub from_slot: Entity,
+    pub to_slot: Entity,
     pub quantity: u32,
 }
 
 pub(super) fn transfer_items(
     mut transfer_items: MessageReader<TransferItems>,
-    inventory: Query<&Inventory>,
     mut stacks: Query<&mut ItemStack>,
+    mut commands: Commands,
 ) {
     for TransferItems {
-        from,
-        to,
-        item,
+        from_slot,
+        to_slot,
         quantity,
     } in transfer_items.read()
     {
-        let Some(from_slot) = inventory
-            .iter_descendants(*from)
-            .find(|e| stacks.get(*e).is_ok_and(|e| e.item == *item))
-        else {
-            warn!("Attempted to transfer an item type from an entity that does not own item type");
-            continue;
-        };
+        if let Ok([mut from_stack, mut to_stack]) = stacks.get_many_mut([*from_slot, *to_slot]) {
+            if from_stack.item != to_stack.item {
+                warn!(
+                    "Attempted to transfer items between incompatible stacks: {from_slot} -> {to_slot}"
+                );
+                continue;
+            }
 
-        let Some(to_slot) = inventory
-            .iter_descendants(*to)
-            .find(|e| stacks.get(*e).is_ok_and(|e| e.item == *item))
-        else {
-            warn!("Attempted to transfer an item type to an entity that does not own item type");
-            continue;
-        };
+            let actual_quantity = from_stack.quantity.min(*quantity);
+            from_stack.quantity = from_stack.quantity.saturating_sub(actual_quantity);
+            to_stack.quantity = to_stack.quantity.saturating_add(actual_quantity);
 
-        let Ok([mut from_stack, mut to_stack]) = stacks.get_many_mut([from_slot, to_slot]) else {
-            warn!("Attempted to transfer items from non-slot entity: {from} -> {to}");
-            continue;
-        };
+            return;
+        }
 
-        let actual_quantity = from_stack.quantity.min(*quantity);
-        from_stack.quantity = from_stack.quantity.saturating_sub(actual_quantity);
-        to_stack.quantity = to_stack.quantity.saturating_add(actual_quantity);
+        if let Ok(mut from_stack) = stacks.get_mut(*from_slot) {
+            let actual_quantity = from_stack.quantity.min(*quantity);
+            from_stack.quantity = from_stack.quantity.saturating_sub(actual_quantity);
+
+            commands.entity(*to_slot).insert(ItemStack {
+                item: from_stack.item.clone(),
+                quantity: actual_quantity,
+                capacity: None,
+            });
+        }
     }
 }

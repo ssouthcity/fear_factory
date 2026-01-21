@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 
-use crate::gameplay::{people::naming::NameManager, world::construction::StructureConstructed};
+use crate::gameplay::{
+    inventory::prelude::*, people::naming::NameManager, world::construction::StructureConstructed,
+};
 
 pub mod foraging;
 pub mod naming;
-pub mod pathfinding;
 pub mod porting;
 pub mod profession;
 
@@ -17,7 +18,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_plugins((
         foraging::plugin,
         naming::plugin,
-        pathfinding::plugin,
         porting::plugin,
         profession::plugin,
     ));
@@ -26,6 +26,8 @@ pub(super) fn plugin(app: &mut App) {
         FixedUpdate,
         add_housed_people_to_new_structures.run_if(on_message::<StructureConstructed>),
     );
+
+    app.add_observer(on_person_add);
 }
 
 #[derive(Component, Reflect, Debug, Default)]
@@ -39,9 +41,7 @@ fn add_housed_people_to_new_structures(
 ) {
     for StructureConstructed(structure) in structures_constructed.read() {
         for _ in 0..3 {
-            let id = commands
-                .spawn((Name::new(name_manager.next()), Person))
-                .id();
+            let id = commands.spawn(person(&mut name_manager)).id();
 
             commands.trigger(AssignPerson {
                 person: id,
@@ -50,4 +50,12 @@ fn add_housed_people_to_new_structures(
             });
         }
     }
+}
+
+pub fn person(name_manager: &mut NameManager) -> impl Bundle {
+    (Name::new(name_manager.next()), Person)
+}
+
+fn on_person_add(add: On<Add, Person>, mut commands: Commands) {
+    commands.spawn(empty_slot(add.entity));
 }

@@ -23,7 +23,7 @@ pub fn plugin(app: &mut App) {
             sync_foragers_outpost_range,
         )
             .chain()
-            .in_set(FactorySystems::Forage),
+            .after(FactorySystems::Construction),
     );
 }
 

@@ -6,7 +6,7 @@ use rand::Rng;
 use crate::{
     gameplay::{
         inventory::prelude::*,
-        people::{Person, naming::NameManager},
+        people::{naming::NameManager, person},
         random::Seed,
     },
     screens::Screen,
@@ -42,7 +42,5 @@ fn spawn_player(
 }
 
 fn give_player_a_person(mut commands: Commands, mut name_manager: ResMut<NameManager>) {
-    let name = name_manager.next();
-
-    commands.spawn((Name::new(name.clone()), Person));
+    commands.spawn(person(&mut name_manager));
 }

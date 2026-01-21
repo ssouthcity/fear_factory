@@ -21,6 +21,7 @@ pub struct InInventory(pub Entity);
 pub struct ItemStack {
     pub item: Handle<ItemDef>,
     pub quantity: u32,
+    pub capacity: Option<u32>,
 }
 
 /// Recipe input slot marker
