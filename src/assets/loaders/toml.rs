@@ -49,6 +49,7 @@ where
     }
 }
 
+#[derive(TypePath)]
 pub struct TomlAssetLoader<T> {
     extensions: Vec<&'static str>,
     _marker: PhantomData<T>,
