@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use std::time::Duration;
+
+use bevy::{prelude::*, time::common_conditions::repeating_after_delay};
 
 use crate::{assets::tracking::is_finished_loading, screens::Screen};
 
@@ -7,9 +9,11 @@ pub fn plugin(app: &mut App) {
 
     app.add_systems(
         Update,
-        transition_to_gameplay
-            .run_if(in_state(Screen::Loading))
-            .run_if(is_finished_loading),
+        transition_to_gameplay.run_if(
+            in_state(Screen::Loading)
+                .and(is_finished_loading)
+                .and(repeating_after_delay(Duration::from_secs(1))),
+        ),
     );
 }
 

@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::gameplay::world::tilemap::TILE_OFFSET;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, translate_coord_to_transform);
+    app.add_systems(PostUpdate, translate_coord_to_transform);
 }
 
 #[derive(Component, Reflect, Debug, Default, Deref, DerefMut, PartialEq, Eq)]
