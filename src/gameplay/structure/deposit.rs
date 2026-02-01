@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use bevy::{asset::LoadedFolder, prelude::*, sprite::Anchor};
-use noise::{Fbm, MultiFractal, NoiseFn, Perlin};
+use noise::{NoiseFn, OpenSimplex};
 use serde::Deserialize;
 
 use crate::{
@@ -93,17 +93,12 @@ impl FromWorld for DepositAssets {
 
 #[derive(Resource, Debug, Default)]
 pub struct DepositNoise {
-    pub noises: HashMap<AssetId<DepositDef>, Fbm<Perlin>>,
+    pub noises: HashMap<AssetId<DepositDef>, OpenSimplex>,
 }
 
 fn create_noise(mut deposit_noise: ResMut<DepositNoise>, deposit_defs: Res<Assets<DepositDef>>) {
     for (deposit_id, deposit_def) in deposit_defs.iter() {
-        let fbm = Fbm::<Perlin>::new(deposit_def.seed)
-            .set_octaves(5)
-            .set_frequency(1.0 / 70.0)
-            .set_lacunarity(2.5)
-            .set_persistence(0.45);
-
+        let fbm = OpenSimplex::new(deposit_def.seed);
         deposit_noise.noises.insert(deposit_id, fbm);
     }
 }
@@ -122,7 +117,7 @@ fn spawn_deposits(
     let absolute_chunk_position = chunk.0 * CHUNK_SIZE.as_ivec2();
 
     for (deposit_id, deposit_def) in deposit_defs.iter() {
-        let Some(fbm) = deposit_noise.noises.get(&deposit_id) else {
+        let Some(noise) = deposit_noise.noises.get(&deposit_id) else {
             return;
         };
 
@@ -133,9 +128,8 @@ fn spawn_deposits(
                     continue;
                 }
 
-                let value = fbm.get(absolute_tile_pos.as_dvec2().into());
-                let normalized_value = (value + 1.0) / 2.0;
-                if normalized_value < 0.75 {
+                let value = noise.get((absolute_tile_pos.as_dvec2() * 0.05).into());
+                if value <= 0.4 {
                     continue;
                 }
 
