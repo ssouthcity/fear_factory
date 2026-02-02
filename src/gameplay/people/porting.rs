@@ -2,7 +2,7 @@ use std::{collections::HashSet, time::Duration};
 
 use bevy::{ecs::relationship::OrderedRelationshipSourceCollection, prelude::*, sprite::Anchor};
 use bevy_aseprite_ultra::prelude::{Animation, AseAnimation};
-use rand::seq::IndexedRandom;
+use rand::seq::{IndexedRandom, IteratorRandom};
 
 use crate::gameplay::{
     inventory::prelude::*,
@@ -106,6 +106,7 @@ fn spawn_porter(
     pickup_stacks: Query<&ItemStack, With<Pickup>>,
     walkables: Query<&Walkable>,
     time: Res<Time>,
+    mut seed: ResMut<Seed>,
 ) {
     for (structure, transform, coord, mut timer, mut index, assignees) in structure_query {
         if !timer.tick(time.delta()).is_finished() {
@@ -138,8 +139,9 @@ fn spawn_porter(
         let Some(neighbor) = CARDINALS
             .iter()
             .map(|c| coord.0 + c)
-            .find_map(|c| constructions.get(&c))
+            .filter_map(|c| constructions.get(&c))
             .filter(|e| walkables.contains(**e))
+            .choose(&mut seed)
         else {
             continue;
         };
@@ -272,26 +274,31 @@ fn calculate_next_target(
         };
 
         let neighbors: Vec<Entity> = CARDINALS
-            .into_iter()
+            .iter()
             .map(|c| c + coord.0)
             .filter_map(|c| constructions.get(&c).cloned())
             .collect();
 
-        if let Some(structure) = neighbors.iter().find(|&&entity| {
-            let Ok(selected_recipe) = structures.get(entity) else {
-                return false;
-            };
+        if let Some(structure) = neighbors
+            .iter()
+            .filter(|construction| {
+                let Ok(selected_recipe) = structures.get(**construction) else {
+                    return false;
+                };
 
-            let Some(recipe) = recipes.get(&selected_recipe.0) else {
-                return false;
-            };
+                let Some(recipe) = recipes.get(&selected_recipe.0) else {
+                    return false;
+                };
 
-            recipe.input.contains_key(&porting.item.id())
-        }) {
+                recipe.input.contains_key(&porting.item.id())
+            })
+            .choose(&mut seed)
+        {
             porter_arrived.write(PorterArrival {
                 porter: *porter,
                 destination: *structure,
             });
+            return;
         }
 
         let paths: Vec<Entity> = neighbors
