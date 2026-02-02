@@ -9,6 +9,7 @@ pub mod naming;
 pub mod porting;
 pub mod profession;
 
+#[allow(unused_imports)]
 pub use profession::{
     AssignPerson, Assignees, Assignment, Forager, PersonAssignmentChanged, Porter, Profession,
     UnassignPerson,

@@ -2,10 +2,7 @@ use bevy::{prelude::*, ui_widgets::observe};
 
 use crate::{
     gameplay::{
-        people::{
-            AssignPerson, Assignees, Assignment, Person, PersonAssignmentChanged, Porter,
-            Profession, UnassignPerson,
-        },
+        people::{AssignPerson, Assignees, Assignment, Person, Porter, Profession, UnassignPerson},
         tome::{
             UITomeLeftPageRoot, UITomeRightPageRoot,
             inspect::{InspectTabs, Inspected},
@@ -22,13 +19,6 @@ pub(super) fn plugin(app: &mut App) {
             (spawn_porter_list, refresh_porter_list).chain(),
             (spawn_unassigned_list, refresh_unassigned_list).chain(),
         ),
-    );
-
-    app.add_systems(
-        Update,
-        (refresh_porter_list, refresh_unassigned_list)
-            .run_if(in_state(InspectTabs::PorterManagement))
-            .run_if(on_message::<PersonAssignmentChanged>),
     );
 }
 
@@ -50,13 +40,19 @@ fn spawn_porter_list(
              inspected: Res<Inspected>,
              badges: Query<&PersonBadge>,
              mut commands: Commands| {
-                if let Ok(PersonBadge(person)) = badges.get(drag_drop.dropped) {
-                    commands.trigger(AssignPerson {
-                        person: *person,
-                        structure: inspected.0,
-                        profession: Profession::Porter,
-                    });
-                }
+                let Ok(PersonBadge(person)) = badges.get(drag_drop.dropped) else {
+                    return;
+                };
+
+                commands
+                    .entity(drag_drop.dropped)
+                    .insert(ChildOf(drag_drop.event_target()));
+
+                commands.trigger(AssignPerson {
+                    person: *person,
+                    structure: inspected.0,
+                    profession: Profession::Porter,
+                });
             },
         ),
     ));
@@ -97,9 +93,15 @@ fn spawn_unassigned_list(
             |drag_drop: On<Pointer<DragDrop>>,
              badges: Query<&PersonBadge>,
              mut commands: Commands| {
-                if let Ok(PersonBadge(person)) = badges.get(drag_drop.dropped) {
-                    commands.trigger(UnassignPerson { person: *person });
-                }
+                let Ok(PersonBadge(person)) = badges.get(drag_drop.dropped) else {
+                    return;
+                };
+
+                commands
+                    .entity(drag_drop.dropped)
+                    .insert(ChildOf(drag_drop.event_target()));
+
+                commands.trigger(UnassignPerson { person: *person });
             },
         ),
     ));

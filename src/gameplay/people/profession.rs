@@ -68,23 +68,29 @@ fn on_assign_person(
     mut commands: Commands,
     mut events: MessageWriter<PersonAssignmentChanged>,
 ) {
-    let mut entity = commands.entity(assign_person.person);
+    let AssignPerson {
+        person,
+        structure,
+        profession,
+    } = *assign_person;
 
-    entity.remove::<(Forager, Porter)>();
+    commands
+        .entity(person)
+        .queue(move |mut entity: EntityWorldMut| {
+            entity.remove::<(Forager, Porter)>();
 
-    entity.insert(Assignment {
-        structure: assign_person.structure,
-        profession: assign_person.profession,
-    });
+            entity.insert(Assignment {
+                structure,
+                profession,
+            });
 
-    match assign_person.profession {
-        Profession::Forager => entity.insert(Forager),
-        Profession::Porter => entity.insert(Porter),
-    };
+            match profession {
+                Profession::Forager => entity.insert(Forager),
+                Profession::Porter => entity.insert(Porter),
+            };
+        });
 
-    events.write(PersonAssignmentChanged {
-        person: entity.id(),
-    });
+    events.write(PersonAssignmentChanged { person });
 }
 
 fn on_unassign_person(
@@ -94,7 +100,7 @@ fn on_unassign_person(
 ) {
     let mut entity = commands.entity(unassign_person.person);
 
-    entity.remove::<(Forager, Porter)>();
+    entity.remove::<(Assignment, Forager, Porter)>();
 
     events.write(PersonAssignmentChanged {
         person: entity.id(),
