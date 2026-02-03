@@ -4,6 +4,7 @@ mod assets;
 mod components;
 mod messages;
 mod prefabs;
+mod registry;
 
 #[allow(unused_imports)]
 pub mod prelude {

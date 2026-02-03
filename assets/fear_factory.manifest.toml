@@ -1,0 +1,9 @@
+items = [
+  "./manifests/items/doll.item.toml",
+  "./manifests/items/ectoplasm.item.toml",
+  "./manifests/items/fauna_a.item.toml",
+  "./manifests/items/flora_a.item.toml",
+  "./manifests/items/quintessence.item.toml",
+  "./manifests/items/ritual_doll.item.toml",
+  "./manifests/items/sack.item.toml",
+]

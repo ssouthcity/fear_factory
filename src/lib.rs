@@ -10,6 +10,7 @@ mod camera;
 mod dev_tools;
 mod gameplay;
 mod input;
+mod loading;
 mod screens;
 mod widgets;
 
@@ -45,6 +46,7 @@ impl Plugin for FactoryGamePlugin {
             dev_tools::plugin,
             gameplay::plugin,
             input::plugin,
+            loading::plugin,
             screens::plugin,
             widgets::plugin,
         ));
