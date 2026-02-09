@@ -9,14 +9,12 @@ mod prefabs;
 pub mod prelude {
     use super::*;
 
-    pub use assets::ItemDef;
+    pub use assets::{ItemDef, ItemTag};
     pub use components::{
         DropOff, InInventory, Input, Inventory, ItemStack, Output, Pickup, Taxonomy, Transport,
     };
     pub use messages::{ItemTransferSystems, TransferItems};
-    pub use prefabs::{
-        dropoff_slot, empty_slot, input_slot, item_stack_slot, output_slot, pickup_slot,
-    };
+    pub use prefabs::{empty_slot, item_stack_slot};
 }
 
 pub fn plugin(app: &mut App) {

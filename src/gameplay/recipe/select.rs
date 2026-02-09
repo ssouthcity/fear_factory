@@ -38,19 +38,21 @@ fn on_select_recipe(
         .entity(select_recipe.entity)
         .despawn_related::<Inventory>();
 
-    for (item_id, requirement) in recipe.input.iter() {
-        commands.spawn(input_slot(
-            select_recipe.entity,
-            item_definitions.get_strong_handle(*item_id).unwrap(),
-            *requirement,
+    for (item_id, &requirement) in recipe.input.iter() {
+        let handle = item_definitions.get_strong_handle(*item_id).unwrap();
+        commands.spawn((
+            item_stack_slot(select_recipe.entity, handle.clone(), 0),
+            Input { requirement },
+            DropOff::Item(handle),
         ));
     }
 
-    for (item_id, production) in recipe.output.iter() {
-        commands.spawn(output_slot(
-            select_recipe.entity,
-            item_definitions.get_strong_handle(*item_id).unwrap(),
-            *production,
+    for (item_id, &production) in recipe.output.iter() {
+        let handle = item_definitions.get_strong_handle(*item_id).unwrap();
+        commands.spawn((
+            item_stack_slot(select_recipe.entity, handle, 0),
+            Output { production },
+            Pickup,
         ));
     }
 

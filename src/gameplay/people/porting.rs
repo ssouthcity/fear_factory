@@ -8,7 +8,6 @@ use crate::gameplay::{
     inventory::prelude::*,
     people::{Assignees, Person, Porter, profession::ProfessionSystems},
     random::Seed,
-    recipe::{assets::Recipe, select::SelectedRecipe},
     sprite_sort::{YSortSprite, ZIndexSprite},
     world::{
         construction::Constructions,
@@ -27,7 +26,7 @@ pub(super) fn plugin(app: &mut App) {
         FixedUpdate,
         (
             spawn_porter,
-            drop_of_items,
+            drop_off_items,
             pickup_items,
             returnal,
             (move_towards_target, calculate_next_target).chain(),
@@ -49,7 +48,7 @@ struct PorterSpawnOutputIndex(usize);
 #[derive(Message, Reflect, Debug)]
 pub struct PorterArrival {
     pub porter: Entity,
-    pub destination: Entity,
+    pub slot: Entity,
 }
 
 #[derive(Message, Reflect, Debug)]
@@ -250,8 +249,9 @@ fn calculate_next_target(
     coords: Query<&Coord>,
     walkables: Query<(), With<Walkable>>,
     constructions: Res<Constructions>,
-    structures: Query<&SelectedRecipe>,
-    recipes: Res<Assets<Recipe>>,
+    inventory: Query<&Inventory>,
+    drop_off_slots: Query<&DropOff>,
+    item_definitions: Res<Assets<ItemDef>>,
     mut porter_arrived: MessageWriter<PorterArrival>,
     mut seed: ResMut<Seed>,
 ) {
@@ -279,24 +279,27 @@ fn calculate_next_target(
             .filter_map(|c| constructions.get(&c).cloned())
             .collect();
 
-        if let Some(structure) = neighbors
+        if let Some(slot) = neighbors
             .iter()
-            .filter(|construction| {
-                let Ok(selected_recipe) = structures.get(**construction) else {
-                    return false;
-                };
+            .filter_map(|construction| {
+                inventory.iter_descendants(*construction).find(|slot| {
+                    let Ok(drop_off) = drop_off_slots.get(*slot) else {
+                        return false;
+                    };
 
-                let Some(recipe) = recipes.get(&selected_recipe.0) else {
-                    return false;
-                };
-
-                recipe.input.contains_key(&porting.item.id())
+                    match drop_off {
+                        DropOff::Item(handle) => porting.item == *handle,
+                        DropOff::Tag(tag) => item_definitions
+                            .get(&porting.item)
+                            .is_some_and(|item| item.tags.contains(tag)),
+                    }
+                })
             })
             .choose(&mut seed)
         {
             porter_arrived.write(PorterArrival {
                 porter: *porter,
-                destination: *structure,
+                slot,
             });
             return;
         }
@@ -341,26 +344,14 @@ fn despawn_lost_porters(
     }
 }
 
-fn drop_of_items(
+fn drop_off_items(
     mut porter_arrivals: MessageReader<PorterArrival>,
     mut porters: Query<(&mut Porting, &mut AseAnimation)>,
     inventory: Query<&Inventory>,
-    slots: Query<&ItemStack, With<DropOff>>,
     mut transfer_items: MessageWriter<TransferItems>,
 ) {
-    for PorterArrival {
-        porter,
-        destination,
-    } in porter_arrivals.read()
-    {
+    for PorterArrival { porter, slot } in porter_arrivals.read() {
         let Ok((mut porting, mut animation)) = porters.get_mut(*porter) else {
-            continue;
-        };
-
-        let Some(destination_slot) = inventory
-            .iter_descendants(*destination)
-            .find(|e| slots.get(*e).is_ok_and(|stack| stack.item == porting.item))
-        else {
             continue;
         };
 
@@ -370,7 +361,7 @@ fn drop_of_items(
 
         transfer_items.write(TransferItems {
             from_slot: porter_slot,
-            to_slot: destination_slot,
+            to_slot: *slot,
             quantity: 1,
         });
 

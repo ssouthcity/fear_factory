@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use serde::Deserialize;
 
+use crate::gameplay::inventory::assets::ItemTag;
+
 use super::prelude::*;
 
 /// Relationship to mark everything in an inventory
@@ -41,7 +43,12 @@ pub struct Output {
 /// Marks slot for porter drop off
 #[derive(Component, Reflect)]
 #[reflect(Component)]
-pub struct DropOff;
+pub enum DropOff {
+    /// Matches exact item
+    Item(Handle<ItemDef>),
+    /// Matches item with tag
+    Tag(ItemTag),
+}
 
 /// Marks slot for porter pickup
 #[derive(Component, Reflect)]

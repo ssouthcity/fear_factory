@@ -69,7 +69,7 @@ fn assign_outpost_taxonomy(
         ));
 
         if let Some(handle) = asset_server.get_id_handle(deposit_def.item_id) {
-            commands.spawn(pickup_slot(*structure, handle));
+            commands.spawn((item_stack_slot(*structure, handle, 0), Pickup));
         }
     }
 }
