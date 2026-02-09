@@ -1,4 +1,4 @@
-use bevy::{asset::LoadedFolder, prelude::*};
+use bevy::{asset::LoadedFolder, platform::collections::HashSet, prelude::*};
 use serde::Deserialize;
 
 use crate::assets::{
@@ -18,6 +18,11 @@ pub fn plugin(app: &mut App) {
     app.load_resource::<ItemAssets>();
 }
 
+#[derive(Reflect, Deserialize, Hash, PartialEq, Eq, Clone, Copy, Debug)]
+pub enum ItemTag {
+    Rotting,
+}
+
 #[derive(Asset, Clone, Debug, Deserialize, Reflect)]
 pub struct ItemRaw {
     pub id: String,
@@ -28,6 +33,8 @@ pub struct ItemRaw {
     pub stack_size: u32,
     pub taxonomy: Taxonomy,
     pub transport: Transport,
+    #[serde(default)]
+    pub tags: HashSet<ItemTag>,
 }
 
 fn placeholder_sprite() -> String {
@@ -43,6 +50,7 @@ pub struct ItemDef {
     pub stack_size: u32,
     pub taxonomy: Taxonomy,
     pub transport: Transport,
+    pub tags: HashSet<ItemTag>,
 }
 
 impl FromToml for ItemDef {
@@ -57,6 +65,7 @@ impl FromToml for ItemDef {
             stack_size: raw.stack_size,
             taxonomy: raw.taxonomy,
             transport: raw.transport,
+            tags: raw.tags,
         }
     }
 }
