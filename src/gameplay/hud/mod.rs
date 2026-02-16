@@ -3,10 +3,11 @@ use bevy_aseprite_ultra::prelude::*;
 
 use crate::screens::Screen;
 
+mod camera_zoom;
 pub mod hotbar;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins(hotbar::plugin);
+    app.add_plugins((camera_zoom::plugin, hotbar::plugin));
 
     app.add_systems(OnEnter(Screen::Gameplay), (setup_portrait, setup_relic));
 }
