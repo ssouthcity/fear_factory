@@ -3,6 +3,4 @@ name = "Sack"
 input.flora_a = 10
 output.sack = 1
 duration = "7s"
-tags = [
-  { kind = "structure_id", value = "constructor" },
-]
+tags = [{ kind = "structure_id", value = "constructor" }]

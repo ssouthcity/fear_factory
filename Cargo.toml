@@ -4,9 +4,12 @@ version = "0.2.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18.0", default-features = false, features = ["2d", "experimental_bevy_ui_widgets"] }
+bevy = { version = "0.18.0", default-features = false, features = [
+  "2d",
+  "experimental_bevy_ui_widgets",
+] }
 bevy-inspector-egui = "0.36.0"
-bevy_aseprite_ultra = { git = "https://github.com/Lommix/bevy_aseprite_ultra.git", rev = "780c0f76f3ce38180693b58b9f6ce5d6819aebd3" }
+bevy_aseprite_ultra = "0.8.2"
 bevy_ecs_tilemap = { version = "0.18.1" }
 humantime-serde = "1.1.1"
 noise = "0.9.0"
@@ -29,11 +32,7 @@ dev = [
   "bevy/bevy_ui_debug",
   "bevy/track_location",
 ]
-dev_native = [
-  "dev",
-  "bevy/file_watcher",
-  "bevy/embedded_watcher",
-]
+dev_native = ["dev", "bevy/file_watcher", "bevy/embedded_watcher"]
 
 [package.metadata.bevy_cli.release]
 default-features = false
