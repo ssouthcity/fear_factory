@@ -7,6 +7,4 @@ taxonomy = "Fauna"
 transport = "Box"
 sprite = "sprites/items/fauna_a.png"
 stack_size = 100
-tags = [
-  "Rotting",
-]
+tags = ["Rotting"]

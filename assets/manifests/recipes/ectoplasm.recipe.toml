@@ -3,6 +3,4 @@ name = "Ectoplasm"
 input.fauna_a = 1
 output.ectoplasm = 1
 duration = "5s"
-tags = [
-  { kind = "structure_id", value = "constructor" },
-]
+tags = [{ kind = "structure_id", value = "constructor" }]

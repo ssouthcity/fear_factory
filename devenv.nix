@@ -2,19 +2,18 @@
 
 {
   packages = [
+    # rust
     pkgs.pkg-config
 
-    pkgs.udev
-    pkgs.alsa-lib-with-plugins
+    # bevy
+    pkgs.libudev-zero
+    pkgs.alsa-lib
     pkgs.vulkan-loader
-
-    # x11
-    pkgs.xorg.libX11
-    pkgs.xorg.libXcursor
-    pkgs.xorg.libXrandr
-    pkgs.xorg.libXi
-
-    # wayland
+    pkgs.vulkan-tools
+    pkgs.libx11
+    pkgs.libxcursor
+    pkgs.libxrandr
+    pkgs.libxi
     pkgs.libxkbcommon
     pkgs.wayland
 
@@ -36,6 +35,15 @@
 
   env.LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath config.packages;
 
+  treefmt = {
+    enable = true;
+    config.programs = {
+      nixfmt.enable = true;
+      rustfmt.enable = true;
+      taplo.enable = true;
+    };
+  };
+
   git-hooks.hooks = {
     # General
     trim-trailing-whitespace.enable = true;
@@ -44,7 +52,9 @@
     # Rust
     cargo-check.enable = true;
     clippy.enable = true;
-    rustfmt.enable = true;
+
+    # Formatters
+    treefmt.enable = true;
 
     # Git
     check-merge-conflicts.enable = true;

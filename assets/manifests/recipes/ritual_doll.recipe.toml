@@ -4,6 +4,4 @@ input.ectoplasm = 5
 input.doll = 1
 output.ritual_doll = 1
 duration = "15s"
-tags = [
-  { kind = "structure_id", value = "constructor" },
-]
+tags = [{ kind = "structure_id", value = "constructor" }]
