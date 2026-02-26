@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.3.0](https://github.com/ssouthcity/fear_factory/compare/v0.2.0...v0.3.0) (2026-02-26)
+
+
+### Features
+
+* add dynamic item page to tome ([#78](https://github.com/ssouthcity/fear_factory/issues/78)) ([b71c14d](https://github.com/ssouthcity/fear_factory/commit/b71c14d5778f01a7fed1113c8849116edb1e37d3))
+* add harvesting and rework inputs/outputs ([#71](https://github.com/ssouthcity/fear_factory/issues/71)) ([f4b4f52](https://github.com/ssouthcity/fear_factory/commit/f4b4f52c8c3cbdb7250bf7630192f1a1f566debc))
+* add people and naming logic ([#79](https://github.com/ssouthcity/fear_factory/issues/79)) ([66c0e28](https://github.com/ssouthcity/fear_factory/commit/66c0e28bcee5c59c1237f9328171e32fc4cdc6f3))
+* add profession concept, migrate harvesting and porting ([#93](https://github.com/ssouthcity/fear_factory/issues/93)) ([1909727](https://github.com/ssouthcity/fear_factory/commit/1909727aa86568eaf5161339835264d480487b91))
+* add recipe list to tome ([#80](https://github.com/ssouthcity/fear_factory/issues/80)) ([2098400](https://github.com/ssouthcity/fear_factory/commit/2098400ee45293c3f1a788264d6c0a3df6f59bbe))
+* add spending to construction and refund on demolition ([#113](https://github.com/ssouthcity/fear_factory/issues/113)) ([ddb0981](https://github.com/ssouthcity/fear_factory/commit/ddb098137b20a1dc92d754f6e823cd34b9b6eba6))
+* add splash screen ([#103](https://github.com/ssouthcity/fear_factory/issues/103)) ([50d7f0e](https://github.com/ssouthcity/fear_factory/commit/50d7f0e19161dadb85abd062b536f8d5ef7ed10e))
+* add tome menu and textures ([#75](https://github.com/ssouthcity/fear_factory/issues/75)) ([c389933](https://github.com/ssouthcity/fear_factory/commit/c389933b5542dbe5c9a0d0b8a631909cf5d5d6e6))
+* move input logic to standalone plugin ([#77](https://github.com/ssouthcity/fear_factory/issues/77)) ([dfac385](https://github.com/ssouthcity/fear_factory/commit/dfac385d7baa68894e79f31f3304b88218131650))
+* move porter dropoff logic to dropoff component ([#108](https://github.com/ssouthcity/fear_factory/issues/108)) ([c936e37](https://github.com/ssouthcity/fear_factory/commit/c936e37209e4fe6ad1e8d52f12100fdabceffcf9))
+* porter returnal and item transfer improvements ([#100](https://github.com/ssouthcity/fear_factory/issues/100)) ([dfe22f1](https://github.com/ssouthcity/fear_factory/commit/dfe22f17e422fbf33d310238b7ac7e8d88a4dd22))
+* porters second iteration ([#94](https://github.com/ssouthcity/fear_factory/issues/94)) ([614c0f6](https://github.com/ssouthcity/fear_factory/commit/614c0f657a1bc7a378f35d263c007457242a6fb5))
+* return inventory slots ([#99](https://github.com/ssouthcity/fear_factory/issues/99)) ([1d3417e](https://github.com/ssouthcity/fear_factory/commit/1d3417e618b735faf623d8e99d8ee54d3b4597bb))
+* rework porters to be a task of people ([#90](https://github.com/ssouthcity/fear_factory/issues/90)) ([832c523](https://github.com/ssouthcity/fear_factory/commit/832c523f48e954c9952938ceb58fe042c60864b9))
+* rework tome to support multiple configurations ([#91](https://github.com/ssouthcity/fear_factory/issues/91)) ([a3d5e9c](https://github.com/ssouthcity/fear_factory/commit/a3d5e9c3e615bbfc6e475d0b88788bec6b194ad9))
+
+
+### Bug Fixes
+
+* only spawn porters on walkable tiles ([#102](https://github.com/ssouthcity/fear_factory/issues/102)) ([2c3b7ec](https://github.com/ssouthcity/fear_factory/commit/2c3b7ecadb374d6c9fe557ad63787d030f7ed4df))
+* profession assignment race condition and random porter paths ([#105](https://github.com/ssouthcity/fear_factory/issues/105)) ([55ef304](https://github.com/ssouthcity/fear_factory/commit/55ef3049e674f220cd4b184f1c72414036d78a16))
+* remove nixpkgs shim from devenv ([#82](https://github.com/ssouthcity/fear_factory/issues/82)) ([edfc6e2](https://github.com/ssouthcity/fear_factory/commit/edfc6e2cfb063cb7efd3228e630bce760e6d0013))
+* use item as term instead of resource ([#85](https://github.com/ssouthcity/fear_factory/issues/85)) ([8baa054](https://github.com/ssouthcity/fear_factory/commit/8baa05484a04086c31e3402f76366fd62cbe9d37))
+
 ## [0.2.0](https://github.com/ssouthcity/fear_factory/compare/v0.1.0...v0.2.0) (2025-11-01)
 
 
