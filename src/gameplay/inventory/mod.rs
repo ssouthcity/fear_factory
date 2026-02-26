@@ -16,7 +16,7 @@ pub mod prelude {
     };
     pub use messages::{ItemTransferSystems, TransferItems};
     pub use prefabs::{empty_slot, item_stack_slot};
-    pub use utils::{can_afford, spend};
+    pub use utils::{can_afford, refund, spend};
 }
 
 pub fn plugin(app: &mut App) {

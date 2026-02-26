@@ -59,3 +59,23 @@ pub fn spend(
         }
     }
 }
+
+pub fn refund(
+    entity: Entity,
+    cost: &HashMap<Handle<ItemDef>, u32>,
+    inventory: &Query<&Inventory>,
+    stacks: &mut Query<&mut ItemStack>,
+) {
+    for (item, quantity) in cost {
+        let Some(slot) = inventory
+            .iter_descendants(entity)
+            .find(|entity| stacks.get(*entity).is_ok_and(|stack| stack.item == *item))
+        else {
+            continue;
+        };
+
+        if let Ok(mut stack) = stacks.get_mut(slot) {
+            stack.quantity += quantity;
+        }
+    }
+}
