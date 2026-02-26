@@ -3,7 +3,13 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 
 use crate::{
-    gameplay::{FactorySystems, world::tilemap::coord::Coord},
+    gameplay::{
+        FactorySystems,
+        inventory::prelude::{Inventory, ItemStack, refund},
+        player::Player,
+        structure::{Structure, assets::StructureDef},
+        world::tilemap::coord::Coord,
+    },
     input::input_map::{Action, InputActions, action_just_pressed},
 };
 
@@ -32,6 +38,7 @@ pub(super) fn plugin(app: &mut App) {
         (
             highlight_demolition,
             demolish_selection.run_if(demolish_timer_finished),
+            refund_on_demolition,
         )
             .chain()
             .in_set(FactorySystems::Demolish),
@@ -41,6 +48,7 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Message, Reflect, Debug)]
 pub struct Demolished {
     pub entity: Entity,
+    pub structure: Handle<StructureDef>,
     pub coord: Coord,
 }
 
@@ -125,16 +133,33 @@ fn demolish_selection(
     mut selection: ResMut<DemolishSelection>,
     mut commands: Commands,
     mut demolitions: MessageWriter<Demolished>,
-    coords: Query<&Coord>,
+    structures: Query<(&Structure, &Coord)>,
 ) {
     for demolishable in selection.drain() {
         commands.entity(demolishable).despawn();
 
-        if let Ok(coord) = coords.get(demolishable) {
+        if let Ok((structure, coord)) = structures.get(demolishable) {
             demolitions.write(Demolished {
                 entity: demolishable,
+                structure: structure.0.clone(),
                 coord: Coord(coord.0),
             });
         }
+    }
+}
+
+fn refund_on_demolition(
+    mut demolished: MessageReader<Demolished>,
+    structure_defs: Res<Assets<StructureDef>>,
+    player: Single<Entity, With<Player>>,
+    inventory: Query<&Inventory>,
+    mut stacks: Query<&mut ItemStack>,
+) {
+    for Demolished { structure, .. } in demolished.read() {
+        let Some(structure_def) = structure_defs.get(structure) else {
+            continue;
+        };
+
+        refund(*player, &structure_def.cost, &inventory, &mut stacks);
     }
 }

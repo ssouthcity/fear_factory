@@ -7,12 +7,5 @@ pub fn empty_slot(owner: Entity) -> impl Bundle {
 }
 
 pub fn item_stack_slot(owner: Entity, item: Handle<ItemDef>, quantity: u32) -> impl Bundle {
-    (
-        empty_slot(owner),
-        ItemStack {
-            item,
-            quantity,
-            capacity: None,
-        },
-    )
+    (empty_slot(owner), ItemStack { item, quantity })
 }

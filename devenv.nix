@@ -51,7 +51,7 @@
 
     # Rust
     cargo-check.enable = true;
-    clippy.enable = true;
+    # clippy.enable = true;
 
     # Formatters
     treefmt.enable = true;

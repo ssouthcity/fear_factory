@@ -4,6 +4,7 @@ mod assets;
 mod components;
 mod messages;
 mod prefabs;
+mod utils;
 
 #[allow(unused_imports)]
 pub mod prelude {
@@ -15,6 +16,7 @@ pub mod prelude {
     };
     pub use messages::{ItemTransferSystems, TransferItems};
     pub use prefabs::{empty_slot, item_stack_slot};
+    pub use utils::{can_afford, refund, spend};
 }
 
 pub fn plugin(app: &mut App) {
