@@ -1,2 +1,5 @@
 id = "foragers_outpost"
 name = "Forager's Outpost"
+
+[cost]
+flora_a = 5

@@ -1,3 +1,6 @@
 id = "crafter"
 name = "Crafter"
 default_recipe = "sack"
+
+[cost]
+fauna_a = 10

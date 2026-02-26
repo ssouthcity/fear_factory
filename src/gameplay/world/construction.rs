@@ -7,6 +7,8 @@ use crate::{
     gameplay::{
         FactorySystems,
         hud::hotbar::{HotbarActionKind, HotbarSelection, HotbarSelectionChanged},
+        inventory::prelude::{Inventory, ItemStack, can_afford, spend},
+        player::Player,
         sprite_sort::{YSortSprite, ZIndexSprite},
         structure::{
             Structure, assets::StructureDef, foragers_outpost::ForagersOutpost,
@@ -26,6 +28,7 @@ use crate::{
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<Constructions>();
     app.init_resource::<ValidPlacement>();
+    app.init_resource::<Affordable>();
 
     app.add_message::<StructureConstructed>();
 
@@ -36,6 +39,7 @@ pub(super) fn plugin(app: &mut App) {
                 .chain()
                 .run_if(on_message::<HotbarSelectionChanged>),
             calculate_valid_placement,
+            calculate_affordability,
             (move_preview, color_preview),
         )
             .in_set(FactorySystems::Construction),
@@ -64,6 +68,10 @@ pub struct ConstructionPreview;
 #[derive(Resource, Reflect, Debug, Default)]
 #[reflect(Resource)]
 pub struct ValidPlacement(pub bool);
+
+#[derive(Resource, Reflect, Debug, Default)]
+#[reflect(Resource)]
+pub struct Affordable(pub bool);
 
 #[derive(Resource, Reflect, Debug, Default, Deref, DerefMut)]
 #[reflect(Resource)]
@@ -132,6 +140,25 @@ fn calculate_valid_placement(
     valid_placement.0 = !spot_occupied;
 }
 
+fn calculate_affordability(
+    hotbar_selection: HotbarSelection,
+    structure_defs: Res<Assets<StructureDef>>,
+    mut affordable: ResMut<Affordable>,
+    player: Single<Entity, With<Player>>,
+    inventory: Query<&Inventory>,
+    stacks: Query<&mut ItemStack>,
+) {
+    let Some(HotbarActionKind::PlaceStructure(handle)) = hotbar_selection.action() else {
+        return;
+    };
+
+    let Some(structure) = structure_defs.get(handle) else {
+        return;
+    };
+
+    affordable.0 = can_afford(*player, &structure.cost, &inventory, &stacks);
+}
+
 fn move_preview(
     cursor_position: Res<CursorPosition>,
     mut preview_query: Query<&mut Coord, With<ConstructionPreview>>,
@@ -143,10 +170,11 @@ fn move_preview(
 
 fn color_preview(
     valid_placement: Res<ValidPlacement>,
+    affordable: Res<Affordable>,
     mut preview_query: Query<&mut Sprite, With<ConstructionPreview>>,
 ) {
     for mut sprite in preview_query.iter_mut() {
-        sprite.color = if !valid_placement.0 {
+        sprite.color = if !valid_placement.0 || !affordable.0 {
             Color::hsl(0.0, 1.0, 0.5)
         } else {
             Color::default().with_alpha(0.5)
@@ -162,6 +190,9 @@ fn construct(
     structure_defs: ResMut<Assets<StructureDef>>,
     mut constructions: ResMut<Constructions>,
     mut structures_constructed: MessageWriter<StructureConstructed>,
+    player: Single<Entity, With<Player>>,
+    inventory: Query<&Inventory>,
+    mut stacks: Query<&mut ItemStack>,
 ) {
     let Some(HotbarActionKind::PlaceStructure(handle)) = hotbar_selection.action() else {
         return;
@@ -172,6 +203,12 @@ fn construct(
         .expect("Attempted to spawn non-existent structure");
 
     for tile_click in tile_clicks.read() {
+        if !can_afford(*player, &structure.cost, &inventory, &stacks) {
+            continue;
+        }
+
+        spend(*player, &structure.cost, &inventory, &mut stacks);
+
         let entity = commands
             .spawn((
                 Name::new(structure.name.clone()),

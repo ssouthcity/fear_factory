@@ -48,7 +48,6 @@ pub(super) fn transfer_items(
             commands.entity(*to_slot).insert(ItemStack {
                 item: from_stack.item.clone(),
                 quantity: actual_quantity,
-                capacity: None,
             });
         }
     }

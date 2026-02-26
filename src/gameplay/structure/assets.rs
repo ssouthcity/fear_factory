@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bevy::{asset::LoadedFolder, prelude::*};
 use serde::Deserialize;
 
@@ -7,7 +9,7 @@ use crate::{
         loaders::toml::{FromToml, TomlAssetPlugin},
         tracking::LoadResource,
     },
-    gameplay::recipe::assets::Recipe,
+    gameplay::{inventory::prelude::ItemDef, recipe::assets::Recipe},
 };
 
 pub fn plugin(app: &mut App) {
@@ -42,6 +44,8 @@ pub struct StructureRaw {
     pub id: String,
     pub name: String,
     pub default_recipe: Option<String>,
+    #[serde(default)]
+    pub cost: HashMap<String, u32>,
 }
 
 #[derive(Asset, Reflect, Debug)]
@@ -49,6 +53,7 @@ pub struct StructureDef {
     pub id: String,
     pub name: String,
     pub default_recipe: Option<AssetId<Recipe>>,
+    pub cost: HashMap<Handle<ItemDef>, u32>,
 }
 
 impl FromToml for StructureDef {
@@ -63,6 +68,16 @@ impl FromToml for StructureDef {
                     .load(format!("manifests/recipes/{recipe_id}.recipe.toml"))
                     .id()
             }),
+            cost: raw
+                .cost
+                .iter()
+                .map(|(key, val)| {
+                    (
+                        load_context.load(format!("manifests/items/{key}.item.toml")),
+                        *val,
+                    )
+                })
+                .collect(),
         }
     }
 }
