@@ -4,9 +4,10 @@ use bevy_aseprite_ultra::prelude::*;
 use crate::screens::Screen;
 
 pub mod hotbar;
+mod player_inventory;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins(hotbar::plugin);
+    app.add_plugins((hotbar::plugin, player_inventory::plugin));
 
     app.add_systems(OnEnter(Screen::Gameplay), (setup_portrait, setup_relic));
 }
