@@ -13,6 +13,8 @@ use crate::{
 };
 
 pub(super) fn plugin(app: &mut App) {
+    app.add_message::<ItemAddedToInventory>();
+
     app.add_systems(OnEnter(Screen::Gameplay), spawn_player);
 
     app.add_systems(
@@ -26,18 +28,31 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Player;
 
+#[derive(Message)]
+pub(crate) struct ItemAddedToInventory {
+    pub item: Entity,
+    pub inventory: Entity,
+}
+
 fn spawn_player(
     mut commands: Commands,
     item_defs: Res<Assets<ItemDef>>,
     mut seed: ResMut<Seed>,
     asset_server: Res<AssetServer>,
+    mut item_added_to_inventory: MessageWriter<ItemAddedToInventory>,
 ) {
     let player = commands.spawn((Name::new("Player"), Player)).id();
 
     for (item_id, _) in item_defs.iter() {
         let item_handle = asset_server.get_id_handle(item_id).unwrap();
         let quantity = seed.random_range(0..100);
-        commands.spawn(item_stack_slot(player, item_handle, quantity));
+        let item = commands
+            .spawn(item_stack_slot(player, item_handle, quantity))
+            .id();
+        item_added_to_inventory.write(ItemAddedToInventory {
+            item,
+            inventory: player,
+        });
     }
 }
 
